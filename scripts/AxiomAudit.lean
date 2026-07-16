@@ -161,7 +161,13 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.OracleCode.exists_prefixPostCode,
    ``ComputableAnalysis.OracleCode.eval_comp_some,
    ``ComputableAnalysis.OracleCode.eval_pair_some,
-   ``ComputableAnalysis.ratOfCode_surjective]
+   ``ComputableAnalysis.ratOfCode_surjective,
+   -- Unit 15: the fast Cauchy representation
+   ``ComputableAnalysis.ComputableMetricPresentation.namesPoint_unique,
+   ``ComputableAnalysis.ComputableMetricPresentation.cauchyRep,
+   ``ComputableAnalysis.ComputableMetricPresentation.cauchyRep_names_iff,
+   ``ComputableAnalysis.ComputableMetricPresentation.IsFastCauchy.exists_namesPoint,
+   ``ComputableAnalysis.ComputableMetricPresentation.IsFastCauchy.valid]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

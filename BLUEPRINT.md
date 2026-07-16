@@ -173,7 +173,7 @@ stops are external reviews.
 | 12 | LPO, LLPO (+ multivalued-oracle test) | — |
 | 13 | lim | — |
 | 14 | Computable metric presentations | done |
-| 15 | Fast Cauchy representation | — |
+| 15 | Fast Cauchy representation | done |
 | 16 | Represented reals + arithmetic contract | — |
 | 17 | Metric examples + rate equivalence | deferred — not required for Review Stop D |
 | 18 | Cantor measurable structure, cylinder masses, uniqueness | done |
