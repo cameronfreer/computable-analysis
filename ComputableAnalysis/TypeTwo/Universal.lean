@@ -140,7 +140,7 @@ section Universal
 open Primrec
 
 /-- An oracle-free code appending one element at the end of an encoded list. -/
-private theorem exists_snocCode :
+theorem exists_snocCode :
     ∃ e : OracleCode, ∀ (P : Baire) (x : ℕ) (l : List ℕ),
       e.eval P (Nat.pair x (encode l)) = Part.some (encode (l ++ [x])) := by
   have hcomp : Computable fun q : ℕ × List ℕ => q.2 ++ [q.1] :=
@@ -153,7 +153,7 @@ private theorem exists_snocCode :
 
 /-- An oracle code producing the encoded length-`k` prefix of the oracle stream, by
 querying coordinate `k` at each `prec` step and snoc-encoding. -/
-private theorem exists_takeCode :
+theorem exists_takeCode :
     ∃ t : OracleCode, ∀ (P : Baire) (k : ℕ),
       t.eval P k = Part.some (encode (streamTake P k)) := by
   obtain ⟨e, he⟩ := exists_snocCode
@@ -206,20 +206,44 @@ private theorem exists_bodyCode :
   simp [Nat.unpair_pair, Denumerable.ofNat_encode]
 
 /-- An oracle-free code for a computable unary numeric function. -/
-private theorem exists_ofNatFn {g : ℕ → ℕ} (hg : Computable g) :
+theorem exists_ofNatFnCode {g : ℕ → ℕ} (hg : Computable g) :
     ∃ e : OracleCode, ∀ (P : Baire) (v : ℕ), e.eval P v = Part.some (g v) := by
   obtain ⟨E, hE⟩ := Nat.Partrec.Code.exists_code.1 hg.partrec
   refine ⟨ofPartrecCode E, fun P v => ?_⟩
   rw [eval_ofPartrecCode, hE]
   simp
 
+/-- **Head-adaptive finite-use bridge.** Any stream operator of the shape
+`F ↦ (n ↦ g (Nat.pair n (encode (streamTake F (b n (F 0))))))` — an oracle-free
+postprocessor `g` of a stream prefix whose length is computed from the coordinate `n` and
+the head `F 0` — is computed by a single oracle code, **totally on all streams**. The
+assembly lemma behind uniform first-order arithmetic on packed names (unit 16). -/
+theorem exists_prefixPostCode {b : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
+    (hb : Primrec₂ b) (hg : Primrec g) :
+    ∃ c : OracleCode, ∀ (F : Baire) (n : ℕ),
+      c.eval F n = Part.some (g (Nat.pair n (encode (streamTake F (b n (F 0)))))) := by
+  obtain ⟨t, ht⟩ := exists_takeCode
+  obtain ⟨B, hB⟩ := exists_ofNatFnCode (g := fun v => b v.unpair.1 v.unpair.2)
+    (hb.comp (Primrec.fst.comp Primrec.unpair) (Primrec.snd.comp Primrec.unpair)).to_comp
+  obtain ⟨G, hG⟩ := exists_ofNatFnCode hg.to_comp
+  refine ⟨.comp G (.pair OracleCode.id (.comp t (.comp B
+    (.pair OracleCode.id (.comp .query .zero))))), fun F n => ?_⟩
+  have h0 : (OracleCode.comp .query .zero).eval F n = Part.some (F 0) :=
+    (eval_comp_some rfl).trans (eval_query F 0)
+  have hbc : (OracleCode.comp B (.pair OracleCode.id (.comp .query .zero))).eval F n
+      = Part.some (b n (F 0)) := by
+    rw [eval_comp_some (eval_pair_some (eval_id F n) h0), hB]
+    simp
+  rw [eval_comp_some (eval_pair_some (eval_id F n)
+    (eval_comp_some hbc ▸ ht F (b n (F 0)))), hG]
+
 theorem exists_universal :
     ∃ u : OracleCode, ∀ (c : OracleCode) (p : Baire) (n : ℕ),
       u.eval p (Nat.pair (encode c) n) = c.eval p n := by
   obtain ⟨b, hb⟩ := exists_bodyCode
-  obtain ⟨flag, hflag⟩ := exists_ofNatFn (g := fun v => 1 - v)
+  obtain ⟨flag, hflag⟩ := exists_ofNatFnCode (g := fun v => 1 - v)
     (Primrec.nat_sub.comp (Primrec.const 1) Primrec.id).to_comp
-  obtain ⟨sub, hsub⟩ := exists_ofNatFn (g := fun v => v - 1)
+  obtain ⟨sub, hsub⟩ := exists_ofNatFnCode (g := fun v => v - 1)
     (Primrec.nat_sub.comp Primrec.id (Primrec.const 1)).to_comp
   refine ⟨comp sub (comp b (pair OracleCode.id (rfind (comp flag b)))), fun c P n => ?_⟩
   set m := Nat.pair (encode c) n with hm

@@ -153,7 +153,15 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.cylMass_isConsistent,
    ``ComputableAnalysis.cylMass_injective,
    -- Unit 19: existence from consistent masses (route B, Ionescu–Tulcea)
-   ``ComputableAnalysis.existsUnique_probabilityMeasure_of_isConsistent]
+   ``ComputableAnalysis.existsUnique_probabilityMeasure_of_isConsistent,
+   -- Unit 14: coded rationals + computable metric presentations + Type-2 riders
+   ``ComputableAnalysis.OracleCode.exists_snocCode,
+   ``ComputableAnalysis.OracleCode.exists_takeCode,
+   ``ComputableAnalysis.OracleCode.exists_ofNatFnCode,
+   ``ComputableAnalysis.OracleCode.exists_prefixPostCode,
+   ``ComputableAnalysis.OracleCode.eval_comp_some,
+   ``ComputableAnalysis.OracleCode.eval_pair_some,
+   ``ComputableAnalysis.ratOfCode_surjective]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

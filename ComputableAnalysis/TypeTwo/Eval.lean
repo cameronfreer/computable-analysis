@@ -78,6 +78,18 @@ theorem eval_comp (cf cg : OracleCode) (p : Baire) (n : ℕ) :
     (comp cf cg).eval p n = cg.eval p n >>= cf.eval p :=
   rfl
 
+/-- Code-assembly step: composing past a converged inner evaluation. -/
+theorem eval_comp_some {cf cg : OracleCode} {p : Baire} {n a : ℕ}
+    (h : cg.eval p n = Part.some a) : (comp cf cg).eval p n = cf.eval p a := by
+  rw [eval_comp, h, Part.bind_eq_bind, Part.bind_some]
+
+/-- Code-assembly step: pairing two converged evaluations. -/
+theorem eval_pair_some {cf cg : OracleCode} {p : Baire} {n a b : ℕ}
+    (hf : cf.eval p n = Part.some a) (hg : cg.eval p n = Part.some b) :
+    (pair cf cg).eval p n = Part.some (Nat.pair a b) := by
+  rw [eval_pair, hf, hg]
+  simp [Seq.seq]
+
 /-- Evaluation of `prec` in the base case. -/
 @[simp]
 theorem eval_prec_zero (cf cg : OracleCode) (p : Baire) (a : ℕ) :

@@ -172,7 +172,7 @@ stops are external reviews.
 | — | **Review Stop C**: semantic API as implemented | approved 2026-07-14 |
 | 12 | LPO, LLPO (+ multivalued-oracle test) | — |
 | 13 | lim | — |
-| 14 | Computable metric presentations | — |
+| 14 | Computable metric presentations | done |
 | 15 | Fast Cauchy representation | — |
 | 16 | Represented reals + arithmetic contract | — |
 | 17 | Metric examples + rate equivalence | deferred — not required for Review Stop D |
