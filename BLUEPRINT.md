@@ -175,7 +175,7 @@ stops are external reviews.
 | 14 | Computable metric presentations | — |
 | 15 | Fast Cauchy representation | — |
 | 16 | Represented reals + arithmetic contract | — |
-| 17 | Metric examples + rate equivalence | — |
+| 17 | Metric examples + rate equivalence | deferred — not required for Review Stop D |
 | 18 | Cantor measurable structure, cylinder masses, uniqueness | done |
 | — | **Feasibility review**: measure-existence route | approved 2026-07-16 |
 | 19 | Existence: measure from consistent masses | done |
@@ -492,8 +492,9 @@ theorem existsUnique_probabilityMeasure_of_isConsistent {m : List Bool → ℝ}
 - Weihrauch (units 10–13): `LLPO ≤W LPO`; `¬ComputableProblem LPO`; `LPO ≤W Lim`;
   formal separation `idProblem ≤W constZeroProblem` with `¬ ≤sW`; multivalued-oracle
   test `llpo_swap_le_llpo` verified against every realizer on the all-zero input.
-- Metric (units 14–17): ℚ; ℝ; Cantor and Baire; finite products; a closed subspace;
-  equivalence of two Cauchy rates.
+- Metric (units 14–16, minimal): ℚ; ℝ (the encoded rational dense sequence). Deferred
+  with unit 17 (not required for Review Stop D): Cantor and Baire presentations; finite
+  products; a closed subspace; equivalence of two Cauchy rates.
 - Measures (units 18–23): Dirac; Bernoulli; finite mixture; product; pushforward.
 - Deferred with their layers: closed choice examples, kernel examples.
 
