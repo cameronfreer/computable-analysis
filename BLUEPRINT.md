@@ -478,6 +478,69 @@ theorem existsUnique_probabilityMeasure_of_isConsistent {m : List Bool → ℝ}
     ∃! μ : ProbabilityMeasure Cantor, ∀ s, cylMass μ s = m s
 ```
 
+### For units 14–16 — minimal represented reals (unit 17 deferred)
+
+Instantiates pinned conventions 7–8 (presentation bundles, `NamesPoint`/`IsFastCauchy`
+with rate `((2:ℝ)⁻¹)^n`, partial `cauchyRep`). The uniform-arithmetic layout was
+validated pre-freeze by the uniform-sums feasibility spike (compiles, zero sorries,
+standard axioms; realizer total on all streams).
+
+```lean
+-- Unit 14 (Metric/Presentation.lean): computable metric presentations (explicit data,
+-- never typeclasses — convention 7). Semidecisions only; a decision oracle is too strong.
+structure ComputableMetricPresentation (X : Type u) [PseudoMetricSpace X] where
+  dense       : ℕ → X
+  denseRange  : DenseRange dense
+  ltSemidec   : REPred fun w : ℕ × ℕ × ℚ => dist (dense w.1) (dense w.2.1) < (w.2.2 : ℝ)
+  gtSemidec   : REPred fun w : ℕ × ℕ × ℚ => (w.2.2 : ℝ) < dist (dense w.1) (dense w.2.1)
+-- Foundation riders (spike-mandated, this unit): publish the currently-private
+-- Universal.lean code builders with spec lemmas — takeCode (encoded oracle prefix),
+-- snocCode, ofNatFn (oracle-free code of a computable ℕ → ℕ function) — plus the
+-- head-adaptive bridge (one code per (bound, postprocessor) pair, TOTAL):
+theorem exists_prefixPostCode {b : ℕ → ℕ → ℕ} {g : ℕ → ℕ} (hb : Primrec₂ b)
+    (hg : Primrec g) : ∃ c : OracleCode, ∀ (F : Baire) (n : ℕ),
+      c.eval F n = Part.some (g (Nat.pair n (encode (streamTake F (b n (F 0))))))
+-- and an eval_comp_some/eval_pair_some simp kit for code-assembly proofs.
+
+-- Unit 15 (Metric/CauchyRepresentation.lean): the three notions of convention 8, over a
+-- fixed P : ComputableMetricPresentation X.
+def P.NamesPoint (p : Baire) (x : X) : Prop                    -- convention 8, verbatim
+def P.IsFastCauchy (p : Baire) : Prop                          -- convention 8, verbatim
+def P.cauchyRep [MetricSpace X] : Representation X             -- valid iff ∃ x named; no
+                                                               -- totalization (ℚ stays
+                                                               -- a legit incomplete ex.)
+theorem P.cauchyRep_names_iff : P.cauchyRep.Names p x ↔ P.NamesPoint p x
+theorem P.namesPoint_isFastCauchy : P.NamesPoint p x → P.IsFastCauchy p   -- constants: 8
+theorem P.isFastCauchy_valid [CompleteSpace X] : P.IsFastCauchy p → P.cauchyRep.Valid p
+
+-- Unit 16 (Metric/Real.lean): represented reals. PINNED concrete presentation: the
+-- total surjective rational coding (spike-validated; chosen over Encodable ℚ decode
+-- because the ambient Encodable/Primcodable ℚ instances are DIFFERENT numberings and
+-- mathlib has no Primrec/Computable lemmas for ℚ or ℤ arithmetic — all arithmetic here
+-- is ℕ pairing arithmetic, no gcd):
+def ratOfCode (m : ℕ) : ℚ :=                                   -- surjective, unnormalized
+  ((m.unpair.1.unpair.1 : ℚ) - m.unpair.1.unpair.2) / (m.unpair.2 + 1)
+def realPresentation : ComputableMetricPresentation ℝ          -- dense := ratOfCode
+def realRep : Representation ℝ := realPresentation.cauchyRep
+def unitIntervalRep : Representation (Set.Icc (0 : ℝ) 1) :=    -- the [0,1] values of
+  realRep.subtype _                                            -- units 20–23
+-- Arithmetic contract (binary ops as ComputableMap on prod; dist for the later
+-- metric-measure interfaces):
+theorem computableMap_realAdd  : ComputableMap (realRep.prod realRep) realRep fun p => p.1 + p.2
+theorem computableMap_realNeg  : ComputableMap realRep realRep Neg.neg
+theorem computableMap_realMul  : ComputableMap (realRep.prod realRep) realRep fun p => p.1 * p.2
+theorem computableMap_realDist : ComputableMap (realRep.prod realRep) realRep fun p => |p.1 - p.2|
+-- Uniform variable-length folds (the units 22–23 consumer). PINNED packing (spike):
+--   component i of F is fun n => F (1 + Nat.pair i n), length k = F 0;
+--   Packs F k x := F 0 = k ∧ ∀ i : Fin k, realRep names (component i) (x i);
+--   precision bump n + k (via k < 2^k); realized by ONE total code through
+--   exists_prefixPostCode.
+theorem exists_uniform_sum_realizer : ∃ c : OracleCode, ∀ (k : ℕ) (F : Baire)
+    (x : Fin k → ℝ), Packs F k x → ∃ q ∈ c.evalStream F, realRep.Names q (∑ i, x i)
+theorem exists_uniform_prod_realizer : -- same shape for ∏ i, x i (bump uses a product
+    -- bound read off the k names; exact bound fixed at implementation)
+```
+
 ## Worked-example checklist (acceptance test; each in its owning unit)
 
 - Type-2 core (units 5–6): identity; constants; composition; pairing/projections;
