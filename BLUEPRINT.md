@@ -180,7 +180,7 @@ stops are external reviews.
 | — | **Feasibility review**: measure-existence route | approved 2026-07-16 |
 | 19 | Existence: measure from consistent masses | done |
 | 20 | Cantor measure representation | done |
-| 21 | Uniform cylinder-value equivalence | — |
+| 21 | Uniform cylinder-value equivalence | done |
 | 22 | Measure constructors | — |
 | 23 | Pushforward | — |
 | — | **Review Stop D**: deliverable complete; re-plan | — |

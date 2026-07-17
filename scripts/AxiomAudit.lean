@@ -186,7 +186,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.measureNames_unique,
    ``ComputableAnalysis.cantorMeasureRep,
    ``ComputableAnalysis.cantorMeasureRep_names_iff,
-   ``ComputableAnalysis.cantorMeasureSpace]
+   ``ComputableAnalysis.cantorMeasureSpace,
+   -- Unit 21: uniform cylinder-value equivalence
+   ``ComputableAnalysis.computablePoint_cantorMeasureRep_iff]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
