@@ -637,21 +637,47 @@ theorem exists_uniform_finiteMixture_realizer :
       Packs W k (fun i => (w i).1) → PacksMeasures M k μs →
       ∃ q ∈ c.evalStream (Baire.interleave W M),
         cantorMeasureRep.Names q (finiteMixture w hw μs)
--- Binary product via the PINNED interleaving identification: the image of μ ⊗ ν under
--- (x, y) ↦ Baire.interleave x y (on Cantor), characterized by deinterleaved subwords
--- (wordEven s = entries of s at even positions, wordOdd at odd — defined this unit):
-def wordEven (s : List Bool) : List Bool
-def wordOdd  (s : List Bool) : List Bool
+-- Binary product via the PINNED interleaving identification. Cantor-typed interleaving
+-- is frozen here and defined in TypeTwo/Cantor.lean at implementation
+-- (Baire.interleave is ℕ → ℕ-stream-typed and does not apply to Cantor):
+def Cantor.interleave (x y : Cantor) : Cantor :=
+  fun n => if n % 2 = 0 then x (n / 2) else y (n / 2)
+@[simp] theorem Cantor.interleave_even : Cantor.interleave x y (2 * n) = x n
+@[simp] theorem Cantor.interleave_odd  : Cantor.interleave x y (2 * n + 1) = y n
+theorem Cantor.measurable_interleave :
+    Measurable fun p : Cantor × Cantor => Cantor.interleave p.1 p.2
+-- Deinterleaved subwords, with explicit bodies and coordinate/length characterizations:
+def wordEven (s : List Bool) : List Bool :=
+  List.ofFn fun i : Fin ((s.length + 1) / 2) => s[2 * i.1]'(by omega)
+def wordOdd (s : List Bool) : List Bool :=
+  List.ofFn fun i : Fin (s.length / 2) => s[2 * i.1 + 1]'(by omega)
+@[simp] theorem length_wordEven : (wordEven s).length = (s.length + 1) / 2
+@[simp] theorem length_wordOdd  : (wordOdd s).length = s.length / 2
+theorem getElem_wordEven (h : i < (wordEven s).length) :
+    (wordEven s)[i] = s[2 * i]'(by simp at h; omega)
+theorem getElem_wordOdd (h : i < (wordOdd s).length) :
+    (wordOdd s)[i] = s[2 * i + 1]'(by simp at h; omega)
+-- The membership law tying interleaving to the subwords:
+theorem Cantor.interleave_mem_cylinder_iff :
+    Cantor.interleave x y ∈ (cylinder s : Set Cantor) ↔
+      x ∈ (cylinder (wordEven s) : Set Cantor) ∧ y ∈ (cylinder (wordOdd s) : Set Cantor)
 def productMeasure (μ ν : ProbabilityMeasure Cantor) : ProbabilityMeasure Cantor
+-- Classical semantics: productMeasure IS the image of the mathlib product measure under
+-- the interleaving identification (implementation may still construct it through unit
+-- 19's existence theorem and prove this equality):
+theorem productMeasure_eq_map_prod :
+    (productMeasure μ ν).toMeasure =
+      (μ.toMeasure.prod ν.toMeasure).map fun p => Cantor.interleave p.1 p.2
 theorem cylMass_productMeasure :
     cylMass (productMeasure μ ν) s = cylMass μ (wordEven s) * cylMass ν (wordOdd s)
 theorem computableMap_productMeasure :
     ComputableMap (cantorMeasureRep.prod cantorMeasureRep) cantorMeasureRep
       fun p => productMeasure p.1 p.2
 
--- Unit 23 (Measure/Pushforward.lean): pushforward along a TOTAL computable map
--- f : Cantor → Cantor (hypothesis: ComputableMap cantorRep cantorRep f — total by the
--- type; nothing is asserted for partial maps).
+-- Unit 23 (Measure/Pushforward.lean): pushforward along a computable map
+-- f : Cantor → Cantor. `f` is a TOTAL mathematical function (total by its type), and
+-- the hypothesis ComputableMap cantorRep cantorRep f means its realizer converges on
+-- every VALID Cantor name — not necessarily on every Baire stream.
 -- Measurability bridge: computable ⇒ continuous (finite use on names) ⇒ measurable.
 theorem continuous_of_computableMap_cantor (hf : ComputableMap cantorRep cantorRep f) :
     Continuous f
