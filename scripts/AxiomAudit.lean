@@ -204,7 +204,14 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.productMeasure,
    ``ComputableAnalysis.cylMass_productMeasure,
    ``ComputableAnalysis.productMeasure_eq_map_prod,
-   ``ComputableAnalysis.computableMap_productMeasure]
+   ``ComputableAnalysis.computableMap_productMeasure,
+   -- Unit 23: pushforward
+   ``ComputableAnalysis.continuous_of_computableMap_cantor,
+   ``ComputableAnalysis.measurable_of_computableMap_cantor,
+   ``ComputableAnalysis.pushforwardMeasure,
+   ``ComputableAnalysis.exists_pushforward_cylinder_table,
+   ``ComputableAnalysis.computableMap_pushforwardMeasure,
+   ``ComputableAnalysis.pushforwardMeasure_comp]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

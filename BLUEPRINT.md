@@ -182,7 +182,7 @@ stops are external reviews.
 | 20 | Cantor measure representation | done |
 | 21 | Uniform cylinder-value equivalence | done |
 | 22 | Measure constructors | done |
-| 23 | Pushforward | — |
+| 23 | Pushforward | done |
 | — | **Review Stop D**: deliverable complete; re-plan | — |
 
 ## Signatures appendix (grows before each review stop)
