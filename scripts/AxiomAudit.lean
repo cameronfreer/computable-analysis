@@ -211,7 +211,15 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.pushforwardMeasure,
    ``ComputableAnalysis.exists_pushforward_cylinder_table,
    ``ComputableAnalysis.computableMap_pushforwardMeasure,
-   ``ComputableAnalysis.pushforwardMeasure_comp]
+   ``ComputableAnalysis.pushforwardMeasure_comp,
+   -- Unit 12: LPO, LLPO, and the multivalued-oracle test
+   ``ComputableAnalysis.LPO,
+   ``ComputableAnalysis.LPO.dom_total,
+   ``ComputableAnalysis.not_computableProblem_LPO,
+   ``ComputableAnalysis.LLPO,
+   ``ComputableAnalysis.llpoSwap,
+   ``ComputableAnalysis.llpo_le_lpo,
+   ``ComputableAnalysis.llpo_swap_le_llpo]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

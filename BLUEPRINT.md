@@ -170,7 +170,7 @@ stops are external reviews.
 | 10 | Problems + ordinary Weihrauch reduction | done |
 | 11 | Strong reduction + formal ≤W/≤sW separation | done |
 | — | **Review Stop C**: semantic API as implemented | approved 2026-07-14 |
-| 12 | LPO, LLPO (+ multivalued-oracle test) | — |
+| 12 | LPO, LLPO (+ multivalued-oracle test) | done |
 | 13 | lim | — |
 | 14 | Computable metric presentations | done |
 | 15 | Fast Cauchy representation | done |
@@ -701,6 +701,30 @@ theorem pushforwardMeasure_comp (hf : ComputableMap cantorRep cantorRep f)
     (hg : ComputableMap cantorRep cantorRep g) :
     pushforwardMeasure g hg (pushforwardMeasure f hf μ) =
       pushforwardMeasure (g ∘ f) (hg.comp hf) μ
+```
+
+### For units 12–13 — Weihrauch principles (frozen via issue #1)
+
+All over `baireSpace` with `natSpace` answers where discrete; answer binders carry `: ℕ`
+ascriptions (the carrier has no `OfNat`). Domains are derived from `accepts` — the
+at-most-one-nonzero conjunct lives INSIDE `LLPO.accepts`.
+
+```lean
+def LPO : Problem baireSpace natSpace :=
+  ⟨fun p (b : ℕ) => (b = 0 ∧ ∀ n, p n = 0) ∨ (b = 1 ∧ ∃ n, p n ≠ 0)⟩
+theorem LPO.dom_total (p : Baire) : LPO.Dom p
+theorem not_computableProblem_LPO : ¬ ComputableProblem LPO      -- finite-use diagonal
+def LLPO : Problem baireSpace natSpace :=
+  ⟨fun p (i : ℕ) => (∀ a b, p a ≠ 0 → p b ≠ 0 → a = b) ∧
+    ((i = 0 ∧ ∀ n, p (2 * n) = 0) ∨ (i = 1 ∧ ∀ n, p (2 * n + 1) = 0))⟩
+def llpoSwap : Problem baireSpace natSpace                       -- parity-swapped LLPO
+-- On the all-zero input BOTH answers are permitted (multivalued content; example).
+theorem llpo_le_lpo : LLPO ≤W LPO                                -- evenPart query
+theorem llpo_swap_le_llpo : llpoSwap ≤W LLPO                     -- parity-swap, ∀ realizer
+def Lim : Problem baireSpace baireSpace :=                       -- unit 13
+  ⟨fun p q => ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n⟩
+theorem Lim.accepts_unique (h : Lim.accepts p q) (h' : Lim.accepts p q') : q = q'
+theorem lpo_le_lim : LPO ≤W Lim                                  -- seen-nonzero columns
 ```
 
 ## Worked-example checklist (acceptance test; each in its owning unit)
