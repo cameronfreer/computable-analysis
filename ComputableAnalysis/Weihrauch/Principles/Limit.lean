@@ -1,0 +1,150 @@
+/-
+Copyright (c) 2026 Cameron Freer. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Cameron Freer
+-/
+import ComputableAnalysis.Weihrauch.Reduction
+import ComputableAnalysis.Weihrauch.Principles.LPO
+
+/-!
+# The limit problem and the reduction `LPO ≤W Lim`
+
+`Lim` receives a table `p` of columns — `p (Nat.pair n t)` is the stage-`t` entry of
+column `n` — with every column eventually constant, and must output the stream of column
+limits. The limit stream is unique (`Lim.accepts_unique`), so `Lim` is single-valued on
+its domain.
+
+`lpo_le_lim` reduces `LPO` to `Lim`: the preprocessor sends a stream `p` to the table
+whose column `n` at stage `t` records whether a nonzero entry appears among
+`p 0, …, p t` — computed uniformly by the head-adaptive prefix bridge
+`OracleCode.exists_prefixPostCode`, testing the prefix via its list sum — and the
+postprocessor reads coordinate `0` of the limit stream, which stabilizes to the `LPO`
+answer bit.
+-/
+
+open Encodable Denumerable
+
+namespace ComputableAnalysis
+
+/-- **The limit problem** on Baire space: the input is a table of columns
+(`p (Nat.pair n t)` is the stage-`t` entry of column `n`), each eventually constant, and
+the accepted answer is the stream of column limits. -/
+def Lim : Problem baireSpace baireSpace :=
+  ⟨fun p (q : Baire) => ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n⟩
+
+/-- Definitional unfolding of `Lim.accepts`, so proofs never depend on `rcases`
+unfolding the structure projection. -/
+private theorem lim_accepts_iff {p q : Baire} :
+    Lim.accepts p q ↔ ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n :=
+  Iff.rfl
+
+/-- The limit stream is unique: `Lim` is single-valued on its domain. Evaluate both
+stabilization stages of column `n` at their maximum and chain the equalities. -/
+theorem Lim.accepts_unique {p q q' : Baire} (h : Lim.accepts p q) (h' : Lim.accepts p q') :
+    q = q' := by
+  funext n
+  obtain ⟨s, hs⟩ := lim_accepts_iff.mp h n
+  obtain ⟨s', hs'⟩ := lim_accepts_iff.mp h' n
+  exact (hs (max s s') (le_max_left _ _)).symm.trans (hs' (max s s') (le_max_right _ _))
+
+/-- Definitional unfolding of `LPO.accepts` (restated here because the copy in `LPO.lean`
+is private to that file). -/
+private theorem lpo_accepts_iff {p : Baire} {b : ℕ} :
+    LPO.accepts p b ↔ (b = 0 ∧ ∀ n, p n = 0) ∨ (b = 1 ∧ ∃ n, p n ≠ 0) :=
+  Iff.rfl
+
+/-- A list of naturals sums to zero iff every entry vanishes. -/
+private theorem list_sum_eq_zero {l : List ℕ} : l.sum = 0 ↔ ∀ x ∈ l, x = 0 := by
+  induction l with
+  | nil => simp
+  | cons a l ih => simp [ih]
+
+/-- The length-`(t + 1)` prefix of a stream sums to zero iff the stream vanishes up to
+time `t`: the entries of `streamTake p (t + 1)` are exactly `p 0, …, p t`. -/
+private theorem streamTake_sum_eq_zero {p : Baire} {t : ℕ} :
+    (streamTake p (t + 1)).sum = 0 ↔ ∀ k ≤ t, p k = 0 := by
+  rw [list_sum_eq_zero]
+  constructor
+  · intro h k hk
+    exact h (p k) (List.mem_ofFn.mpr ⟨⟨k, Nat.lt_succ_of_le hk⟩, rfl⟩)
+  · intro h x hx
+    obtain ⟨i, rfl⟩ := List.mem_ofFn.mp hx
+    exact h i (Nat.lt_succ_iff.mp i.isLt)
+
+/-- The preprocessed table for `lpo_le_lim`: column `n` at stage `t` — coordinate
+`Nat.pair n t` — is `1` if a nonzero entry appears among `p 0, …, p t`, else `0`. Every
+column is eventually constant with limit the `LPO` answer bit. -/
+private def limInput (p : Baire) : Baire := fun m =>
+  if (streamTake p (m.unpair.2 + 1)).sum = 0 then 0 else 1
+
+/-- The table entry is `0` when the input vanishes up to the stage. -/
+private theorem limInput_eq_zero {p : Baire} {m : ℕ} (h : ∀ k ≤ m.unpair.2, p k = 0) :
+    limInput p m = 0 :=
+  if_pos (streamTake_sum_eq_zero.mpr h)
+
+/-- The table entry is `1` once a nonzero input entry has appeared by the stage. -/
+private theorem limInput_eq_one {p : Baire} {m k : ℕ} (hk : k ≤ m.unpair.2)
+    (hpk : p k ≠ 0) : limInput p m = 1 :=
+  if_neg fun hsum => hpk (streamTake_sum_eq_zero.mp hsum k hk)
+
+/-- The postprocessor `comp query (const 1)`: on any oracle `r` its stream value is the
+constant stream at `r 1` — coordinate `1` of the interleaved input is the oracle answer's
+coordinate `0`. (Restated here because the copy in `LLPO.lean` is private to that file.) -/
+private theorem const_query_one_mem_evalStream (r : Baire) :
+    (fun _ => r 1 : Baire) ∈ (OracleCode.comp .query (.const 1)).evalStream r := by
+  refine OracleCode.mem_evalStream.mpr fun n => ?_
+  rw [OracleCode.eval_comp_some (OracleCode.eval_const r 1 n), OracleCode.eval_query]
+  exact Part.mem_some _
+
+/-- **`LPO ≤W Lim`.** Preprocess a stream `p` into the table whose column `n` at stage
+`t` flags whether a nonzero entry appears among `p 0, …, p t` (uniformly, by the
+head-adaptive prefix bridge with the list-sum test); every column stabilizes to the `LPO`
+answer bit, so postprocessing reads coordinate `0` of the limit stream. -/
+theorem lpo_le_lim : LPO ≤W Lim := by
+  -- The preprocessor: a total code computing `limInput`, via the prefix bridge.
+  have hb : Primrec₂ fun (n : ℕ) (_ : ℕ) => n.unpair.2 + 1 :=
+    (Primrec.succ.comp ((Primrec.snd.comp Primrec.unpair).comp Primrec.fst)).to₂
+  have hl : Primrec fun v : ℕ => ofNat (List ℕ) v.unpair.2 :=
+    (Primrec.ofNat (List ℕ)).comp (Primrec.snd.comp Primrec.unpair)
+  have hsum : Primrec fun v : ℕ => (ofNat (List ℕ) v.unpair.2).sum :=
+    (Primrec.list_foldr hl (Primrec.const 0)
+      ((Primrec.nat_add.comp (Primrec.fst.comp Primrec.snd)
+        (Primrec.snd.comp Primrec.snd)).to₂)).of_eq fun _ => List.sum_eq_foldr.symm
+  have hg : Primrec fun v : ℕ => if (ofNat (List ℕ) v.unpair.2).sum = 0 then 0 else 1 :=
+    Primrec.ite (Primrec.eq.comp hsum (Primrec.const 0)) (Primrec.const 0) (Primrec.const 1)
+  obtain ⟨K, hK⟩ := OracleCode.exists_prefixPostCode hb hg
+  refine reduction_iff_exists_reductionPair.mpr
+    ⟨K, .comp .query (.const 1), fun p x hpx hdom => ?_⟩
+  obtain rfl := (baireRep_names_iff.mp hpx).symm
+  have hKp : limInput p ∈ K.evalStream p := by
+    refine OracleCode.mem_evalStream.mpr fun m => ?_
+    rw [hK p m]
+    simp only [Nat.unpair_pair, Denumerable.ofNat_encode, Part.mem_some_iff, limInput]
+  -- The table is in the domain of `Lim`: every column stabilizes.
+  have hdomL : Lim.Dom (limInput p) := by
+    by_cases hz : ∀ k, p k = 0
+    · exact ⟨(fun _ => 0 : Baire), lim_accepts_iff.mpr fun n =>
+        ⟨0, fun t _ => limInput_eq_zero fun k _ => hz k⟩⟩
+    · obtain ⟨k₀, hk₀⟩ := not_forall.mp hz
+      exact ⟨(fun _ => 1 : Baire), lim_accepts_iff.mpr fun n =>
+        ⟨k₀, fun t ht => limInput_eq_one (by rw [Nat.unpair_pair]; exact ht) hk₀⟩⟩
+  refine ⟨limInput p, hKp, limInput p, baireRep_names_iff.mpr rfl, hdomL,
+    fun a y' hay' hacc => ?_⟩
+  have heq : y' = a := baireRep_names_iff.mp hay'
+  subst y'
+  have h1 : Baire.interleave p a 1 = a 0 := by simpa using Baire.interleave_odd p a 0
+  refine ⟨fun _ => Baire.interleave p a 1, const_query_one_mem_evalStream _, a 0,
+    natRep_names_iff.mpr h1.symm, ?_⟩
+  -- Column `0` of the table stabilizes to `a 0`; case on whether `p` vanishes.
+  obtain ⟨s, hs⟩ := lim_accepts_iff.mp hacc 0
+  by_cases hz : ∀ k, p k = 0
+  · have ha0 : a 0 = 0 :=
+      (hs s le_rfl).symm.trans (limInput_eq_zero fun k _ => hz k)
+    exact lpo_accepts_iff.mpr (Or.inl ⟨ha0, hz⟩)
+  · obtain ⟨k₀, hk₀⟩ := not_forall.mp hz
+    have ha1 : a 0 = 1 :=
+      (hs (max s k₀) (le_max_left _ _)).symm.trans
+        (limInput_eq_one (by rw [Nat.unpair_pair]; exact le_max_right _ _) hk₀)
+    exact lpo_accepts_iff.mpr (Or.inr ⟨ha1, k₀, hk₀⟩)
+
+end ComputableAnalysis

@@ -17,6 +17,7 @@ import ComputableAnalysis.Weihrauch.Reduction
 import ComputableAnalysis.Weihrauch.StrongReduction
 import ComputableAnalysis.Weihrauch.Principles.LPO
 import ComputableAnalysis.Weihrauch.Principles.LLPO
+import ComputableAnalysis.Weihrauch.Principles.Limit
 import ComputableAnalysis.Measure.CylinderMass
 import ComputableAnalysis.Measure.Construction
 import ComputableAnalysis.Metric.Presentation

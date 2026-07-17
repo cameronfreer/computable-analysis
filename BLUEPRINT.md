@@ -171,7 +171,7 @@ stops are external reviews.
 | 11 | Strong reduction + formal ≤W/≤sW separation | done |
 | — | **Review Stop C**: semantic API as implemented | approved 2026-07-14 |
 | 12 | LPO, LLPO (+ multivalued-oracle test) | done |
-| 13 | lim | — |
+| 13 | lim | done |
 | 14 | Computable metric presentations | done |
 | 15 | Fast Cauchy representation | done |
 | 16 | Represented reals + arithmetic contract | done |

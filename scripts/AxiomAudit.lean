@@ -219,7 +219,11 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.LLPO,
    ``ComputableAnalysis.llpoSwap,
    ``ComputableAnalysis.llpo_le_lpo,
-   ``ComputableAnalysis.llpo_swap_le_llpo]
+   ``ComputableAnalysis.llpo_swap_le_llpo,
+   -- Unit 13: the limit operator
+   ``ComputableAnalysis.Lim,
+   ``ComputableAnalysis.Lim.accepts_unique,
+   ``ComputableAnalysis.lpo_le_lim]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
