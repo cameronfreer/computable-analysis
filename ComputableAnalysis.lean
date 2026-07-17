@@ -20,3 +20,4 @@ import ComputableAnalysis.Measure.Construction
 import ComputableAnalysis.Metric.Presentation
 import ComputableAnalysis.Metric.CauchyRepresentation
 import ComputableAnalysis.Metric.Real
+import ComputableAnalysis.Measure.CantorRepresentation

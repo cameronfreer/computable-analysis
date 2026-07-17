@@ -181,7 +181,12 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.computableMap_realDist,
    ``ComputableAnalysis.computableMap_unitSymm,
    ``ComputableAnalysis.exists_uniform_sum_realizer,
-   ``ComputableAnalysis.exists_uniform_unitProd_realizer]
+   ``ComputableAnalysis.exists_uniform_unitProd_realizer,
+   -- Unit 20: the Cantor computable-measure representation
+   ``ComputableAnalysis.measureNames_unique,
+   ``ComputableAnalysis.cantorMeasureRep,
+   ``ComputableAnalysis.cantorMeasureRep_names_iff,
+   ``ComputableAnalysis.cantorMeasureSpace]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

@@ -179,7 +179,7 @@ stops are external reviews.
 | 18 | Cantor measurable structure, cylinder masses, uniqueness | done |
 | — | **Feasibility review**: measure-existence route | approved 2026-07-16 |
 | 19 | Existence: measure from consistent masses | done |
-| 20 | Cantor measure representation | — |
+| 20 | Cantor measure representation | done |
 | 21 | Uniform cylinder-value equivalence | — |
 | 22 | Measure constructors | — |
 | 23 | Pushforward | — |
