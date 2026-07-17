@@ -572,6 +572,111 @@ theorem exists_uniform_unitProd_realizer :
         ∃ q ∈ c.evalStream F, realRep.Names q (∏ i, x i)
 ```
 
+### For units 20–23 — the Cantor computable-measure representation (draft; freeze pending)
+
+On top of units 18–19 (`cylMass`, `IsConsistentCylinderMass`, `cylMass_injective`,
+`existsUnique_probabilityMeasure_of_isConsistent`) and unit 16 (`unitIntervalRep`, the
+packed folds). Word indices use `Encodable.encode : List Bool → ℕ` (the `Primcodable`
+numbering — safe here, unlike ℚ: it is one numbering with the full `Primrec` list
+toolkit). Completing 20–23 closes the measure spine; Review Stop D / Milestone A closes
+only once units 12–13 land as well.
+
+```lean
+-- Unit 20 (Measure/CantorRepresentation.lean): the measure representation.
+-- PINNED packing: one Baire name F carries, for every word s, the unitIntervalRep name
+-- of the mass of s as the component  fun n => F (Nat.pair (Encodable.encode s) n).
+-- Invalid behavior: if ANY component fails to name the corresponding mass — invalid
+-- [0,1]-name or masses of no single measure — F denotes NOTHING (no default measure).
+def cylMass01 (μ : ProbabilityMeasure Cantor) (s : List Bool) : Set.Icc (0 : ℝ) 1 :=
+  ⟨cylMass μ s, cylMass_nonneg μ s, cylMass_le_one μ s⟩
+def MeasureNames (F : Baire) (μ : ProbabilityMeasure Cantor) : Prop :=
+  ∀ s : List Bool,
+    unitIntervalRep.Names (fun n => F (Nat.pair (Encodable.encode s) n)) (cylMass01 μ s)
+def cantorMeasureRep : Representation (ProbabilityMeasure Cantor)
+  -- rep F valid iff ∃ μ, MeasureNames F μ (unique: component names are single-valued,
+  -- then cylMass_injective); onto via unitIntervalRep.onto per word (choice).
+theorem cantorMeasureRep_names_iff : cantorMeasureRep.Names F μ ↔ MeasureNames F μ
+def cantorMeasureSpace : RepSpace := ⟨ProbabilityMeasure Cantor, cantorMeasureRep⟩
+
+-- Unit 21 (Measure/CylinderValues.lean): first-order uniform cylinder-mass equivalence.
+-- A measure is a computable point iff ONE first-order procedure uniformly produces the
+-- [0,1]-names of all its cylinder masses from the encoded word.
+theorem computablePoint_cantorMeasureRep_iff {μ : ProbabilityMeasure Cantor} :
+    cantorMeasureRep.ComputablePoint μ ↔
+      ∃ f : ℕ → ℕ → ℕ, Computable₂ f ∧ ∀ s : List Bool,
+        unitIntervalRep.Names (f (Encodable.encode s)) (cylMass01 μ s)
+
+-- Unit 22 (Measure/Constructors.lean). All constructions produce ProbabilityMeasure
+-- Cantor via unit 19's existence theorem from an explicitly consistent mass function;
+-- each has a cylMass law and a computability theorem.
+def diracMeasure (x : Cantor) : ProbabilityMeasure Cantor
+theorem cylMass_diracMeasure :
+    cylMass (diracMeasure x) s = if x ∈ (cylinder s : Set Cantor) then 1 else 0
+theorem computablePoint_diracMeasure (hx : cantorRep.ComputablePoint x) :
+    cantorMeasureRep.ComputablePoint (diracMeasure x)
+-- Bernoulli = the i.i.d. PRODUCT measure on Cantor (not the one-bit bernoulliMeasure),
+-- uniformly computable in the parameter (via the [0,1] uniform product fold + unitSymm):
+def bernoulliProduct (p : Set.Icc (0 : ℝ) 1) : ProbabilityMeasure Cantor
+theorem cylMass_bernoulliProduct :
+    cylMass (bernoulliProduct p) s = ∏ i : Fin s.length, cond s[i] p.1 (1 - p.1)
+theorem computableMap_bernoulliProduct :
+    ComputableMap unitIntervalRep cantorMeasureRep bernoulliProduct
+-- Finite mixtures. PINNED input encoding: F = Baire.interleave W M, where W packs the
+-- k weights per unit 16's Packs layout (as [0,1] values) and M packs the k measure
+-- names with component i at  fun n => M (1 + Nat.pair i n):
+def PacksMeasures (M : Baire) (k : ℕ) (μs : Fin k → ProbabilityMeasure Cantor) : Prop :=
+  M 0 = k ∧ ∀ i : Fin k, cantorMeasureRep.Names (fun n => M (1 + Nat.pair i n)) (μs i)
+-- Normalization is a HYPOTHESIS (∑ w = 1), never re-derived or repaired:
+def finiteMixture {k : ℕ} (w : Fin k → Set.Icc (0 : ℝ) 1) (hw : ∑ i, (w i).1 = 1)
+    (μs : Fin k → ProbabilityMeasure Cantor) : ProbabilityMeasure Cantor
+theorem cylMass_finiteMixture :
+    cylMass (finiteMixture w hw μs) s = ∑ i, (w i).1 * cylMass (μs i) s
+theorem exists_uniform_finiteMixture_realizer :
+    ∃ c : OracleCode, ∀ (k : ℕ) (W M : Baire) (w : Fin k → Set.Icc (0:ℝ) 1)
+      (hw : ∑ i, (w i).1 = 1) (μs : Fin k → ProbabilityMeasure Cantor),
+      Packs W k (fun i => (w i).1) → PacksMeasures M k μs →
+      ∃ q ∈ c.evalStream (Baire.interleave W M),
+        cantorMeasureRep.Names q (finiteMixture w hw μs)
+-- Binary product via the PINNED interleaving identification: the image of μ ⊗ ν under
+-- (x, y) ↦ Baire.interleave x y (on Cantor), characterized by deinterleaved subwords
+-- (wordEven s = entries of s at even positions, wordOdd at odd — defined this unit):
+def wordEven (s : List Bool) : List Bool
+def wordOdd  (s : List Bool) : List Bool
+def productMeasure (μ ν : ProbabilityMeasure Cantor) : ProbabilityMeasure Cantor
+theorem cylMass_productMeasure :
+    cylMass (productMeasure μ ν) s = cylMass μ (wordEven s) * cylMass ν (wordOdd s)
+theorem computableMap_productMeasure :
+    ComputableMap (cantorMeasureRep.prod cantorMeasureRep) cantorMeasureRep
+      fun p => productMeasure p.1 p.2
+
+-- Unit 23 (Measure/Pushforward.lean): pushforward along a TOTAL computable map
+-- f : Cantor → Cantor (hypothesis: ComputableMap cantorRep cantorRep f — total by the
+-- type; nothing is asserted for partial maps).
+-- Measurability bridge: computable ⇒ continuous (finite use on names) ⇒ measurable.
+theorem continuous_of_computableMap_cantor (hf : ComputableMap cantorRep cantorRep f) :
+    Continuous f
+theorem measurable_of_computableMap_cantor (hf : ComputableMap cantorRep cantorRep f) :
+    Measurable f
+def pushforwardMeasure (f : Cantor → Cantor) (hf : ComputableMap cantorRep cantorRep f)
+    (μ : ProbabilityMeasure Cantor) : ProbabilityMeasure Cantor   -- μ.map f
+-- Prefix-table mass formula (unit 6): the preimage of a cylinder is a FINITE disjoint
+-- union of cylinders read off uniformPrefixTableSearch on a realizer of f, so the
+-- pushforward mass is the finite sum of source masses:
+theorem exists_pushforward_cylinder_table (hf : ComputableMap cantorRep cantorRep f)
+    (s : List Bool) : ∃ T : Finset (List Bool),
+      (f ⁻¹' (cylinder s : Set Cantor) = ⋃ t ∈ T, (cylinder t : Set Cantor)) ∧
+      (T : Set (List Bool)).Pairwise (Disjoint on fun t => (cylinder t : Set Cantor)) ∧
+      ∀ μ, cylMass (pushforwardMeasure f hf μ) s = ∑ t ∈ T, cylMass μ t
+-- Computability, uniform in the measure for a fixed computable f:
+theorem computableMap_pushforwardMeasure (hf : ComputableMap cantorRep cantorRep f) :
+    ComputableMap cantorMeasureRep cantorMeasureRep (pushforwardMeasure f hf)
+-- Composition law:
+theorem pushforwardMeasure_comp (hf : ComputableMap cantorRep cantorRep f)
+    (hg : ComputableMap cantorRep cantorRep g) :
+    pushforwardMeasure g hg (pushforwardMeasure f hf μ) =
+      pushforwardMeasure (g ∘ f) (hg.comp hf) μ
+```
+
 ## Worked-example checklist (acceptance test; each in its owning unit)
 
 - Type-2 core (units 5–6): identity; constants; composition; pairing/projections;
