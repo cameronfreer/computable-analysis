@@ -174,7 +174,7 @@ stops are external reviews.
 | 13 | lim | — |
 | 14 | Computable metric presentations | done |
 | 15 | Fast Cauchy representation | done |
-| 16 | Represented reals + arithmetic contract | — |
+| 16 | Represented reals + arithmetic contract | done |
 | 17 | Metric examples + rate equivalence | deferred — not required for Review Stop D |
 | 18 | Cantor measurable structure, cylinder masses, uniqueness | done |
 | — | **Feasibility review**: measure-existence route | approved 2026-07-16 |

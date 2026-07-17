@@ -167,7 +167,21 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.ComputableMetricPresentation.cauchyRep,
    ``ComputableAnalysis.ComputableMetricPresentation.cauchyRep_names_iff,
    ``ComputableAnalysis.ComputableMetricPresentation.IsFastCauchy.exists_namesPoint,
-   ``ComputableAnalysis.ComputableMetricPresentation.IsFastCauchy.valid]
+   ``ComputableAnalysis.ComputableMetricPresentation.IsFastCauchy.valid,
+   -- Unit 16: represented reals + [0,1] arithmetic contract
+   ``ComputableAnalysis.rationalPresentation,
+   ``ComputableAnalysis.realPresentation,
+   ``ComputableAnalysis.realRep,
+   ``ComputableAnalysis.unitIntervalRep,
+   ``ComputableAnalysis.computablePoint_realZero,
+   ``ComputableAnalysis.computablePoint_realOne,
+   ``ComputableAnalysis.computableMap_realAdd,
+   ``ComputableAnalysis.computableMap_realNeg,
+   ``ComputableAnalysis.computableMap_realMul,
+   ``ComputableAnalysis.computableMap_realDist,
+   ``ComputableAnalysis.computableMap_unitSymm,
+   ``ComputableAnalysis.exists_uniform_sum_realizer,
+   ``ComputableAnalysis.exists_uniform_unitProd_realizer]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
