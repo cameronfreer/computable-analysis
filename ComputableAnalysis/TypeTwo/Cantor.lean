@@ -106,4 +106,91 @@ theorem truncate_le_one (p : Baire) (n : ℕ) : truncate p n ≤ 1 := min_le_rig
 theorem truncate_of_forall_le_one {p : Baire} (h : ∀ n, p n ≤ 1) : truncate p = p := by
   funext n; exact min_eq_left (h n)
 
+/-! ### Interleaving and deinterleaved subwords
+
+The Cantor-typed interleaving identification (pinned with units 20–23): even coordinates
+read the first point, odd coordinates the second, and a word cylinder constraint splits
+into constraints on the two deinterleaved subwords. -/
+
+namespace Cantor
+
+/-- Interleave two Cantor points: even coordinates from `x`, odd coordinates from `y`. -/
+def interleave (x y : Cantor) : Cantor :=
+  fun n => if n % 2 = 0 then x (n / 2) else y (n / 2)
+
+/-- Even coordinates of an interleaving read the first point. -/
+@[simp]
+theorem interleave_even (x y : Cantor) (n : ℕ) : interleave x y (2 * n) = x n := by
+  unfold interleave
+  rw [if_pos (by omega)]
+  congr 1
+  omega
+
+/-- Odd coordinates of an interleaving read the second point. -/
+@[simp]
+theorem interleave_odd (x y : Cantor) (n : ℕ) : interleave x y (2 * n + 1) = y n := by
+  unfold interleave
+  rw [if_neg (by omega)]
+  congr 1
+  omega
+
+end Cantor
+
+/-- The even-indexed subword of a binary word. -/
+def wordEven (s : List Bool) : List Bool :=
+  List.ofFn fun i : Fin ((s.length + 1) / 2) => s[2 * i.1]'(by omega)
+
+/-- The odd-indexed subword of a binary word. -/
+def wordOdd (s : List Bool) : List Bool :=
+  List.ofFn fun i : Fin (s.length / 2) => s[2 * i.1 + 1]'(by omega)
+
+/-- Length of the even-indexed subword. -/
+@[simp]
+theorem length_wordEven (s : List Bool) : (wordEven s).length = (s.length + 1) / 2 := by
+  simp [wordEven]
+
+/-- Length of the odd-indexed subword. -/
+@[simp]
+theorem length_wordOdd (s : List Bool) : (wordOdd s).length = s.length / 2 := by
+  simp [wordOdd]
+
+/-- Coordinates of the even-indexed subword. -/
+theorem getElem_wordEven {s : List Bool} {i : ℕ} (h : i < (wordEven s).length) :
+    (wordEven s)[i] = s[2 * i]'(by simp at h; omega) := by
+  simp [wordEven]
+
+/-- Coordinates of the odd-indexed subword. -/
+theorem getElem_wordOdd {s : List Bool} {i : ℕ} (h : i < (wordOdd s).length) :
+    (wordOdd s)[i] = s[2 * i + 1]'(by simp at h; omega) := by
+  simp [wordOdd]
+
+/-- Membership of an interleaving in a word cylinder splits into membership of the two
+points in the deinterleaved subword cylinders. -/
+theorem Cantor.interleave_mem_cylinder_iff {x y : Cantor} {s : List Bool} :
+    Cantor.interleave x y ∈ (cylinder s : Set Cantor) ↔
+      x ∈ (cylinder (wordEven s) : Set Cantor) ∧ y ∈ (cylinder (wordOdd s) : Set Cantor) := by
+  constructor
+  · intro h
+    constructor
+    · intro i hi
+      have h2 : 2 * i < s.length := by
+        have hlen := hi
+        rw [length_wordEven] at hlen
+        omega
+      rw [getElem_wordEven hi, ← Cantor.interleave_even x y i]
+      exact h (2 * i) h2
+    · intro i hi
+      have h2 : 2 * i + 1 < s.length := by
+        have hlen := hi
+        rw [length_wordOdd] at hlen
+        omega
+      rw [getElem_wordOdd hi, ← Cantor.interleave_odd x y i]
+      exact h (2 * i + 1) h2
+  · rintro ⟨hx, hy⟩ i hi
+    obtain ⟨t, rfl | rfl⟩ : ∃ t, i = 2 * t ∨ i = 2 * t + 1 := ⟨i / 2, by omega⟩
+    · have hlt : t < (wordEven s).length := by rw [length_wordEven]; omega
+      rw [Cantor.interleave_even, hx t hlt, getElem_wordEven hlt]
+    · have hlt : t < (wordOdd s).length := by rw [length_wordOdd]; omega
+      rw [Cantor.interleave_odd, hy t hlt, getElem_wordOdd hlt]
+
 end ComputableAnalysis

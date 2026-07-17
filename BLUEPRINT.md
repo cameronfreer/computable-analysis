@@ -181,7 +181,7 @@ stops are external reviews.
 | 19 | Existence: measure from consistent masses | done |
 | 20 | Cantor measure representation | done |
 | 21 | Uniform cylinder-value equivalence | done |
-| 22 | Measure constructors | — |
+| 22 | Measure constructors | done |
 | 23 | Pushforward | — |
 | — | **Review Stop D**: deliverable complete; re-plan | — |
 

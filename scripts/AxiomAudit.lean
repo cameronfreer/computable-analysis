@@ -188,7 +188,23 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.cantorMeasureRep_names_iff,
    ``ComputableAnalysis.cantorMeasureSpace,
    -- Unit 21: uniform cylinder-value equivalence
-   ``ComputableAnalysis.computablePoint_cantorMeasureRep_iff]
+   ``ComputableAnalysis.computablePoint_cantorMeasureRep_iff,
+   -- Unit 22: measure constructors
+   ``ComputableAnalysis.Cantor.interleave_mem_cylinder_iff,
+   ``ComputableAnalysis.Cantor.measurable_interleave,
+   ``ComputableAnalysis.diracMeasure,
+   ``ComputableAnalysis.cylMass_diracMeasure,
+   ``ComputableAnalysis.computablePoint_diracMeasure,
+   ``ComputableAnalysis.bernoulliProduct,
+   ``ComputableAnalysis.cylMass_bernoulliProduct,
+   ``ComputableAnalysis.computableMap_bernoulliProduct,
+   ``ComputableAnalysis.finiteMixture,
+   ``ComputableAnalysis.cylMass_finiteMixture,
+   ``ComputableAnalysis.exists_uniform_finiteMixture_realizer,
+   ``ComputableAnalysis.productMeasure,
+   ``ComputableAnalysis.cylMass_productMeasure,
+   ``ComputableAnalysis.productMeasure_eq_map_prod,
+   ``ComputableAnalysis.computableMap_productMeasure]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
