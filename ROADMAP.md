@@ -16,17 +16,24 @@ with products, sums, and subtypes; representation equivalence; problems (partial
 multivalued); and ordinary and strong Weihrauch reducibility, with the fixed-witness
 transformer characterization and the formal `≤W`/`≤sW` separation.
 
-## Current prerequisite spine
+## Completed prerequisite spine
 
-In progress next, each independently reusable:
+Complete, each independently reusable:
 
 - **Represented reals**: computable metric presentations, the fast Cauchy
-  representation, represented reals with a `[0,1]` arithmetic contract.
-- **Cantor-space computable measures**: cylinder masses, measure representation and
-  uniqueness/existence, measure constructors, pushforward.
-- **General measure and kernel interfaces** on represented spaces, with
-  integration/moments.
-- **Weihrauch principles** (LPO, LLPO, lim) as the reducibility layer needs them.
+  representation, represented reals with a `[0,1]` arithmetic contract including
+  uniform variable-length folds.
+- **Cantor-space computable measures**: cylinder masses, measure representation with
+  uniqueness/existence, the uniform cylinder-value characterization, constructors
+  (Dirac, Bernoulli, finite mixtures, products), and pushforward along computable maps.
+- **Weihrauch principles**: LPO, LLPO, and lim, with `LLPO ≤W LPO`, the
+  noncomputability of LPO, and `LPO ≤W Lim`.
+
+## Next phase: measure/kernel interfaces
+
+The general interfaces on computable metric spaces — the probability-measure
+representation, represented continuous maps, continuous kernels, and bounded-continuous
+integration — beginning with focused feasibility reviews before any signature freeze.
 
 ## Target application: computability of conditioning
 

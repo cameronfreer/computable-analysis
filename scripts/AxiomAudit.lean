@@ -220,6 +220,7 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.llpoSwap,
    ``ComputableAnalysis.llpo_le_lpo,
    ``ComputableAnalysis.llpo_swap_le_llpo,
+   ``ComputableAnalysis.llpo_accepts_zero_both,
    -- Unit 13: the limit operator
    ``ComputableAnalysis.Lim,
    ``ComputableAnalysis.Lim.accepts_unique,

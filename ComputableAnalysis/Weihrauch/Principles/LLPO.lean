@@ -56,8 +56,10 @@ private theorem llpoSwap_accepts_iff {p : Baire} {i : ℕ} :
       ((i = 0 ∧ ∀ n, p (2 * n + 1) = 0) ∨ (i = 1 ∧ ∀ n, p (2 * n) = 0)) :=
   Iff.rfl
 
-/-- On the all-zero input, BOTH answers are permitted (the multivalued content). -/
-example : LLPO.accepts (fun _ => 0) (0 : ℕ) ∧ LLPO.accepts (fun _ => 0) (1 : ℕ) :=
+/-- On the all-zero input, BOTH answers are permitted — the multivalued content of
+`LLPO`, and the input on which `llpo_swap_le_llpo` exercises every realizer. -/
+theorem llpo_accepts_zero_both :
+    LLPO.accepts (fun _ => 0) (0 : ℕ) ∧ LLPO.accepts (fun _ => 0) (1 : ℕ) :=
   ⟨llpo_accepts_iff.mpr ⟨fun _ _ ha _ => absurd rfl ha, Or.inl ⟨rfl, fun _ => rfl⟩⟩,
    llpo_accepts_iff.mpr ⟨fun _ _ ha _ => absurd rfl ha, Or.inr ⟨rfl, fun _ => rfl⟩⟩⟩
 

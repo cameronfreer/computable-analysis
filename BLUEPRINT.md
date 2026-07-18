@@ -183,7 +183,10 @@ stops are external reviews.
 | 21 | Uniform cylinder-value equivalence | done |
 | 22 | Measure constructors | done |
 | 23 | Pushforward | done |
-| — | **Review Stop D**: deliverable complete; re-plan | — |
+| — | **Review Stop D**: deliverable complete; re-plan | approved 2026-07-18 |
+
+Milestone A's acceptance deliverable is complete: 23 numbered units are implemented and
+unit 17 is a deferred extension (not required for Review Stop D).
 
 ## Signatures appendix (grows before each review stop)
 
