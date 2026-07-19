@@ -175,7 +175,7 @@ stops are external reviews.
 | 14 | Computable metric presentations | done |
 | 15 | Fast Cauchy representation | done |
 | 16 | Represented reals + arithmetic contract | done |
-| 17 | Metric examples + rate equivalence | deferred — not required for Review Stop D |
+| 17 | Metric examples + rate equivalence | deferred — Cantor slice moved to unit 24; remaining examples (Baire, products, subspaces, rate equivalence) stay deferred |
 | 18 | Cantor measurable structure, cylinder masses, uniqueness | done |
 | — | **Feasibility review**: measure-existence route | approved 2026-07-16 |
 | 19 | Existence: measure from consistent masses | done |
@@ -192,7 +192,7 @@ Measure/kernel-interface phase (post-Stop-D re-plan; tracked in issue #4):
 
 | Unit | Content | Status |
 | ---- | ------- | ------ |
-| 24 | Cantor metric presentation (the unit 17 slice) | — |
+| 24 | Cantor metric presentation (the unit 17 slice) | done |
 | 25 | Represented advice-realizable maps (function spaces) | — |
 | — | Remaining feasibility spikes: generic Polish contract; generic rational-atomic Prokhorov; Cauchy admissibility bridge; bounded-integration micro-spike | in progress |
 | 26+ | Generic measure/kernel/integration block | blocked on the spikes above |

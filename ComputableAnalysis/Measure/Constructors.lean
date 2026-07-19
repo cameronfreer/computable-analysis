@@ -50,14 +50,8 @@ private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
 private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
   Primrec.snd.comp Primrec.unpair
 
-/-- The canonical code of `0` (fraction `(0 - 0)/(0 + 1)`). -/
-private def zeroCode : ℕ := Nat.pair (Nat.pair 0 0) 0
-
 /-- The canonical code of `1` (fraction `(1 - 0)/(0 + 1)`). -/
 private def oneCode : ℕ := Nat.pair (Nat.pair 1 0) 0
-
-private theorem ratOfCode_zeroCode : ratOfCode zeroCode = 0 := by
-  simp [ratOfCode, zeroCode]
 
 private theorem ratOfCode_oneCode : ratOfCode oneCode = 1 := by
   simp [ratOfCode, oneCode]

@@ -42,14 +42,8 @@ mathlib's `Primrec` lemmas. -/
 
 section CodedRationalArithmetic
 
-/-- The canonical code of `0` (fraction `(0 - 0)/(0 + 1)`). -/
-private def zeroCode : ℕ := Nat.pair (Nat.pair 0 0) 0
-
 /-- The canonical code of `1` (fraction `(1 - 0)/(0 + 1)`). -/
 private def oneCode : ℕ := Nat.pair (Nat.pair 1 0) 0
-
-private theorem ratOfCode_zeroCode : ratOfCode zeroCode = 0 := by
-  simp [ratOfCode, zeroCode]
 
 private theorem ratOfCode_oneCode : ratOfCode oneCode = 1 := by
   simp [ratOfCode, oneCode]
@@ -251,44 +245,6 @@ unnormalized fractions (denominators are positive), hence primitive recursive, h
 recursively enumerable — the uniform semidecisions demanded by convention 7. -/
 
 section SemidecidableComparisons
-
-/-- Strict comparison of coded rationals is the ℕ cross-multiplication comparison —
-all-ℕ, no subtraction pitfalls. -/
-private theorem ratOfCode_lt_iff (m₁ m₂ : ℕ) :
-    ratOfCode m₁ < ratOfCode m₂ ↔
-      m₁.unpair.1.unpair.1 * (m₂.unpair.2 + 1) + m₂.unpair.1.unpair.2 * (m₁.unpair.2 + 1)
-        < m₂.unpair.1.unpair.1 * (m₁.unpair.2 + 1)
-            + m₁.unpair.1.unpair.2 * (m₂.unpair.2 + 1) := by
-  have h₁ : (0 : ℚ) < (m₁.unpair.2 : ℚ) + 1 := by positivity
-  have h₂ : (0 : ℚ) < (m₂.unpair.2 : ℚ) + 1 := by positivity
-  rw [ratOfCode, ratOfCode, div_lt_div_iff₀ h₁ h₂, sub_mul, sub_mul, sub_lt_sub_iff]
-  exact_mod_cast Iff.rfl
-
-/-- Builder for the presentations' semidecisions: any predicate equivalent to a strict
-comparison of primitively computed rational codes is r.e. (`ComputablePred.to_re` over the
-decidable ℕ cross-multiplication comparison). -/
-private theorem repred_of_ratLt {q : ℕ × ℕ × RatCode → Prop} {f g : ℕ × ℕ × RatCode → ℕ}
-    (hf : Primrec f) (hg : Primrec g)
-    (hq : ∀ w, q w ↔ ratOfCode (f w) < ratOfCode (g w)) : REPred q := by
-  have ha : Primrec fun m : ℕ => m.unpair.1.unpair.1 :=
-    primrec_unpairFst.comp primrec_unpairFst
-  have hb : Primrec fun m : ℕ => m.unpair.1.unpair.2 :=
-    primrec_unpairSnd.comp primrec_unpairFst
-  have hd : Primrec fun m : ℕ => m.unpair.2 + 1 := Primrec.succ.comp primrec_unpairSnd
-  have hnat : PrimrecPred fun w : ℕ × ℕ × RatCode =>
-      (f w).unpair.1.unpair.1 * ((g w).unpair.2 + 1)
-          + (g w).unpair.1.unpair.2 * ((f w).unpair.2 + 1)
-        < (g w).unpair.1.unpair.1 * ((f w).unpair.2 + 1)
-            + (f w).unpair.1.unpair.2 * ((g w).unpair.2 + 1) :=
-    Primrec.nat_lt.comp
-      (Primrec.nat_add.comp
-        (Primrec.nat_mul.comp (ha.comp hf) (hd.comp hg))
-        (Primrec.nat_mul.comp (hb.comp hg) (hd.comp hf)))
-      (Primrec.nat_add.comp
-        (Primrec.nat_mul.comp (ha.comp hg) (hd.comp hf))
-        (Primrec.nat_mul.comp (hb.comp hf) (hd.comp hg)))
-  exact ((hnat.of_eq fun w =>
-    ((ratOfCode_lt_iff (f w) (g w)).symm.trans (hq w).symm)).computablePred).to_re
 
 end SemidecidableComparisons
 

@@ -69,4 +69,64 @@ structure ComputableMetricPresentation (X : Type u) [PseudoMetricSpace X] where
   gtSemidec : REPred fun w : ℕ × ℕ × RatCode =>
     (ratOfCode w.2.2 : ℝ) < dist (dense w.1) (dense w.2.1)
 
+/-! ### The coded zero and the `REPred` threshold builder
+
+When a presentation's dense-point distances are *exactly* coded — dyadic distances on
+Cantor space (unit 24), coded-rational dense sequences, exact mass tables — each
+convention 7 threshold comparison is a strict comparison of two primitively computed
+rational codes. On codes that comparison is the decidable `Nat.pair` cross-multiplication
+test, so the semidecisions come for free: `repred_of_ratLt` packages this reduction once.
+`zeroCode` is the canonical coded distance of coincident dense points. -/
+
+/-- The canonical code of `0`: the unnormalized fraction `(0 - 0) / (0 + 1)`. -/
+def zeroCode : RatCode := Nat.pair (Nat.pair 0 0) 0
+
+/-- `zeroCode` decodes to `0`. -/
+theorem ratOfCode_zeroCode : ratOfCode zeroCode = 0 := by
+  simp [ratOfCode, zeroCode]
+
+private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
+  Primrec.fst.comp Primrec.unpair
+
+private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
+  Primrec.snd.comp Primrec.unpair
+
+/-- Strict comparison of coded rationals is the ℕ cross-multiplication comparison. -/
+private theorem ratOfCode_lt_iff (m₁ m₂ : ℕ) :
+    ratOfCode m₁ < ratOfCode m₂ ↔
+      m₁.unpair.1.unpair.1 * (m₂.unpair.2 + 1) + m₂.unpair.1.unpair.2 * (m₁.unpair.2 + 1)
+        < m₂.unpair.1.unpair.1 * (m₁.unpair.2 + 1)
+            + m₁.unpair.1.unpair.2 * (m₂.unpair.2 + 1) := by
+  have h₁ : (0 : ℚ) < (m₁.unpair.2 : ℚ) + 1 := by positivity
+  have h₂ : (0 : ℚ) < (m₂.unpair.2 : ℚ) + 1 := by positivity
+  rw [ratOfCode, ratOfCode, div_lt_div_iff₀ h₁ h₂, sub_mul, sub_mul, sub_lt_sub_iff]
+  exact_mod_cast Iff.rfl
+
+/-- **The threshold builder.** Any predicate equivalent to a strict comparison of
+primitively computed rational codes is r.e. — decidable coded-rational comparisons are
+`REPred` via `PrimrecPred.computablePred.to_re`. Both semidecisions of a presentation
+with exactly coded distances are instances (units 24 and 26+). -/
+theorem repred_of_ratLt {q : ℕ × ℕ × RatCode → Prop} {f g : ℕ × ℕ × RatCode → ℕ}
+    (hf : Primrec f) (hg : Primrec g)
+    (hq : ∀ w, q w ↔ ratOfCode (f w) < ratOfCode (g w)) : REPred q := by
+  have ha : Primrec fun m : ℕ => m.unpair.1.unpair.1 :=
+    primrec_unpairFst.comp primrec_unpairFst
+  have hb : Primrec fun m : ℕ => m.unpair.1.unpair.2 :=
+    primrec_unpairSnd.comp primrec_unpairFst
+  have hd : Primrec fun m : ℕ => m.unpair.2 + 1 := Primrec.succ.comp primrec_unpairSnd
+  have hnat : PrimrecPred fun w : ℕ × ℕ × RatCode =>
+      (f w).unpair.1.unpair.1 * ((g w).unpair.2 + 1)
+          + (g w).unpair.1.unpair.2 * ((f w).unpair.2 + 1)
+        < (g w).unpair.1.unpair.1 * ((f w).unpair.2 + 1)
+            + (f w).unpair.1.unpair.2 * ((g w).unpair.2 + 1) :=
+    Primrec.nat_lt.comp
+      (Primrec.nat_add.comp
+        (Primrec.nat_mul.comp (ha.comp hf) (hd.comp hg))
+        (Primrec.nat_mul.comp (hb.comp hg) (hd.comp hf)))
+      (Primrec.nat_add.comp
+        (Primrec.nat_mul.comp (ha.comp hg) (hd.comp hf))
+        (Primrec.nat_mul.comp (hb.comp hf) (hd.comp hg)))
+  exact ((hnat.of_eq fun w =>
+    ((ratOfCode_lt_iff (f w) (g w)).symm.trans (hq w).symm)).computablePred).to_re
+
 end ComputableAnalysis

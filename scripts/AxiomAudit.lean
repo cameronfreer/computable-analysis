@@ -224,7 +224,11 @@ def headlineDecls : List Name :=
    -- Unit 13: the limit operator
    ``ComputableAnalysis.Lim,
    ``ComputableAnalysis.Lim.accepts_unique,
-   ``ComputableAnalysis.lpo_le_lim]
+   ``ComputableAnalysis.lpo_le_lim,
+   -- Unit 24: the Cantor metric presentation (unit 17 slice) + the threshold builder
+   ``ComputableAnalysis.repred_of_ratLt,
+   ``ComputableAnalysis.cantorPresentation,
+   ``ComputableAnalysis.cantorPresentation_cauchyRep_equiv]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
