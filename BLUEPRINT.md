@@ -188,6 +188,15 @@ stops are external reviews.
 Milestone A's acceptance deliverable is complete: 23 numbered units are implemented and
 unit 17 is a deferred extension (not required for Review Stop D).
 
+Measure/kernel-interface phase (post-Stop-D re-plan; tracked in issue #4):
+
+| Unit | Content | Status |
+| ---- | ------- | ------ |
+| 24 | Cantor metric presentation (the unit 17 slice) | — |
+| 25 | Represented advice-realizable maps (function spaces) | — |
+| — | Remaining feasibility spikes: generic Polish contract; generic rational-atomic Prokhorov; Cauchy admissibility bridge; bounded-integration micro-spike | in progress |
+| 26+ | Generic measure/kernel/integration block | blocked on the spikes above |
+
 ## Signatures appendix (grows before each review stop)
 
 ### For Review Stop A — units 2–6 operational layer
@@ -728,6 +737,59 @@ def Lim : Problem baireSpace baireSpace :=                       -- unit 13
   ⟨fun p q => ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n⟩
 theorem Lim.accepts_unique (h : Lim.accepts p q) (h' : Lim.accepts p q') : q = q'
 theorem lpo_le_lim : LPO ≤W Lim                                  -- seen-nonzero columns
+```
+
+### For units 24–25 — Cantor presentation slice + represented function spaces (frozen at
+### the #4 feasibility review, 2026-07-19)
+
+Both spike-validated (zero sorries, standard axioms). Terminology is binding:
+`RealizableFun` points are **advice-realizable maps** — nothing asserts `Continuous`, and
+"all continuous kernels" is reserved until a Cauchy-admissibility bridge is proved.
+
+```lean
+-- Unit 24 (Metric/CantorPresentation.lean; scoped instances per convention 11): the
+-- Cantor slice of deferred unit 17 — Baire/products/subspaces/rate equivalence stay out.
+namespace PiNatInstances
+noncomputable scoped instance cantorMetricSpace : MetricSpace Cantor :=
+  PiNat.metricSpaceOfDiscreteUniformity fun _ => rfl   -- defeq to the product structures
+scoped instance : BorelSpace Cantor := Pi.borelSpace   -- explicit; search won't cross defeq
+end PiNatInstances
+def cantorPresentation : ComputableMetricPresentation Cantor
+  -- dense m := streamExtend ((Encodable.decode (List Bool) m).getD []) (fun _ => false)
+  -- (no Denumerable (List Bool) exists); distances are exact coded dyadics via firstDiff
+theorem cantorPresentation_cauchyRep_equiv : cantorPresentation.cauchyRep ≡c cantorRep
+-- Rider: hoist the REPred threshold builder public into Metric/Presentation.lean:
+theorem repred_of_ratLt {d : ℕ → ℕ → ℚ} (hd : Primrec₂ d) ... -- decidable coded-rational
+  -- strict comparisons are REPred (shape as implemented; consumed by units 24 and 26+)
+
+-- Unit 25 (RepresentedSpace/FunctionSpace.lean + a Type-2 rider): advice-realizable maps.
+-- Type-2 rider, GENERALIZED (no funRep dependency) — the stream-level universal
+-- evaluator: code and advice head-cons-packed on the even track, argument on the odd:
+theorem OracleCode.exists_advisedEvalCode : ∃ e : OracleCode, ∀ (r : Baire) (n : ℕ),
+    e.eval r n = (Denumerable.ofNat OracleCode (r.evenPart 0)).eval
+      (Baire.interleave (fun k => r.evenPart (k + 1)) r.oddPart) n
+def AdvisedRealizes (X : Representation α) (Y : Representation β) (c : OracleCode)
+    (q : Baire) (f : α → β) : Prop :=
+  ∀ p a, X.Names p a → ∃ r ∈ c.evalStream (Baire.interleave q p), Y.Names r (f a)
+theorem advisedRealizes_unique :   -- unconditional: onto + Part single-valuedness
+    AdvisedRealizes X Y c q f → AdvisedRealizes X Y c q g → f = g
+-- Opaque structure (NOT a reducible subtype abbrev): toFun + CoeFun + ext.
+structure RealizableFun (X : Representation α) (Y : Representation β) where
+  toFun : α → β
+  exists_advised : ∃ c q, AdvisedRealizes X Y c q toFun
+instance : CoeFun (RealizableFun X Y) fun _ => α → β
+@[ext] theorem RealizableFun.ext {f g : RealizableFun X Y} (h : ∀ a, f a = g a) : f = g
+-- Names: head-cons packing F 0 = encode c, advice at F (n + 1); valid iff the decoded
+-- pair advised-realizes some (unique) carrier point; no default point.
+def funRep (X : Representation α) (Y : Representation β) : Representation (RealizableFun X Y)
+theorem funRep_names_iff : (funRep X Y).Names F f ↔
+    AdvisedRealizes X Y (Denumerable.ofNat OracleCode (F 0)) (fun n => F (n + 1)) f.toFun
+theorem computableMap_funRep_eval :
+    ComputableMap ((funRep X Y).prod X) Y fun p => p.1 p.2
+theorem RealizableFun.computablePoint_const (hy : Y.ComputablePoint y) :
+    (funRep X Y).ComputablePoint ⟨fun _ => y, _⟩       -- constant maps are points
+theorem computableMap_funRep_postcomp (hg : ComputableMap Y Z g) :
+    ComputableMap (funRep X Y) (funRep X Z) (postcomp of g)   -- shape as implemented
 ```
 
 ## Worked-example checklist (acceptance test; each in its owning unit)
