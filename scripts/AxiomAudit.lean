@@ -228,7 +228,16 @@ def headlineDecls : List Name :=
    -- Unit 24: the Cantor metric presentation (unit 17 slice) + the threshold builder
    ``ComputableAnalysis.repred_of_ratLt,
    ``ComputableAnalysis.cantorPresentation,
-   ``ComputableAnalysis.cantorPresentation_cauchyRep_equiv]
+   ``ComputableAnalysis.cantorPresentation_cauchyRep_equiv,
+   -- Unit 25: represented advice-realizable maps + the stream-level universal evaluator
+   ``ComputableAnalysis.OracleCode.exists_advisedEvalCode,
+   ``ComputableAnalysis.advisedRealizes_unique,
+   ``ComputableAnalysis.RealizableFun.ext,
+   ``ComputableAnalysis.funRep,
+   ``ComputableAnalysis.funRep_names_iff,
+   ``ComputableAnalysis.computableMap_funRep_eval,
+   ``ComputableAnalysis.RealizableFun.computablePoint_const,
+   ``ComputableAnalysis.computableMap_funRep_postcomp]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

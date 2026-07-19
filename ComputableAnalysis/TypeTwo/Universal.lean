@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.Continuity
 import ComputableAnalysis.TypeTwo.Evaln
 import Mathlib.Computability.RecursiveIn
 
@@ -281,6 +282,44 @@ theorem exists_universal :
   simp [hy]
 
 end Universal
+
+/-! ### The advised-evaluation code -/
+
+/-- **The advised-evaluation code.** A single code that, on every oracle `r`, decodes a
+code index from the head of the even track and runs the decoded code — via the universal
+machine — against the remaining even track (the *advice*) interleaved with the odd track
+(the argument). Total plumbing: the identity holds at every `r` and `n`. This is the
+Type-2 engine of the represented function space: a function name head-cons-packs a code
+index and an advice stream, and evaluation reads that pack off the even track of a
+product name. -/
+theorem exists_advisedEvalCode :
+    ∃ e : OracleCode, ∀ (r : Baire) (n : ℕ),
+      e.eval r n = (Denumerable.ofNat OracleCode (r.evenPart 0)).eval
+        (Baire.interleave (fun k => r.evenPart (k + 1)) r.oddPart) n := by
+  obtain ⟨u, hu⟩ := exists_universal
+  -- the advised oracle is `r` read through a fixed computable reindexing: even
+  -- coordinates shift past the head, odd coordinates are untouched
+  obtain ⟨cG, hcG⟩ := type2Computable_query_comp (g := fun m => if m % 2 = 0 then m + 2 else m)
+    (Primrec.ite
+      (Primrec.eq.comp (Primrec.nat_mod.comp Primrec.id (Primrec.const 2)) (Primrec.const 0))
+      (Primrec.nat_add.comp Primrec.id (Primrec.const 2)) Primrec.id).to_comp
+  refine ⟨.comp (u.subst cG) (.pair (.comp .query (.const 0)) .id), fun r n => ?_⟩
+  have h0 : (OracleCode.comp .query (.const 0)).eval r n = Part.some (r 0) :=
+    (eval_comp_some (eval_const r 0 n)).trans (eval_query r 0)
+  have hinp : (OracleCode.pair (.comp .query (.const 0)) OracleCode.id).eval r n
+      = Part.some (Nat.pair (r 0) n) := eval_pair_some h0 (eval_id r n)
+  have hsub : (u.subst cG).eval r = u.eval fun m => r (if m % 2 = 0 then m + 2 else m) :=
+    eval_subst hcG u r
+  have hhead : r 0 = encode (Denumerable.ofNat OracleCode (r.evenPart 0)) := by simp
+  have hadv : Baire.interleave (fun k => r.evenPart (k + 1)) r.oddPart
+      = fun m => r (if m % 2 = 0 then m + 2 else m) := by
+    funext m
+    rcases Nat.even_or_odd' m with ⟨k, rfl | rfl⟩
+    · rw [Baire.interleave_even, if_pos (Nat.mul_mod_right 2 k)]
+      rfl
+    · rw [Baire.interleave_odd, if_neg (by omega)]
+      rfl
+  rw [eval_comp_some hinp, hsub, hhead, hu, hadv]
 
 end OracleCode
 

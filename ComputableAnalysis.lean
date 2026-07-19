@@ -12,6 +12,7 @@ import ComputableAnalysis.RepresentedSpace.Realizer
 import ComputableAnalysis.RepresentedSpace.ComputableMap
 import ComputableAnalysis.RepresentedSpace.Constructions
 import ComputableAnalysis.RepresentedSpace.Equivalence
+import ComputableAnalysis.RepresentedSpace.FunctionSpace
 import ComputableAnalysis.Weihrauch.Problem
 import ComputableAnalysis.Weihrauch.Reduction
 import ComputableAnalysis.Weihrauch.StrongReduction

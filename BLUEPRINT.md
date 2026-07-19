@@ -193,7 +193,7 @@ Measure/kernel-interface phase (post-Stop-D re-plan; tracked in issue #4):
 | Unit | Content | Status |
 | ---- | ------- | ------ |
 | 24 | Cantor metric presentation (the unit 17 slice) | done |
-| 25 | Represented advice-realizable maps (function spaces) | — |
+| 25 | Represented advice-realizable maps (function spaces) | done |
 | — | Remaining feasibility spikes: generic Polish contract; generic rational-atomic Prokhorov; Cauchy admissibility bridge; bounded-integration micro-spike | in progress |
 | 26+ | Generic measure/kernel/integration block | blocked on the spikes above |
 
