@@ -194,8 +194,9 @@ Measure/kernel-interface phase (post-Stop-D re-plan; tracked in issue #4):
 | ---- | ------- | ------ |
 | 24 | Cantor metric presentation (the unit 17 slice) | done |
 | 25 | Represented advice-realizable maps (function spaces) | done |
-| — | Remaining feasibility spikes: generic Polish contract; generic rational-atomic Prokhorov; Cauchy admissibility bridge; bounded-integration micro-spike | in progress |
-| 26+ | Generic measure/kernel/integration block | blocked on the spikes above |
+| — | Feasibility spikes: generic Polish contract; generic rational-atomic Prokhorov; Cauchy admissibility bridge; bounded-integration micro-spike | complete (issue #4) |
+| — | Correction spikes before the 26+ freeze: bounded-quantifier `REPred` riders (closing the Prokhorov bookkeeping); the `cantorMeasureRep ≡c weakMeasureRep cantorPresentation` bridge; the generic bounded-Lipschitz integration assembly | in progress |
+| 26+ | Generic block — presentation contract + `REPred` riders; generic Prokhorov + `weakMeasureRep`; Cantor/weak equivalence; Cauchy admissibility + continuous-map representation; continuous-kernel carrier (`Continuous`-subtype of `RealizableFun`, mathlib `Kernel` bridge); generic bounded-Lipschitz integration | blocked on the correction spikes + freeze review |
 
 ## Signatures appendix (grows before each review stop)
 
