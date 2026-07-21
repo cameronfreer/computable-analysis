@@ -95,21 +95,24 @@ private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
 /-! ### The dense sequence: words extended by `false`s -/
 
 /-- Decode an index to a binary word (`Primcodable (List Bool)` numbering; garbage ↦ `[]`). -/
-private def denseWord (m : ℕ) : List Bool := (Encodable.decode (α := List Bool) m).getD []
+def denseWord (m : ℕ) : List Bool := (Encodable.decode (α := List Bool) m).getD []
 
 /-- The Cantor point of a word: extend by `false`s. -/
-private def wordPoint (s : List Bool) : Cantor := streamExtend s fun _ => false
+def wordPoint (s : List Bool) : Cantor := streamExtend s fun _ => false
 
 /-- The dense sequence of the Cantor presentation. -/
-private def densePoint (m : ℕ) : Cantor := wordPoint (denseWord m)
+def densePoint (m : ℕ) : Cantor := wordPoint (denseWord m)
 
-private theorem primrec_denseWord : Primrec denseWord :=
+/-- Decoding an index to a binary word is primitive recursive. -/
+theorem primrec_denseWord : Primrec denseWord :=
   Primrec.option_getD.comp Primrec.decode (Primrec.const [])
 
-private theorem denseWord_encode (s : List Bool) : denseWord (Encodable.encode s) = s := by
+/-- Decoding inverts encoding on binary words. -/
+theorem denseWord_encode (s : List Bool) : denseWord (Encodable.encode s) = s := by
   simp [denseWord, Encodable.encodek]
 
-private theorem wordPoint_apply (s : List Bool) (i : ℕ) : wordPoint s i = s.getD i false := by
+/-- Coordinates of an extended word: the word's entries below its length, `false` beyond. -/
+theorem wordPoint_apply (s : List Bool) (i : ℕ) : wordPoint s i = s.getD i false := by
   by_cases h : i < s.length
   · rw [wordPoint, streamExtend_apply_lt _ _ h, List.getD_eq_getElem _ _ h]
   · rw [wordPoint, streamExtend_apply_ge _ _ (Nat.le_of_not_lt h),

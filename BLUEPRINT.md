@@ -198,7 +198,7 @@ Measure/kernel-interface phase (post-Stop-D re-plan; tracked in issue #4):
 | — | Correction spikes (Prokhorov closure + riders; measure-representation bridge; generic integration assembly; kernel carrier; BL representation wrapper) | complete — all zero sorries |
 | 26 | `REPred` closure riders + the prefix-chain bridge | done |
 | 27 | Generic Prokhorov presentation + `weakMeasureRep` | done |
-| 28 | Cantor/weak measure-representation equivalence | — |
+| 28 | Cantor/weak measure-representation equivalence | done |
 | 29 | Cauchy admissibility: continuous maps are advice-realizable | — |
 | 30 | Continuous Markov kernel carrier + bridges | — |
 | 31 | Bounded-Lipschitz integration | — |

@@ -31,3 +31,4 @@ import ComputableAnalysis.Measure.CylinderValues
 import ComputableAnalysis.Measure.Constructors
 import ComputableAnalysis.Measure.Pushforward
 import ComputableAnalysis.Measure.WeakRepresentation
+import ComputableAnalysis.Measure.WeakEquivalence

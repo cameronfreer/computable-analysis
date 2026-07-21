@@ -251,7 +251,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_atomic_close,
    ``ComputableAnalysis.weakMeasureRep,
    ``ComputableAnalysis.weakMeasureRep_names_iff,
-   ``ComputableAnalysis.prokhorovPresentation]
+   ``ComputableAnalysis.prokhorovPresentation,
+   -- Unit 28: the Cantor/weak measure-representation equivalence
+   ``ComputableAnalysis.cantorMeasureRep_equiv_weak]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
