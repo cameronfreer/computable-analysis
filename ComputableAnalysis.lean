@@ -4,6 +4,7 @@ import ComputableAnalysis.TypeTwo.OracleCode
 import ComputableAnalysis.TypeTwo.Eval
 import ComputableAnalysis.TypeTwo.Evaln
 import ComputableAnalysis.TypeTwo.Universal
+import ComputableAnalysis.TypeTwo.REPredClosure
 import ComputableAnalysis.TypeTwo.Continuity
 import ComputableAnalysis.TypeTwo.StreamExamples
 import ComputableAnalysis.TypeTwo.PrefixTable

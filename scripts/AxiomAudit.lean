@@ -237,7 +237,16 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.funRep_names_iff,
    ``ComputableAnalysis.computableMap_funRep_eval,
    ``ComputableAnalysis.RealizableFun.computablePoint_const,
-   ``ComputableAnalysis.computableMap_funRep_postcomp]
+   ``ComputableAnalysis.computableMap_funRep_postcomp,
+   -- Unit 26: REPred closure riders + the prefix-chain bridge
+   ``ComputableAnalysis.repred_comp,
+   ``ComputableAnalysis.repred_of_primrecPred,
+   ``ComputableAnalysis.repred_and,
+   ``ComputableAnalysis.repred_or,
+   ``ComputableAnalysis.repred_exists_nat,
+   ``ComputableAnalysis.repred_forall_lt,
+   ``ComputableAnalysis.repred_exists_lt,
+   ``ComputableAnalysis.OracleCode.exists_prefixChainCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

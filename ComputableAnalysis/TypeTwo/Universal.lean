@@ -321,6 +321,68 @@ theorem exists_advisedEvalCode :
       rfl
   rw [eval_comp_some hinp, hsub, hhead, hu, hadv]
 
+/-! ### The three-stage adaptive prefix chain -/
+
+/-- **Three-stage adaptive prefix-chain bridge.** Any stream operator that reads a
+prefix of primitively computed length `b₀ n`, recomputes a longer prefix length `b₁`
+from the coordinate and that encoded prefix, recomputes once more through `b₂`, and
+postprocesses with an oracle-free `g`, is computed by a single oracle code, **totally
+on all streams**. This strictly generalizes `exists_prefixPostCode` (whose adaptation
+sees only the head `F 0`): here each stage's bound is recomputed from the previous
+stage's entire encoded prefix. Built from the same primitives — `exists_takeCode`,
+`exists_ofNatFnCode`, and the `eval_comp_some`/`eval_pair_some` assembly steps. -/
+theorem exists_prefixChainCode {b₀ : ℕ → ℕ} {b₁ b₂ : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
+    (hb₀ : Primrec b₀) (hb₁ : Primrec₂ b₁) (hb₂ : Primrec₂ b₂) (hg : Primrec g) :
+    ∃ c : OracleCode, ∀ (F : Baire) (n : ℕ),
+      c.eval F n = Part.some (g (Nat.pair n (encode (streamTake F
+        (b₂ n (encode (streamTake F
+          (b₁ n (encode (streamTake F (b₀ n))))))))))) := by
+  obtain ⟨t, ht⟩ := exists_takeCode
+  obtain ⟨B₀, hB₀⟩ := exists_ofNatFnCode hb₀.to_comp
+  obtain ⟨B₁, hB₁⟩ := exists_ofNatFnCode
+    (g := fun v => b₁ v.unpair.1 v.unpair.2)
+    (hb₁.comp (Primrec.fst.comp Primrec.unpair) (Primrec.snd.comp Primrec.unpair)).to_comp
+  obtain ⟨B₂, hB₂⟩ := exists_ofNatFnCode
+    (g := fun v => b₂ v.unpair.1 v.unpair.2)
+    (hb₂.comp (Primrec.fst.comp Primrec.unpair) (Primrec.snd.comp Primrec.unpair)).to_comp
+  obtain ⟨G, hG⟩ := exists_ofNatFnCode hg.to_comp
+  refine ⟨.comp G (.pair OracleCode.id (.comp t (.comp B₂ (.pair OracleCode.id
+    (.comp t (.comp B₁ (.pair OracleCode.id (.comp t B₀)))))))), fun F n => ?_⟩
+  have e₀ : (OracleCode.comp t B₀).eval F n
+      = Part.some (encode (streamTake F (b₀ n))) :=
+    (eval_comp_some (hB₀ F n)).trans (ht F (b₀ n))
+  have p₁ : (OracleCode.pair OracleCode.id (.comp t B₀)).eval F n
+      = Part.some (Nat.pair n (encode (streamTake F (b₀ n)))) :=
+    eval_pair_some (eval_id F n) e₀
+  have q₁ : (OracleCode.comp B₁ (.pair OracleCode.id (.comp t B₀))).eval F n
+      = Part.some (b₁ n (encode (streamTake F (b₀ n)))) := by
+    rw [eval_comp_some p₁, hB₁]
+    simp
+  have e₁ : (OracleCode.comp t (.comp B₁ (.pair OracleCode.id (.comp t B₀)))).eval F n
+      = Part.some (encode (streamTake F (b₁ n (encode (streamTake F (b₀ n)))))) :=
+    (eval_comp_some q₁).trans (ht F _)
+  have p₂ : (OracleCode.pair OracleCode.id
+        (.comp t (.comp B₁ (.pair OracleCode.id (.comp t B₀))))).eval F n
+      = Part.some (Nat.pair n
+          (encode (streamTake F (b₁ n (encode (streamTake F (b₀ n))))))) :=
+    eval_pair_some (eval_id F n) e₁
+  have q₂ : (OracleCode.comp B₂ (.pair OracleCode.id
+        (.comp t (.comp B₁ (.pair OracleCode.id (.comp t B₀)))))).eval F n
+      = Part.some (b₂ n (encode (streamTake F (b₁ n (encode (streamTake F (b₀ n))))))) := by
+    rw [eval_comp_some p₂, hB₂]
+    simp
+  have e₂ : (OracleCode.comp t (.comp B₂ (.pair OracleCode.id
+        (.comp t (.comp B₁ (.pair OracleCode.id (.comp t B₀))))))).eval F n
+      = Part.some (encode (streamTake F
+          (b₂ n (encode (streamTake F (b₁ n (encode (streamTake F (b₀ n))))))))) :=
+    (eval_comp_some q₂).trans (ht F _)
+  have p₃ : (OracleCode.pair OracleCode.id (.comp t (.comp B₂ (.pair OracleCode.id
+        (.comp t (.comp B₁ (.pair OracleCode.id (.comp t B₀)))))))).eval F n
+      = Part.some (Nat.pair n (encode (streamTake F
+          (b₂ n (encode (streamTake F (b₁ n (encode (streamTake F (b₀ n)))))))))) :=
+    eval_pair_some (eval_id F n) e₂
+  rw [eval_comp_some p₃, hG]
+
 end OracleCode
 
 end ComputableAnalysis
