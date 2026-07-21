@@ -33,3 +33,4 @@ import ComputableAnalysis.Measure.Constructors
 import ComputableAnalysis.Measure.Pushforward
 import ComputableAnalysis.Measure.WeakRepresentation
 import ComputableAnalysis.Measure.WeakEquivalence
+import ComputableAnalysis.Measure.Kernel

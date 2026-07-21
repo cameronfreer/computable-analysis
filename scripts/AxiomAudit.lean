@@ -255,7 +255,12 @@ def headlineDecls : List Name :=
    -- Unit 28: the Cantor/weak measure-representation equivalence
    ``ComputableAnalysis.cantorMeasureRep_equiv_weak,
    -- Unit 29: Cauchy admissibility
-   ``ComputableAnalysis.continuous_advisedRealizable]
+   ``ComputableAnalysis.continuous_advisedRealizable,
+   -- Unit 30: the continuous Markov kernel carrier
+   ``ComputableAnalysis.ContinuousMarkovKernel.toKernel,
+   ``ComputableAnalysis.ContinuousMarkovKernel.advisedRealizable,
+   ``ComputableAnalysis.ContinuousMarkovKernel.toRealizableFun,
+   ``ComputableAnalysis.ContinuousMarkovKernel.ofRealizableFun]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

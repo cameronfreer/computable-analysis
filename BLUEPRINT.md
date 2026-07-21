@@ -200,7 +200,7 @@ Measure/kernel-interface phase (post-Stop-D re-plan; tracked in issue #4):
 | 27 | Generic Prokhorov presentation + `weakMeasureRep` | done |
 | 28 | Cantor/weak measure-representation equivalence | done |
 | 29 | Cauchy admissibility: continuous maps are advice-realizable | done |
-| 30 | Continuous Markov kernel carrier + bridges | — |
+| 30 | Continuous Markov kernel carrier + bridges | done |
 | 31 | Bounded-Lipschitz integration | — |
 
 ## Signatures appendix (grows before each review stop)
