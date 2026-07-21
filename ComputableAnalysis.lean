@@ -25,6 +25,7 @@ import ComputableAnalysis.Measure.Construction
 import ComputableAnalysis.Metric.Presentation
 import ComputableAnalysis.Metric.CauchyRepresentation
 import ComputableAnalysis.Metric.CantorPresentation
+import ComputableAnalysis.Metric.Admissibility
 import ComputableAnalysis.Metric.Real
 import ComputableAnalysis.Measure.CantorRepresentation
 import ComputableAnalysis.Measure.CylinderValues

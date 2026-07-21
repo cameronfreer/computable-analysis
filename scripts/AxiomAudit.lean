@@ -253,7 +253,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.weakMeasureRep_names_iff,
    ``ComputableAnalysis.prokhorovPresentation,
    -- Unit 28: the Cantor/weak measure-representation equivalence
-   ``ComputableAnalysis.cantorMeasureRep_equiv_weak]
+   ``ComputableAnalysis.cantorMeasureRep_equiv_weak,
+   -- Unit 29: Cauchy admissibility
+   ``ComputableAnalysis.continuous_advisedRealizable]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
