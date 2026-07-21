@@ -195,8 +195,13 @@ Measure/kernel-interface phase (post-Stop-D re-plan; tracked in issue #4):
 | 24 | Cantor metric presentation (the unit 17 slice) | done |
 | 25 | Represented advice-realizable maps (function spaces) | done |
 | — | Feasibility spikes: generic Polish contract; generic rational-atomic Prokhorov; Cauchy admissibility bridge; bounded-integration micro-spike | complete (issue #4) |
-| — | Correction spikes before the 26+ freeze: bounded-quantifier `REPred` riders (closing the Prokhorov bookkeeping); the `cantorMeasureRep ≡c weakMeasureRep cantorPresentation` bridge; the generic bounded-Lipschitz integration assembly | in progress |
-| 26+ | Generic block — presentation contract + `REPred` riders; generic Prokhorov + `weakMeasureRep`; Cantor/weak equivalence; Cauchy admissibility + continuous-map representation; continuous-kernel carrier (`Continuous`-subtype of `RealizableFun`, mathlib `Kernel` bridge); generic bounded-Lipschitz integration | blocked on the correction spikes + freeze review |
+| — | Correction spikes (Prokhorov closure + riders; measure-representation bridge; generic integration assembly; kernel carrier; BL representation wrapper) | complete — all zero sorries |
+| 26 | `REPred` closure riders + the prefix-chain bridge | — |
+| 27 | Generic Prokhorov presentation + `weakMeasureRep` | — |
+| 28 | Cantor/weak measure-representation equivalence | — |
+| 29 | Cauchy admissibility: continuous maps are advice-realizable | — |
+| 30 | Continuous Markov kernel carrier + bridges | — |
+| 31 | Bounded-Lipschitz integration | — |
 
 ## Signatures appendix (grows before each review stop)
 
@@ -791,6 +796,95 @@ theorem RealizableFun.computablePoint_const (hy : Y.ComputablePoint y) :
     (funRep X Y).ComputablePoint ⟨fun _ => y, _⟩       -- constant maps are points
 theorem computableMap_funRep_postcomp (hg : ComputableMap Y Z g) :
     ComputableMap (funRep X Y) (funRep X Z) (postcomp of g)   -- shape as implemented
+```
+
+### For units 26–31 — the generic measure/kernel/integration block (frozen at the #4
+### feasibility review closure, 2026-07-21; every statement compiled in a preserved spike)
+
+Contract convention (doc-level, not a structure): the generic phase works over
+`(P : ComputableMetricPresentation X)` with `[MetricSpace X] [MeasurableSpace X]
+[BorelSpace X]`, adding `[CompleteSpace X]` only where Polishness is consumed.
+Separability always derives from `P.denseRange`. Quarantine rule: `LevyProkhorov` never
+appears in a `Representation` carrier position or in public statements — the public
+measure interface is `WeakMeasureNames`/`weakMeasureRep` only.
+
+```lean
+-- Unit 26 (TypeTwo/REPredClosure.lean + a Universal.lean rider): closure lemmas absent
+-- from mathlib (upstream candidates), + the three-stage adaptive prefix bridge.
+theorem repred_comp : REPred p → Computable g → REPred fun a => p (g a)
+theorem repred_of_primrecPred : PrimrecPred p → REPred p
+theorem repred_and / repred_or : REPred p → REPred q → REPred (p ∧/∨ q pointwise)
+theorem repred_exists_nat : REPred p → REPred fun a => ∃ n, p (a, n)
+theorem repred_forall_lt (hp : REPred p) (hf : Primrec f) : REPred fun a => ∀ i < f a, p (a, i)
+theorem repred_exists_lt (hp : REPred p) (hf : Primrec f) : REPred fun a => ∃ i < f a, p (a, i)
+theorem OracleCode.exists_prefixChainCode {b₀ : ℕ → ℕ} {b₁ b₂ : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
+    (hb₀ : Primrec b₀) (hb₁ : Primrec₂ b₁) (hb₂ : Primrec₂ b₂) (hg : Primrec g) :
+    ∃ c : OracleCode, ∀ F n, c.eval F n = Part.some (g (Nat.pair n (encode (streamTake F
+      (b₂ n (encode (streamTake F (b₁ n (encode (streamTake F (b₀ n)))))))))))
+-- Implementation disciplines (binding): `local irreducible` seal on the coded-rational
+-- layer after its semantics/Primrec lemmas; explicit (g := ...) at repred_comp calls.
+
+-- Unit 27 (Measure/WeakRepresentation.lean): atomics as DIRECT finite weighted Dirac
+-- sums (total decoding: clamp/renormalize/default-dirac), generic LP density, the weak
+-- representation on the PLAIN carrier, and the Prokhorov presentation with both
+-- semidecisions discharged (5-level Σ₁ assemblies through the unit 26 riders).
+def atomicOfList (P) : List (ℕ × ℕ) → ProbabilityMeasure X   -- and atomic P : ℕ → _
+theorem exists_atomic_close : ∀ μ ε, 0 < ε → ∃ m,
+    levyProkhorovDist μ.toMeasure (atomic P m).toMeasure < ε
+def WeakMeasureNames (P) (p : Baire) (μ : ProbabilityMeasure X) : Prop :=
+  ∀ n, levyProkhorovDist μ.toMeasure (atomic P (p n)).toMeasure ≤ ((2:ℝ)⁻¹) ^ n
+noncomputable def weakMeasureRep (P) : Representation (ProbabilityMeasure X)
+@[simp] theorem weakMeasureRep_names_iff : (weakMeasureRep P).Names p μ ↔ WeakMeasureNames P p μ
+def prokhorovPresentation (P) : ComputableMetricPresentation (LevyProkhorov (ProbabilityMeasure X))
+-- (the synonym-side cauchyRep bridge lemma stays PRIVATE per the quarantine rule)
+
+-- Unit 28 (Measure/WeakEquivalence.lean): the interface theorem. Separation fact:
+-- thickening ε (cylinder s) ⊆ cylinder s for 0 < ε ≤ 2·((2:ℝ)⁻¹)^s.length, so LP
+-- distance controls cylinder masses exactly; atomic cylinder masses are exact rationals
+-- (divPosCode rider). Rider: publicize denseWord/wordPoint/densePoint in unit 24's file.
+theorem cantorMeasureRep_equiv_weak : cantorMeasureRep ≡c weakMeasureRep cantorPresentation
+
+-- Unit 29 (Metric/Admissibility.lean): the bridge enabling continuous-kernel language
+-- (carrier-membership sense; classical advice — no computable-point claim).
+theorem continuous_advisedRealizable (P : CMP X) (Q : CMP Y) {f : X → Y}
+    (hf : Continuous f) : ∃ c q, AdvisedRealizes P.cauchyRep Q.cauchyRep c q f
+-- First legitimately partial realizer (rfind search over a classical certificate table).
+
+-- Unit 30 (Measure/Kernel.lean): the carrier bundles ALL THREE facets as data —
+-- weak continuity does NOT yield Giry measurability at this pin (verified: mathlib has
+-- no connecting instance or lemma). Law-first design; [OpensMeasurableSpace Y] required
+-- for the weak topology to exist.
+structure ContinuousMarkovKernel (X Y) [MeasurableSpace X] [TopologicalSpace X]
+    [MeasurableSpace Y] [TopologicalSpace Y] [OpensMeasurableSpace Y] where
+  law : X → ProbabilityMeasure Y
+  continuous_law : Continuous law
+  measurable_toMeasure : Measurable fun x => (law x).toMeasure
+def ContinuousMarkovKernel.toKernel : ProbabilityTheory.Kernel X Y   -- rfl-level, Markov
+theorem ContinuousMarkovKernel.advisedRealizable (κ) :
+    ∃ c q, AdvisedRealizes P.cauchyRep (weakMeasureRep Q) c q κ.law
+def ContinuousMarkovKernel.toRealizableFun : RealizableFun P.cauchyRep (weakMeasureRep Q)
+def ContinuousMarkovKernel.ofRealizableFun (f) (hc : Continuous f.toFun)
+    (hm : Measurable fun x => (f.toFun x).toMeasure) : ContinuousMarkovKernel X Y
+-- (measurability is always a supplied hypothesis, never derived)
+
+-- Unit 31 (Measure/Integration.lean): BOUNDED-LIPSCHITZ integration (never
+-- "bounded-continuous" — provably necessary restriction: escaping mass makes unbounded
+-- integration LP-discontinuous, and Type-2 computability implies continuity).
+def IntegrandName (P) (Φ : Baire) (L B : ℕ) (φ : X → ℝ) : Prop   -- Φ 0 = L, Φ 1 = B,
+  -- values of φ (P.dense m) at Φ (2 + Nat.pair m n) at rate ((2:ℝ)⁻¹)^n,
+  -- LipschitzWith L φ, ∀ x, |φ x| ≤ (B : ℝ)
+structure BoundedLipschitzFun (X) [MetricSpace X] where
+  toFun : X → ℝ
+  exists_bounds : ∃ L B : ℕ, LipschitzWith (L : ℝ≥0) toFun ∧ ∀ x, |toFun x| ≤ (B : ℝ)
+-- (CoeFun + @[ext] ext; single-valuedness of names via DenseRange.equalizer)
+noncomputable def blRep (P) : Representation (BoundedLipschitzFun X)
+@[simp] theorem blRep_names_iff : (blRep P).Names Φ f ↔ IntegrandName P Φ (Φ 0) (Φ 1) f.toFun
+theorem computableMap_integrateBL :
+    ComputableMap ((blRep P).prod (weakMeasureRep P)) realRep
+      fun q => ∫ x, q.1 x ∂q.2.toMeasure
+-- Engine (private machinery): the total realizer with stage k = n+1+(L+2B), the generic
+-- stability estimate |∫φdμ − ∫φdν| ≤ (K + 2B)·levyProkhorovDist, and the parity-swap
+-- precomposition aligning prod packing with the engine packing.
 ```
 
 ## Worked-example checklist (acceptance test; each in its owning unit)
