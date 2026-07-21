@@ -246,7 +246,12 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.repred_exists_nat,
    ``ComputableAnalysis.repred_forall_lt,
    ``ComputableAnalysis.repred_exists_lt,
-   ``ComputableAnalysis.OracleCode.exists_prefixChainCode]
+   ``ComputableAnalysis.OracleCode.exists_prefixChainCode,
+   -- Unit 27: generic Prokhorov presentation + the weak measure representation
+   ``ComputableAnalysis.exists_atomic_close,
+   ``ComputableAnalysis.weakMeasureRep,
+   ``ComputableAnalysis.weakMeasureRep_names_iff,
+   ``ComputableAnalysis.prokhorovPresentation]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
