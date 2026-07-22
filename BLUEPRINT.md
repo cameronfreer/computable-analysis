@@ -897,59 +897,92 @@ identified a.e. (mathlib `Kernel` + the `compProd` version relation; never claim
 continuous); **continuous disintegrations** are the restricted `ContinuousMarkovKernel`
 carrier, used only for the unique-continuous-disintegration `≡sW Lim` result.
 
-```lean
--- Rider (the product slice of deferred unit 17): the presented product, max metric,
--- dense (Nat.pair i j) = (P.dense i, Q.dense j); semidecisions are conjunctions/
--- disjunctions of the factors' semidecisions (via the unit 26 closure riders).
-def ComputableMetricPresentation.prod (P : CMP X) (Q : CMP Y) : CMP (X × Y)
+Orientation (binding): this library conditions **Y given X** — the disintegration is
+over the first marginal `μ.fst`. AFR write measures on `S × T` and condition `S` given
+`T`; the dictionary is `(X, Y) = (T, S)`.
 
--- (a) The VERSION RELATION — mathlib's compProd form, riding its Disintegration stack
--- (Measure.condKernel, compProd_fst_condKernel, eq_condKernel_of_measure_eq_compProd):
+```lean
+-- Rider (the product slice of deferred unit 17; the part C spike may replace it if the
+-- concrete rich spaces need a [0,1] presentation instead): the presented product, max
+-- metric, dense (Nat.pair i j) = (P.dense i, Q.dense j); semidecisions are conjunctions/
+-- disjunctions of the factors' (unit 26 closure riders).
+def ComputableMetricPresentation.prod (P : CMP X) (Q : CMP Y) : CMP (X × Y)
+-- Rider (Weihrauch layer): strong equivalence as a definition (no ≡sW API exists yet).
+def StrongWeihrauchEquivalent (f : Problem X Y) (g : Problem X' Y') : Prop :=
+  f ≤sW g ∧ g ≤sW f
+infix:50 " ≡sW " => StrongWeihrauchEquivalent
+-- Rider (function-space calibration — REQUIRED to interpret part A; spiked before use):
+theorem funRep_computablePoint_iff {f : RealizableFun X Y} :
+    (funRep X Y).ComputablePoint f ↔ ComputableMap X Y f.toFun
+
+-- (a) The VERSION RELATION — through mathlib's own proposition (Disintegration stack:
+-- Measure.IsCondKernel, Measure.condKernel, compProd_fst_condKernel; orientation
+-- already matches fst ⊗ₘ κ = μ):
 def IsCondKernel (μ : ProbabilityMeasure (X × Y)) (κ : ProbabilityTheory.Kernel X Y) :
     Prop :=
-  ProbabilityTheory.IsMarkovKernel κ ∧ μ.toMeasure.fst ⊗ₘ κ = μ.toMeasure
+  ProbabilityTheory.IsMarkovKernel κ ∧ μ.toMeasure.IsCondKernel κ
 -- (b) The A.E. CONVENTION — versions identified a.e. against the X-marginal; problems
--- are stated multivalued over versions, never over quotient carriers:
+-- multivalued over versions, never quotient carriers; the equivalence is genuinely one:
 def CondKernelAEEq (μ) (κ κ' : ProbabilityTheory.Kernel X Y) : Prop :=
   ∀ᵐ x ∂μ.toMeasure.fst, κ x = κ' x
-theorem isCondKernel_ae_unique :          -- from mathlib's standard-Borel uniqueness
+theorem CondKernelAEEq.refl / .symm / .trans
+theorem isCondKernel_ae_unique [StandardBorelSpace Y] [Nonempty Y] :
     IsCondKernel μ κ → IsCondKernel μ κ' → CondKernelAEEq μ κ κ'
+  -- exactly mathlib's Unique.lean hypotheses; part C separately pins completeness
 -- (c) The JOINT-LAW INPUT — a weak-measure name on the presented product:
 def jointMeasureSpace (P : CMP X) (Q : CMP Y) : RepSpace :=
   ⟨ProbabilityMeasure (X × Y), weakMeasureRep (P.prod Q)⟩
--- (d) The OUTPUT CARRIERS — two, never conflated:
+-- (d) The OUTPUT CARRIERS — two, never conflated.
 -- GENERAL (parts A/B): outputs are advice-realizable maps into the weak measure space,
 -- accepted iff they agree with SOME version on a full-measure set (a.e.-flexible;
--- multivalued). [Review alternative, rejected in this draft: a representation of
--- measurable-mod-a.e. kernels — none exists or is planned; the RealizableFun output
--- also makes part A's noncomputability STRONGER.]
+-- multivalued). [Alternative rejected: a representation of measurable-mod-a.e. kernels —
+-- none exists or is planned. Note on the acceptance shape: requiring Condition.Dom μ
+-- strengthens the REGULARITY of any constructed part-A witness (an advice-realizable
+-- version must exist); restricting the output carrier does not itself strengthen the
+-- negative quantifier. AFR indeed supply continuous but noncomputable disintegrations —
+-- that is the scientific claim.]
 def condFunSpace (P : CMP X) (Q : CMP Y) : RepSpace :=
   ⟨RealizableFun P.cauchyRep (weakMeasureRep Q), funRep _ _⟩
 def Condition (P : CMP X) (Q : CMP Y) : Problem (jointMeasureSpace P Q) (condFunSpace P Q) :=
   ⟨fun μ f => ∃ κ, IsCondKernel μ κ ∧
     ∀ᵐ x ∂μ.toMeasure.fst, (f.toFun x).toMeasure = κ x⟩
--- CONTINUOUS (part C): the restricted carrier — the Continuous ∧ Measurable subtype of
--- the function space, in bijection with ContinuousMarkovKernel via to/ofRealizableFun:
+-- CONTINUOUS (part C): the restricted carrier with EXACT bridges (a named Equiv, not
+-- commentary):
 def continuousKernelSpace (P : CMP X) (Q : CMP Y) : RepSpace :=
   ⟨{f : RealizableFun P.cauchyRep (weakMeasureRep Q) //
       Continuous f.toFun ∧ Measurable fun x => (f.toFun x).toMeasure},
     (funRep _ _).subtype _⟩
-def UniqueContinuousDisintegration (μ : ProbabilityMeasure (X × Y)) : Prop  -- ∃! over
-  -- continuousKernelSpace-carrier points κ with IsCondKernel μ (induced kernel)
+def inducedKernel (f : continuousKernelSpace-carrier) : ProbabilityTheory.Kernel X Y :=
+  ⟨fun x => (f.val.toFun x).toMeasure, f.prop.2⟩          -- Markov via the subtype
+def continuousKernelEquiv :
+    continuousKernelSpace-carrier ≃ ContinuousMarkovKernel X Y   -- via to/ofRealizableFun
+-- Part C's domain (AFR): FULL SUPPORT of the conditioning marginal + existence of a
+-- continuous disintegration; full support then makes the disintegration POINTWISE
+-- unique (a theorem, not a definition):
+def FullFirstMarginalSupport (μ : ProbabilityMeasure (X × Y)) : Prop :=
+  μ.toMeasure.fst.support = Set.univ
 def Disintegrate (P : CMP X) (Q : CMP Y) :
-    Problem (jointMeasureSpace P Q) (continuousKernelSpace P Q)
-  -- accepts μ κ := UniqueContinuousDisintegration μ ∧ IsCondKernel μ (κ-induced);
-  -- Dom = the unique-continuous-disintegration measures (derived, convention 5)
+    Problem (jointMeasureSpace P Q) (continuousKernelSpace P Q) :=
+  ⟨fun μ f => FullFirstMarginalSupport μ ∧ IsCondKernel μ (inducedKernel f)⟩
+theorem disintegrate_accepts_unique :     -- full support ⇒ the accepted output is unique
+    Disintegrate.accepts μ f → Disintegrate.accepts μ f' → f = f'
+theorem disintegrate_dom_iff : (Disintegrate P Q).Dom μ ↔
+    FullFirstMarginalSupport μ ∧ ∃ f, IsCondKernel μ (inducedKernel f)
 
--- Part statements (each gets its own INDEPENDENT feasibility spike after this review):
--- A (noncomputability; arXiv:1005.3014): a computable point μ of jointMeasureSpace (on
---    a concrete presented product pinned by the spike) with Condition.Dom μ such that NO
---    computable point of condFunSpace is Condition-accepted at μ.
--- B (positive): conditioning under the paper's exact hypotheses (pinned at the spike;
---    e.g. independent computable noise with sufficiently smooth bounded computable
---    density), in ComputableMap / computable-point-preserving form.
--- C (calibration): Disintegrate P Q ≡sW Lim on the unique-continuous-disintegration
---    domain — upper bound via the computable-Vitali route (MSCS), lower the Lim-encoding.
+-- Part statements (INDEPENDENT spikes; part-specific signatures stay UNFROZEN until
+-- their spikes return):
+-- A (noncomputability; AckermanFreerRoyCompCondProb): a computable point μ of a concrete
+--    jointMeasureSpace with Condition.Dom μ such that NO computable point of condFunSpace
+--    is Condition-accepted at μ (interpreted through funRep_computablePoint_iff).
+-- B (positive): conditioning under the paper's exact hypotheses (pinned at the spike),
+--    in ComputableMap / computable-point-preserving form.
+-- C (calibration; AFR-Tjur Thm 4.7 + its upper-bound argument), SPLIT — the generic
+--    equivalence is FALSE (trivial outcome spaces):
+theorem disintegrate_le_lim :             -- generic upper bound, complete-separable hyps
+    Disintegrate P Q ≤sW Lim
+theorem lim_le_disintegrate :             -- lower bound on concrete rich spaces P₀, Q₀
+    Lim ≤sW Disintegrate P₀ Q₀            -- chosen by the part C spike; equivalence
+                                          -- (≡sW) then holds for those instances
 ```
 
 ## Worked-example checklist (acceptance test; each in its owning unit)
