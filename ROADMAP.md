@@ -29,11 +29,13 @@ Complete, each independently reusable:
 - **Weihrauch principles**: LPO, LLPO, and lim, with `LLPO ≤W LPO`, the
   noncomputability of LPO, and `LPO ≤W Lim`.
 
-## Next phase: measure/kernel interfaces
+## Completed: measure/kernel interfaces
 
-The general interfaces on computable metric spaces — the probability-measure
-representation, represented continuous maps, continuous kernels, and bounded-continuous
-integration — beginning with focused feasibility reviews before any signature freeze.
+The general interfaces on computable metric spaces are complete: the weak
+(Lévy–Prokhorov) probability-measure representation with its equivalence to the Cantor
+cylinder representation, represented advice-realizable maps with the admissibility
+bridge (every continuous map is advice-realizable), the continuous Markov kernel
+carrier, and bounded-Lipschitz integration as a computable map.
 
 ## Target application: computability of conditioning
 

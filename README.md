@@ -8,7 +8,10 @@ discrete computability stack and its classical Polish/Borel/measure stack:
 - partial multivalued problems with ordinary and strong Weihrauch reducibility;
 - benchmark principles (`LPO`, `LLPO`, `lim`);
 - computable metric presentations and fast Cauchy representations;
-- computable probability measures on Cantor space via cylinder values.
+- computable probability measures on Cantor space via cylinder values;
+- generic weak (Lévy–Prokhorov) probability-measure representations;
+- continuous Markov kernels and represented advice-realizable maps;
+- bounded-Lipschitz integration as a computable map.
 
 `BLUEPRINT.md` is the self-contained specification: pinned conventions, the unit
 sequence with status, and the acceptance checklist.

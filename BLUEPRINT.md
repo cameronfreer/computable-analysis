@@ -805,8 +805,10 @@ Contract convention (doc-level, not a structure): the generic phase works over
 `(P : ComputableMetricPresentation X)` with `[MetricSpace X] [MeasurableSpace X]
 [BorelSpace X]`, adding `[CompleteSpace X]` only where Polishness is consumed.
 Separability always derives from `P.denseRange`. Quarantine rule: `LevyProkhorov` never
-appears in a `Representation` carrier position or in public statements — the public
-measure interface is `WeakMeasureNames`/`weakMeasureRep` only.
+appears in a `Representation` carrier position or in any downstream measure-interface
+carrier (the public `prokhorovPresentation` necessarily mentions it in its
+`ComputableMetricPresentation` type; nothing else public does) — the public measure
+interface is `WeakMeasureNames`/`weakMeasureRep` only.
 
 ```lean
 -- Unit 26 (TypeTwo/REPredClosure.lean + a Universal.lean rider): closure lemmas absent
