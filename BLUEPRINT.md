@@ -889,6 +889,69 @@ theorem computableMap_integrateBL :
 -- precomposition aligning prod packing with the engine packing.
 ```
 
+### For the conditioning layer (issue #5) — SHARED SIGNATURE DRAFT, pending the #5
+### signature review. NO spikes or implementation before its approval.
+
+The binding distinction: **general conditional kernels** are measurable, versioned, and
+identified a.e. (mathlib `Kernel` + the `compProd` version relation; never claimed
+continuous); **continuous disintegrations** are the restricted `ContinuousMarkovKernel`
+carrier, used only for the unique-continuous-disintegration `≡sW Lim` result.
+
+```lean
+-- Rider (the product slice of deferred unit 17): the presented product, max metric,
+-- dense (Nat.pair i j) = (P.dense i, Q.dense j); semidecisions are conjunctions/
+-- disjunctions of the factors' semidecisions (via the unit 26 closure riders).
+def ComputableMetricPresentation.prod (P : CMP X) (Q : CMP Y) : CMP (X × Y)
+
+-- (a) The VERSION RELATION — mathlib's compProd form, riding its Disintegration stack
+-- (Measure.condKernel, compProd_fst_condKernel, eq_condKernel_of_measure_eq_compProd):
+def IsCondKernel (μ : ProbabilityMeasure (X × Y)) (κ : ProbabilityTheory.Kernel X Y) :
+    Prop :=
+  ProbabilityTheory.IsMarkovKernel κ ∧ μ.toMeasure.fst ⊗ₘ κ = μ.toMeasure
+-- (b) The A.E. CONVENTION — versions identified a.e. against the X-marginal; problems
+-- are stated multivalued over versions, never over quotient carriers:
+def CondKernelAEEq (μ) (κ κ' : ProbabilityTheory.Kernel X Y) : Prop :=
+  ∀ᵐ x ∂μ.toMeasure.fst, κ x = κ' x
+theorem isCondKernel_ae_unique :          -- from mathlib's standard-Borel uniqueness
+    IsCondKernel μ κ → IsCondKernel μ κ' → CondKernelAEEq μ κ κ'
+-- (c) The JOINT-LAW INPUT — a weak-measure name on the presented product:
+def jointMeasureSpace (P : CMP X) (Q : CMP Y) : RepSpace :=
+  ⟨ProbabilityMeasure (X × Y), weakMeasureRep (P.prod Q)⟩
+-- (d) The OUTPUT CARRIERS — two, never conflated:
+-- GENERAL (parts A/B): outputs are advice-realizable maps into the weak measure space,
+-- accepted iff they agree with SOME version on a full-measure set (a.e.-flexible;
+-- multivalued). [Review alternative, rejected in this draft: a representation of
+-- measurable-mod-a.e. kernels — none exists or is planned; the RealizableFun output
+-- also makes part A's noncomputability STRONGER.]
+def condFunSpace (P : CMP X) (Q : CMP Y) : RepSpace :=
+  ⟨RealizableFun P.cauchyRep (weakMeasureRep Q), funRep _ _⟩
+def Condition (P : CMP X) (Q : CMP Y) : Problem (jointMeasureSpace P Q) (condFunSpace P Q) :=
+  ⟨fun μ f => ∃ κ, IsCondKernel μ κ ∧
+    ∀ᵐ x ∂μ.toMeasure.fst, (f.toFun x).toMeasure = κ x⟩
+-- CONTINUOUS (part C): the restricted carrier — the Continuous ∧ Measurable subtype of
+-- the function space, in bijection with ContinuousMarkovKernel via to/ofRealizableFun:
+def continuousKernelSpace (P : CMP X) (Q : CMP Y) : RepSpace :=
+  ⟨{f : RealizableFun P.cauchyRep (weakMeasureRep Q) //
+      Continuous f.toFun ∧ Measurable fun x => (f.toFun x).toMeasure},
+    (funRep _ _).subtype _⟩
+def UniqueContinuousDisintegration (μ : ProbabilityMeasure (X × Y)) : Prop  -- ∃! over
+  -- continuousKernelSpace-carrier points κ with IsCondKernel μ (induced kernel)
+def Disintegrate (P : CMP X) (Q : CMP Y) :
+    Problem (jointMeasureSpace P Q) (continuousKernelSpace P Q)
+  -- accepts μ κ := UniqueContinuousDisintegration μ ∧ IsCondKernel μ (κ-induced);
+  -- Dom = the unique-continuous-disintegration measures (derived, convention 5)
+
+-- Part statements (each gets its own INDEPENDENT feasibility spike after this review):
+-- A (noncomputability; arXiv:1005.3014): a computable point μ of jointMeasureSpace (on
+--    a concrete presented product pinned by the spike) with Condition.Dom μ such that NO
+--    computable point of condFunSpace is Condition-accepted at μ.
+-- B (positive): conditioning under the paper's exact hypotheses (pinned at the spike;
+--    e.g. independent computable noise with sufficiently smooth bounded computable
+--    density), in ComputableMap / computable-point-preserving form.
+-- C (calibration): Disintegrate P Q ≡sW Lim on the unique-continuous-disintegration
+--    domain — upper bound via the computable-Vitali route (MSCS), lower the Lim-encoding.
+```
+
 ## Worked-example checklist (acceptance test; each in its owning unit)
 
 - Type-2 core (units 5–6): identity; constants; composition; pairing/projections;
