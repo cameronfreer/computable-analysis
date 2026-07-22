@@ -260,7 +260,12 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.ContinuousMarkovKernel.toKernel,
    ``ComputableAnalysis.ContinuousMarkovKernel.advisedRealizable,
    ``ComputableAnalysis.ContinuousMarkovKernel.toRealizableFun,
-   ``ComputableAnalysis.ContinuousMarkovKernel.ofRealizableFun]
+   ``ComputableAnalysis.ContinuousMarkovKernel.ofRealizableFun,
+   -- Unit 31: bounded-Lipschitz integration
+   ``ComputableAnalysis.BoundedLipschitzFun.ext,
+   ``ComputableAnalysis.blRep,
+   ``ComputableAnalysis.blRep_names_iff,
+   ``ComputableAnalysis.computableMap_integrateBL]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
