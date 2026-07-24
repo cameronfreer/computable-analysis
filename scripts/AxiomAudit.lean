@@ -298,7 +298,12 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.jointOfCantor_rectangle,
    ``ComputableAnalysis.computableMap_jointOfCantor,
    -- Unit 36 (Part A): noncomputability of conditional probability
-   ``ComputableAnalysis.condition_noncomputable]
+   ``ComputableAnalysis.condition_noncomputable,
+   -- Unit 37 (Part B): the bounded-Lipschitz everywhere-positive specialization
+   ``ComputableAnalysis.isCondKernel_bayesKernel,
+   ``ComputableAnalysis.computableMap_reweight,
+   ``ComputableAnalysis.computableMap_bayesCond,
+   ``ComputableAnalysis.computableMap_bayesCond_curried]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
