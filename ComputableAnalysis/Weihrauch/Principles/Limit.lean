@@ -20,6 +20,13 @@ whose column `n` at stage `t` records whether a nonzero entry appears among
 `OracleCode.exists_prefixPostCode`, testing the prefix via its list sum — and the
 postprocessor reads coordinate `0` of the limit stream, which stabilizes to the `LPO`
 answer bit.
+
+`limTable` is the generic table for reductions that need the input together with its jump:
+even columns echo the input and odd columns carry the bounded-simulation halting bit at the
+stage. `limTable_dom` places it in the domain of `Lim`, and `exists_limTableCode` produces
+it by a single oracle code, so any `_ ≤sW Lim` whose oracle need is the jump can take its
+preprocessor from here. Routing the input through the answer is what leaves the
+postprocessor free of it, hence what makes such a reduction strong.
 -/
 
 open Encodable Denumerable
@@ -146,5 +153,134 @@ theorem lpo_le_lim : LPO ≤W Lim := by
       (hs (max s k₀) (le_max_left _ _)).symm.trans
         (limInput_eq_one (by rw [Nat.unpair_pair]; exact le_max_right _ _) hk₀)
     exact lpo_accepts_iff.mpr (Or.inr ⟨ha1, k₀, hk₀⟩)
+
+/-! ### The reduce-to-`Lim` input/jump table
+
+The table a reduction hands to `Lim` when what it needs from the oracle is its own input
+together with the input's jump. Even columns echo the input, so the answer carries it and
+the postprocessor never has to revisit it — the move that makes such a reduction strong.
+Odd columns run the bounded simulation for one more stage, so they are monotone and
+`{0,1}`-valued, hence eventually constant with limit the halting bit.
+-/
+
+/-- The jump bit: `1` when the `e`-th oracle code, run against the length-`t` prefix of `p`
+with fuel `t` on input `e`, has halted, and `0` otherwise. -/
+def jumpBit (p : Baire) (e t : ℕ) : ℕ :=
+  (OracleCode.evalnPrefix t (ofNat OracleCode e) (streamTake p t) e).isSome.toNat
+
+/-- The jump bit is a bit. -/
+theorem jumpBit_cases (p : Baire) (e t : ℕ) : jumpBit p e t = 0 ∨ jumpBit p e t = 1 := by
+  unfold jumpBit
+  cases (OracleCode.evalnPrefix t (ofNat OracleCode e) (streamTake p t) e).isSome <;> simp
+
+/-- The jump column is monotone in the stage: once halted, always halted, since the bounded
+simulation is monotone in the fuel and under prefix extension simultaneously. -/
+theorem jumpBit_mono (p : Baire) (e : ℕ) {t t' : ℕ} (htt : t ≤ t')
+    (h1 : jumpBit p e t = 1) : jumpBit p e t' = 1 := by
+  simp only [jumpBit, Bool.toNat_eq_one, Option.isSome_iff_exists] at h1 ⊢
+  obtain ⟨y, hy⟩ := h1
+  exact ⟨y, OracleCode.evalnPrefix_mono htt (streamTake_prefix p htt) hy⟩
+
+/-- **The input/jump table.** Coordinate `Nat.pair col t` is the stage-`t` entry of column
+`col`: even columns echo the input entry `p (col / 2)`, constant in the stage; odd columns
+carry `jumpBit p (col / 2) t`. -/
+def limTable (p : Baire) : Baire := fun m =>
+  if m.unpair.1 % 2 = 0 then p (m.unpair.1 / 2) else jumpBit p (m.unpair.1 / 2) m.unpair.2
+
+/-- **The table lies in the domain of `Lim`.** Echo columns are constant in the stage; jump
+columns are monotone and `{0,1}`-valued, so they stabilize either at the first halting stage
+or at `0` forever. -/
+theorem limTable_dom (p : Baire) : Lim.Dom (limTable p) := by
+  have hcol : ∀ n : ℕ, ∃ ln : ℕ, ∃ s : ℕ, ∀ t, s ≤ t → limTable p (Nat.pair n t) = ln := by
+    intro n
+    by_cases hpar : n % 2 = 0
+    · exact ⟨p (n / 2), 0, fun t _ => by simp only [limTable, Nat.unpair_pair, if_pos hpar]⟩
+    · by_cases hhalt : ∃ t, jumpBit p (n / 2) t = 1
+      · obtain ⟨t₀, ht₀⟩ := hhalt
+        refine ⟨1, t₀, fun t ht => ?_⟩
+        simp only [limTable, Nat.unpair_pair, if_neg hpar]
+        exact jumpBit_mono p (n / 2) ht ht₀
+      · have hnone := not_exists.mp hhalt
+        refine ⟨0, 0, fun t _ => ?_⟩
+        simp only [limTable, Nat.unpair_pair, if_neg hpar]
+        rcases jumpBit_cases p (n / 2) t with h0 | h1
+        · exact h0
+        · exact absurd h1 (hnone t)
+  exact ⟨fun n => (hcol n).choose, fun n => (hcol n).choose_spec⟩
+
+/-- Truncating a longer prefix of a stream gives the shorter prefix. -/
+private theorem take_streamTake {α : Type*} (p : ℕ → α) {t n : ℕ} (h : t ≤ n) :
+    (streamTake p n).take t = streamTake p t := by
+  have hpre := List.prefix_iff_eq_take.mp (streamTake_prefix p h)
+  rw [length_streamTake] at hpre
+  exact hpre.symm
+
+/-- The oracle-free postprocessor behind `exists_limTableCode`: from the coordinate paired
+with an encoded prefix of the input, read the echoed entry off the prefix on even columns,
+and run the bounded simulation against the prefix truncated to the stage on odd ones. -/
+private def limTableStep (v : ℕ) : ℕ :=
+  if v.unpair.1.unpair.1 % 2 = 0 then
+    ((ofNat (List ℕ) v.unpair.2)[v.unpair.1.unpair.1 / 2]?).getD 0
+  else
+    (OracleCode.evalnPrefix v.unpair.1.unpair.2
+      (ofNat OracleCode (v.unpair.1.unpair.1 / 2))
+      ((ofNat (List ℕ) v.unpair.2).take v.unpair.1.unpair.2)
+      (v.unpair.1.unpair.1 / 2)).isSome.toNat
+
+private theorem primrec_limTableStep : Primrec limTableStep := by
+  have hcoord : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hcol : Primrec fun v : ℕ => v.unpair.1.unpair.1 :=
+    Primrec.fst.comp (Primrec.unpair.comp hcoord)
+  have hstage : Primrec fun v : ℕ => v.unpair.1.unpair.2 :=
+    Primrec.snd.comp (Primrec.unpair.comp hcoord)
+  have hidx : Primrec fun v : ℕ => v.unpair.1.unpair.1 / 2 :=
+    Primrec.nat_div.comp hcol (Primrec.const 2)
+  have hlist : Primrec fun v : ℕ => ofNat (List ℕ) v.unpair.2 :=
+    (Primrec.ofNat (List ℕ)).comp (Primrec.snd.comp Primrec.unpair)
+  have hecho : Primrec fun v : ℕ =>
+      ((ofNat (List ℕ) v.unpair.2)[v.unpair.1.unpair.1 / 2]?).getD 0 :=
+    Primrec.option_getD.comp (Primrec.list_getElem?.comp hlist hidx) (Primrec.const 0)
+  have hsim : Primrec fun v : ℕ =>
+      OracleCode.evalnPrefix v.unpair.1.unpair.2 (ofNat OracleCode (v.unpair.1.unpair.1 / 2))
+        ((ofNat (List ℕ) v.unpair.2).take v.unpair.1.unpair.2) (v.unpair.1.unpair.1 / 2) :=
+    OracleCode.primrec_evalnPrefix.comp
+      ((hstage.pair ((Primrec.ofNat OracleCode).comp hidx)).pair
+        ((Primrec.list_take.comp hstage hlist).pair hidx))
+  have hjump : Primrec fun v : ℕ =>
+      (OracleCode.evalnPrefix v.unpair.1.unpair.2 (ofNat OracleCode (v.unpair.1.unpair.1 / 2))
+        ((ofNat (List ℕ) v.unpair.2).take v.unpair.1.unpair.2)
+        (v.unpair.1.unpair.1 / 2)).isSome.toNat := by
+    refine (Primrec.ite (Primrec.eq.comp (Primrec.option_isSome.comp hsim) (Primrec.const true))
+      (Primrec.const 1) (Primrec.const 0)).of_eq fun v => ?_
+    cases h : (OracleCode.evalnPrefix v.unpair.1.unpair.2
+      (ofNat OracleCode (v.unpair.1.unpair.1 / 2))
+      ((ofNat (List ℕ) v.unpair.2).take v.unpair.1.unpair.2)
+      (v.unpair.1.unpair.1 / 2)).isSome <;> simp
+  exact Primrec.ite
+    (Primrec.eq.comp (Primrec.nat_mod.comp hcol (Primrec.const 2)) (Primrec.const 0))
+    hecho hjump
+
+/-- **The table is produced by a single oracle code**, on every input stream. Both tracks
+read a finite prefix of the input — the echo track needs the entry itself, the jump track
+the length-`t` prefix the bounded simulation may query — so one prefix long enough for both
+suffices, and the head-adaptive prefix bridge assembles the code. -/
+theorem exists_limTableCode : ∃ K : OracleCode, ∀ p : Baire, limTable p ∈ K.evalStream p := by
+  have hb : Primrec₂ fun (m : ℕ) (_ : ℕ) => max (m.unpair.1 / 2 + 1) m.unpair.2 :=
+    (Primrec.nat_max.comp
+      (Primrec.succ.comp (Primrec.nat_div.comp
+        ((Primrec.fst.comp Primrec.unpair).comp Primrec.fst) (Primrec.const 2)))
+      ((Primrec.snd.comp Primrec.unpair).comp Primrec.fst)).to₂
+  obtain ⟨K, hK⟩ := OracleCode.exists_prefixPostCode hb primrec_limTableStep
+  refine ⟨K, fun p => OracleCode.mem_evalStream.mpr fun m => ?_⟩
+  rw [hK p m]
+  refine Part.mem_some_iff.mpr ?_
+  have hlt : m.unpair.1 / 2 < max (m.unpair.1 / 2 + 1) m.unpair.2 :=
+    lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_left _ _)
+  have hle : m.unpair.2 ≤ max (m.unpair.1 / 2 + 1) m.unpair.2 := le_max_right _ _
+  by_cases hpar : m.unpair.1 % 2 = 0
+  · simp only [limTable, limTableStep, Nat.unpair_pair, Denumerable.ofNat_encode, if_pos hpar,
+      getElem?_streamTake_of_lt p hlt, Option.getD_some]
+  · simp only [limTable, limTableStep, Nat.unpair_pair, Denumerable.ofNat_encode, if_neg hpar,
+      take_streamTake p hle, jumpBit]
 
 end ComputableAnalysis

@@ -214,7 +214,7 @@ Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
 | 36 | Part A: condition_noncomputable | done |
 | 37 | Part B: the bounded-Lipschitz everywhere-positive specialization | done |
 | 38 | Head-cons function-space name emitter | done |
-| 39 | Generic reduce-to-Lim input/jump table | — |
+| 39 | Generic reduce-to-Lim input/jump table | done |
 | 40 | Cantor Dirac decoder (representation level) | — |
 | 41 | Part C1 lower headline: lim_le_disintegrate | — |
 | 42 | Part C1 upper headline: disintegrate_le_lim | reopened — the pointwise-ball route is falsified; see the units 38–42 appendix |

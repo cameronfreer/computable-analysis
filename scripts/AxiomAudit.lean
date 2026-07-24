@@ -309,7 +309,14 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.funCode_funPack,
    ``ComputableAnalysis.funAdvice_funPack,
    ``ComputableAnalysis.names_funPack,
-   ``ComputableAnalysis.exists_funPackCode]
+   ``ComputableAnalysis.exists_funPackCode,
+   -- Unit 39: the reduce-to-Lim input/jump table
+   ``ComputableAnalysis.jumpBit,
+   ``ComputableAnalysis.jumpBit_cases,
+   ``ComputableAnalysis.jumpBit_mono,
+   ``ComputableAnalysis.limTable,
+   ``ComputableAnalysis.limTable_dom,
+   ``ComputableAnalysis.exists_limTableCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
