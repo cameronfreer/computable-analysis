@@ -35,3 +35,4 @@ import ComputableAnalysis.Measure.WeakRepresentation
 import ComputableAnalysis.Measure.WeakEquivalence
 import ComputableAnalysis.Measure.Kernel
 import ComputableAnalysis.Measure.Integration
+import ComputableAnalysis.Measure.Conditioning

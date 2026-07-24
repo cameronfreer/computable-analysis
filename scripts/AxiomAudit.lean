@@ -265,7 +265,21 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.BoundedLipschitzFun.ext,
    ``ComputableAnalysis.blRep,
    ``ComputableAnalysis.blRep_names_iff,
-   ``ComputableAnalysis.computableMap_integrateBL]
+   ``ComputableAnalysis.computableMap_integrateBL,
+   -- Unit 32: the shared conditioning layer
+   ``ComputableAnalysis.ComputableMetricPresentation.prod,
+   ``ComputableAnalysis.ComputableMetricPresentation.separableSpace,
+   ``ComputableAnalysis.ComputableMetricPresentation.borelSpace_prod,
+   ``ComputableAnalysis.StrongWeihrauchEquivalent,
+   ``ComputableAnalysis.funRep_computablePoint_iff,
+   ``ComputableAnalysis.isCondKernel_ae_unique,
+   ``ComputableAnalysis.Condition,
+   ``ComputableAnalysis.inducedKernel,
+   ``ComputableAnalysis.continuousKernelEquiv,
+   ``ComputableAnalysis.FullFirstMarginalSupport.isOpenPosMeasure,
+   ``ComputableAnalysis.Disintegrate,
+   ``ComputableAnalysis.disintegrate_dom_iff,
+   ``ComputableAnalysis.disintegrate_accepts_unique]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

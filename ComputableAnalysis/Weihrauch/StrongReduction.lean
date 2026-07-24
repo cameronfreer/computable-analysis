@@ -185,4 +185,12 @@ theorem exists_reduction_not_strong :
   ⟨baireSpace, baireSpace, baireSpace, baireSpace, idProblem baireSpace,
     constZeroProblem, idProblem_le_constZero, idProblem_not_sle_constZero⟩
 
+/-! ### Strong Weihrauch equivalence -/
+
+/-- Strong Weihrauch equivalence: strong reductions both ways. -/
+def StrongWeihrauchEquivalent (f : Problem X Y) (g : Problem X' Y') : Prop :=
+  f ≤sW g ∧ g ≤sW f
+
+@[inherit_doc] infix:50 " ≡sW " => StrongWeihrauchEquivalent
+
 end ComputableAnalysis

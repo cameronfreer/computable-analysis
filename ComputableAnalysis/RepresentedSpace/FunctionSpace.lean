@@ -250,4 +250,45 @@ theorem computableMap_funRep_postcomp {g : β → γ} (hg : ComputableMap Y Z g)
   rw [evalStream_subst hout']
   exact hout2
 
+/-! ### Calibration: computable points of the function space are the computable maps -/
+
+/-- **Calibration.** A computable point of the function space is exactly a function that
+is a computable map: (→) precompose the head-decoded code with the
+interleave-computable-advice operator; (←) pack `c.subst oddTrackCode` with an all-zeros
+advice stream. -/
+theorem funRep_computablePoint_iff {f : RealizableFun X Y} :
+    (funRep X Y).ComputablePoint f ↔ ComputableMap X Y f.toFun := by
+  constructor
+  · rintro ⟨F, hFc, hF⟩
+    have hadv := funRep_names_iff.mp hF
+    have hq : Computable fun n => F (n + 1) := hFc.comp Computable.succ
+    have hid : Type2Computable (id : Baire → Baire) := ⟨.query, fun p n => eval_query p n⟩
+    have hint : Type2Computable fun p : Baire => Baire.interleave (fun n => F (n + 1)) p :=
+      Type2Computable.interleave (type2Computable_const_stream hq) hid
+    obtain ⟨m, hm⟩ := hint
+    refine ⟨(Denumerable.ofNat OracleCode (F 0)).subst m, fun p a hpa => ?_⟩
+    obtain ⟨r, hr, hname⟩ := hadv p a hpa
+    refine ⟨r, ?_, hname⟩
+    rw [evalStream_subst (Part.eq_some_iff.mp (computes_iff_evalStream.mp hm p))]
+    exact hr
+  · rintro ⟨c, hc⟩
+    obtain ⟨od, hod⟩ := type2Computable_oddPart
+    have hF : AdvisedRealizes X Y (c.subst od) (fun _ => 0) f.toFun := by
+      intro p a hpa
+      obtain ⟨r, hr, hname⟩ := hc p a hpa
+      have hmem : p ∈ od.evalStream (Baire.interleave (fun _ => 0) p) := by
+        have h := computes_iff_evalStream.mp hod (Baire.interleave (fun _ => 0) p)
+        rw [Baire.oddPart_interleave] at h
+        exact Part.eq_some_iff.mp h
+      exact ⟨r, (evalStream_subst hmem).symm ▸ hr, hname⟩
+    refine ⟨fun n => n.casesOn (Encodable.encode (c.subst od)) fun _ => 0, ?_, ?_⟩
+    · exact Computable.nat_casesOn Computable.id (Computable.const _)
+        ((Computable.const 0).comp Computable.snd).to₂
+    · refine funRep_names_iff.mpr ?_
+      change AdvisedRealizes X Y
+        (Denumerable.ofNat OracleCode (Encodable.encode (c.subst od))) (fun _ : ℕ => 0)
+        f.toFun
+      rw [Denumerable.ofNat_encode]
+      exact hF
+
 end ComputableAnalysis
