@@ -78,7 +78,7 @@ private theorem exists_namesPoint_agree (P : ComputableMetricPresentation X) {p 
 /-- **Realizable ⇒ continuous** (the converse admissibility half). A map advised-realized
 over the fast Cauchy representations is continuous: each output coordinate of the
 realizer has finite use on the interleaved oracle, the advice track is fixed, and nearby
-points admit names agreeing with a slack name of `x` on the finitely many argument
+points have names agreeing with a slack name of `x` on the finitely many argument
 coordinates read (`exists_namesPoint_agree`), so output names agree at the queried
 coordinate and the images are `2·(2⁻¹)^m`-close. -/
 theorem continuous_of_advisedRealizes (P : ComputableMetricPresentation X)
