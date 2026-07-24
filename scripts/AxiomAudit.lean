@@ -303,7 +303,13 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.isCondKernel_bayesKernel,
    ``ComputableAnalysis.computableMap_reweight,
    ``ComputableAnalysis.computableMap_bayesCond,
-   ``ComputableAnalysis.computableMap_bayesCond_curried]
+   ``ComputableAnalysis.computableMap_bayesCond_curried,
+   -- Unit 38: the head-cons function-space name emitter
+   ``ComputableAnalysis.funPack,
+   ``ComputableAnalysis.funCode_funPack,
+   ``ComputableAnalysis.funAdvice_funPack,
+   ``ComputableAnalysis.names_funPack,
+   ``ComputableAnalysis.exists_funPackCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

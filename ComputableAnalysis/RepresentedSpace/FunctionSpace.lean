@@ -24,6 +24,8 @@ Main results:
   computable point of the function space.
 * `computableMap_funRep_postcomp`: postcomposition by a fixed computable map is a
   computable map between function spaces.
+* `exists_funPackCode`: one oracle code emits the packed name `funPack c₀ a` from the
+  stream `a` alone — the emitter for postprocessors whose output is a function name.
 
 Nothing here asserts continuity: absent an admissibility theory, the carrier is exactly
 the advice-realizable maps, no more and no less.
@@ -90,17 +92,17 @@ private theorem RealizableFun.toFun_inj {f g : RealizableFun X Y} (h : f.toFun =
   RealizableFun.ext fun a => congrFun h a
 
 /-- Pack a code and an advice stream into a function name: head `encode c`, tail `q`. -/
-private def funPack (c : OracleCode) (q : Baire) : Baire :=
+def funPack (c : OracleCode) (q : Baire) : Baire :=
   fun n => n.casesOn (Encodable.encode c) q
 
 /-- Decoding the head of a packed name recovers the code. -/
-private theorem funCode_funPack (c : OracleCode) (q : Baire) :
+theorem funCode_funPack (c : OracleCode) (q : Baire) :
     Denumerable.ofNat OracleCode (funPack c q 0) = c := by
   have h : funPack c q 0 = Encodable.encode c := rfl
   rw [h, Denumerable.ofNat_encode]
 
 /-- The shifted tail of a packed name recovers the advice. -/
-private theorem funAdvice_funPack (c : OracleCode) (q : Baire) :
+theorem funAdvice_funPack (c : OracleCode) (q : Baire) :
     (fun n => funPack c q (n + 1)) = q := rfl
 
 /-- The function-space representation of the advice-realizable maps: `F` names `f` exactly
@@ -140,10 +142,45 @@ theorem funRep_names_iff {F : Baire} {f : RealizableFun X Y} :
 
 /-- A packed name `funPack c q` names `f` whenever `(c, q)` advised-realizes its
 underlying function. -/
-private theorem names_funPack {c : OracleCode} {q : Baire} {f : RealizableFun X Y}
+theorem names_funPack {c : OracleCode} {q : Baire} {f : RealizableFun X Y}
     (h : AdvisedRealizes X Y c q f.toFun) : (funRep X Y).Names (funPack c q) f := by
   refine funRep_names_iff.mpr ?_
   rwa [funCode_funPack, funAdvice_funPack]
+
+/-! ### The head-cons name emitter -/
+
+/-- **The head-cons name emitter.** A single oracle code produces the packed function name
+`funPack c₀ a` from the stream `a` alone, for one fixed code `c₀`: coordinate `0` returns
+the constant `Encodable.encode c₀`, and coordinate `n + 1` returns `a n`, read off the
+length-`(n + 1)` prefix. Total on every stream.
+
+This is the emitter a postprocessor uses when its output is a function name. Because the
+emitted name mentions only the fixed code and the stream it is handed, a reduction whose
+postprocessor is this code depends on nothing but that stream — which is what makes such a
+reduction strong. -/
+theorem exists_funPackCode (c₀ : OracleCode) :
+    ∃ H : OracleCode, ∀ a : Baire, funPack c₀ a ∈ H.evalStream a := by
+  have hidx : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hlst : Primrec fun v : ℕ => v.unpair.2 := Primrec.snd.comp Primrec.unpair
+  have hg : Primrec fun v : ℕ =>
+      if v.unpair.1 = 0 then Encodable.encode c₀
+      else ((Denumerable.ofNat (List ℕ) v.unpair.2)[v.unpair.1 - 1]?).getD 0 :=
+    Primrec.ite (Primrec.eq.comp hidx (Primrec.const 0)) (Primrec.const _)
+      (Primrec.option_getD.comp
+        (Primrec.list_getElem?.comp ((Primrec.ofNat (List ℕ)).comp hlst)
+          (Primrec.nat_sub.comp hidx (Primrec.const 1)))
+        (Primrec.const 0))
+  obtain ⟨H, hH⟩ := OracleCode.exists_prefixPostCode (b := fun n _ => n) Primrec.fst hg
+  refine ⟨H, fun a => OracleCode.mem_evalStream.mpr fun n => ?_⟩
+  rw [hH a n]
+  refine Part.mem_some_iff.mpr ?_
+  cases n with
+  | zero => simp [funPack]
+  | succ m =>
+      have hlen : m < m + 1 := Nat.lt_succ_self m
+      simp only [Nat.unpair_pair, Nat.succ_ne_zero, Denumerable.ofNat_encode,
+        Nat.add_sub_cancel, getElem?_streamTake_of_lt a hlen, Option.getD_some]
+      rfl
 
 /-! ### Evaluation is a computable map -/
 

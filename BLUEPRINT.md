@@ -213,7 +213,7 @@ Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
 | 35 | Substrate riders III: countable mixtures / cylinder-mass route; deinterleave pushforward | done |
 | 36 | Part A: condition_noncomputable | done |
 | 37 | Part B: the bounded-Lipschitz everywhere-positive specialization | done |
-| 38 | Head-cons function-space name emitter | — |
+| 38 | Head-cons function-space name emitter | done |
 | 39 | Generic reduce-to-Lim input/jump table | — |
 | 40 | Cantor Dirac decoder (representation level) | — |
 | 41 | Part C1 lower headline: lim_le_disintegrate | — |
@@ -1062,14 +1062,18 @@ public; the calibration construction stays private, so it never enters the perma
 `IsStrongReductionPair` shape enforces this, and each unit records it.
 
 ```lean
--- Unit 38 (RepresentedSpace/FunctionSpace.lean, function-space namespace): the head-cons
--- name emitter. PUBLIC. Reusable wherever a postprocessor must emit a `funRep` name built
--- from a fixed code and a stream of advice.
-def consName (c₀ : OracleCode) (a : Baire) : Baire   -- code in the head, advice in the tail
-theorem consName_head / consName_tail                -- the specification pair
-theorem exists_consCode (c₀ : OracleCode) :
-    ∃ H : OracleCode, ∀ a : Baire, consName c₀ a ∈ H.evalStream a
-  -- via exists_prefixPostCode; needs a `Primrec` last-element extractor.
+-- Unit 38 (RepresentedSpace/FunctionSpace.lean): the head-cons name emitter. PUBLIC.
+-- Reusable wherever a postprocessor must emit a `funRep` name built from a fixed code and a
+-- stream of advice. The packing and its specifications ALREADY EXISTED here as the private
+-- `funPack` supporting `funRep`'s onto proof, so the unit promotes those to public instead
+-- of introducing a second copy under another name.
+def funPack (c : OracleCode) (q : Baire) : Baire     -- code in the head, advice in the tail
+theorem funCode_funPack / funAdvice_funPack          -- the specification pair
+theorem names_funPack                                -- a packed name names what (c, q) realizes
+theorem exists_funPackCode (c₀ : OracleCode) :
+    ∃ H : OracleCode, ∀ a : Baire, funPack c₀ a ∈ H.evalStream a
+  -- via exists_prefixPostCode at `b n _ = n`: coordinate 0 returns the constant code index,
+  -- coordinate n+1 the last element of the length-(n+1) prefix (Primrec.list_getElem?).
 
 -- Unit 39 (Weihrauch/Principles/Limit.lean): the reduce-to-Lim input/jump table. PUBLIC and
 -- generic — reusable by any `_ ≤sW Lim`. Even columns echo the input (making the reduction
