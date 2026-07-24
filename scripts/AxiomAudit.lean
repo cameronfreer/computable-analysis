@@ -279,7 +279,11 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.FullFirstMarginalSupport.isOpenPosMeasure,
    ``ComputableAnalysis.Disintegrate,
    ``ComputableAnalysis.disintegrate_dom_iff,
-   ``ComputableAnalysis.disintegrate_accepts_unique]
+   ``ComputableAnalysis.disintegrate_accepts_unique,
+   -- Unit 33: division away from zero + funRep currying
+   ``ComputableAnalysis.computableMap_realInv_pos,
+   ``ComputableAnalysis.computableMap_funRep_curry,
+   ``ComputableAnalysis.RealizableFun.computablePoint_curry]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

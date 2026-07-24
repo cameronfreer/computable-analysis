@@ -250,6 +250,46 @@ theorem computableMap_funRep_postcomp {g : β → γ} (hg : ComputableMap Y Z g)
   rw [evalStream_subst hout']
   exact hout2
 
+/-! ### Currying -/
+
+/-- Currying on the carrier: for a computable map `f` out of the product, each section
+`f (a, ·)` is advice-realizable — a realizer of `f` is the code and any name of `a` the
+advice, because the advice-interleaved oracle `Baire.interleave advice argument` *is* the
+product packing of a name of `a` with a name of the argument. -/
+def RealizableFun.curry {f : α × β → γ} (hf : ComputableMap (X.prod Y) Z f) (a : α) :
+    RealizableFun Y Z where
+  toFun b := f (a, b)
+  exists_advised := by
+    obtain ⟨c, hc⟩ := hf
+    obtain ⟨p, hp⟩ := X.onto a
+    have hp' : X.Names p a := hp
+    refine ⟨c, p, fun q b hq => ?_⟩
+    exact hc (Baire.interleave p q) (a, b)
+      (Representation.prod_names_iff.mpr ⟨by simpa using hp', by simpa using hq⟩)
+
+/-- **Currying.** For a computable map `f` out of the product, the curried map into the
+function space is computable. The realizer is a *pure repackaging*: the image name of `a`
+under a name `p` is `funPack c p` — fixed head the code index of `f`'s realizer `c`,
+advice the whole of `p` — because `AdvisedRealizes` runs `c` on
+`Baire.interleave advice argument`, which is exactly the product packing of `p` with a
+name of the argument. -/
+theorem computableMap_funRep_curry {f : α × β → γ}
+    (hf : ComputableMap (X.prod Y) Z f) :
+    ComputableMap X (funRep Y Z) (RealizableFun.curry hf) := by
+  obtain ⟨c, hc⟩ := hf
+  obtain ⟨cc, hcc⟩ := exists_consCode c
+  refine ⟨cc, .of_computes hcc fun p a hp => ?_⟩
+  refine names_funPack fun q b hq => ?_
+  exact hc (Baire.interleave p q) (a, b)
+    (Representation.prod_names_iff.mpr ⟨by simpa using hp, by simpa using hq⟩)
+
+/-- The computable-point form of currying: at a computable point `a`, the section
+`f (a, ·)` is a computable point of the function space. -/
+theorem RealizableFun.computablePoint_curry {f : α × β → γ}
+    (hf : ComputableMap (X.prod Y) Z f) {a : α} (ha : X.ComputablePoint a) :
+    (funRep Y Z).ComputablePoint (RealizableFun.curry hf a) :=
+  (computableMap_funRep_curry hf).computablePoint ha
+
 /-! ### Calibration: computable points of the function space are the computable maps -/
 
 /-- **Calibration.** A computable point of the function space is exactly a function that
