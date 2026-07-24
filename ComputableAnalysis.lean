@@ -42,3 +42,4 @@ import ComputableAnalysis.Measure.Kernel
 import ComputableAnalysis.Measure.Integration
 import ComputableAnalysis.Measure.Conditioning
 import ComputableAnalysis.Measure.ConditionPositive
+import ComputableAnalysis.Measure.DiracDecode

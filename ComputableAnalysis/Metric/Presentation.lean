@@ -103,23 +103,23 @@ private theorem ratOfCode_lt_iff (m₁ m₂ : ℕ) :
   rw [ratOfCode, ratOfCode, div_lt_div_iff₀ h₁ h₂, sub_mul, sub_mul, sub_lt_sub_iff]
   exact_mod_cast Iff.rfl
 
-/-- **The threshold builder.** Any predicate equivalent to a strict comparison of
-primitively computed rational codes is r.e. — decidable coded-rational comparisons are
-`REPred` via `PrimrecPred.computablePred.to_re`. Both semidecisions of a presentation
-with exactly coded distances are instances (units 24 and 26+). -/
-theorem repred_of_ratLt {q : ℕ × ℕ × RatCode → Prop} {f g : ℕ × ℕ × RatCode → ℕ}
-    (hf : Primrec f) (hg : Primrec g)
-    (hq : ∀ w, q w ↔ ratOfCode (f w) < ratOfCode (g w)) : REPred q := by
+/-- **The comparison builder.** Strict comparison of primitively computed rational codes is
+a `PrimrecPred`: the coding puts it at cross-multiplication of the numerator and denominator
+projections, all of them primitive recursive. Every decision a realizer makes about coded
+rationals — thresholds, majority tests, sign tests — factors through this. -/
+theorem primrecPred_ratLt {α : Type*} [Primcodable α] {f g : α → ℕ}
+    (hf : Primrec f) (hg : Primrec g) :
+    PrimrecPred fun a => ratOfCode (f a) < ratOfCode (g a) := by
   have ha : Primrec fun m : ℕ => m.unpair.1.unpair.1 :=
     primrec_unpairFst.comp primrec_unpairFst
   have hb : Primrec fun m : ℕ => m.unpair.1.unpair.2 :=
     primrec_unpairSnd.comp primrec_unpairFst
   have hd : Primrec fun m : ℕ => m.unpair.2 + 1 := Primrec.succ.comp primrec_unpairSnd
-  have hnat : PrimrecPred fun w : ℕ × ℕ × RatCode =>
-      (f w).unpair.1.unpair.1 * ((g w).unpair.2 + 1)
-          + (g w).unpair.1.unpair.2 * ((f w).unpair.2 + 1)
-        < (g w).unpair.1.unpair.1 * ((f w).unpair.2 + 1)
-            + (f w).unpair.1.unpair.2 * ((g w).unpair.2 + 1) :=
+  have hnat : PrimrecPred fun a : α =>
+      (f a).unpair.1.unpair.1 * ((g a).unpair.2 + 1)
+          + (g a).unpair.1.unpair.2 * ((f a).unpair.2 + 1)
+        < (g a).unpair.1.unpair.1 * ((f a).unpair.2 + 1)
+            + (f a).unpair.1.unpair.2 * ((g a).unpair.2 + 1) :=
     Primrec.nat_lt.comp
       (Primrec.nat_add.comp
         (Primrec.nat_mul.comp (ha.comp hf) (hd.comp hg))
@@ -127,8 +127,16 @@ theorem repred_of_ratLt {q : ℕ × ℕ × RatCode → Prop} {f g : ℕ × ℕ �
       (Primrec.nat_add.comp
         (Primrec.nat_mul.comp (ha.comp hg) (hd.comp hf))
         (Primrec.nat_mul.comp (hb.comp hf) (hd.comp hg)))
-  exact ((hnat.of_eq fun w =>
-    ((ratOfCode_lt_iff (f w) (g w)).symm.trans (hq w).symm)).computablePred).to_re
+  exact hnat.of_eq fun a => (ratOfCode_lt_iff (f a) (g a)).symm
+
+/-- **The threshold builder.** Any predicate equivalent to a strict comparison of
+primitively computed rational codes is r.e. — decidable coded-rational comparisons are
+`REPred` via `PrimrecPred.computablePred.to_re`. Both semidecisions of a presentation
+with exactly coded distances are instances (units 24 and 26+). -/
+theorem repred_of_ratLt {q : ℕ × ℕ × RatCode → Prop} {f g : ℕ × ℕ × RatCode → ℕ}
+    (hf : Primrec f) (hg : Primrec g)
+    (hq : ∀ w, q w ↔ ratOfCode (f w) < ratOfCode (g w)) : REPred q :=
+  (((primrecPred_ratLt hf hg).of_eq fun w => (hq w).symm).computablePred).to_re
 
 /-! ### The presented product (the product slice of deferred unit 17) -/
 

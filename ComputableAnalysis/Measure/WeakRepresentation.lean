@@ -1407,37 +1407,6 @@ private theorem primrec_ratDivCode : Primrec₂ ratDivCode :=
         (primrec_den1.comp Primrec.fst))
       (Primrec.const 1))
 
-/-- Strict comparison of decoded rationals is the ℕ cross-multiplication comparison
-(re-proof of the `Presentation.lean` private lemma). -/
-private theorem ratOfCode_lt_iff' (m₁ m₂ : ℕ) :
-    ratOfCode m₁ < ratOfCode m₂ ↔
-      m₁.unpair.1.unpair.1 * (m₂.unpair.2 + 1) + m₂.unpair.1.unpair.2 * (m₁.unpair.2 + 1)
-        < m₂.unpair.1.unpair.1 * (m₁.unpair.2 + 1)
-            + m₁.unpair.1.unpair.2 * (m₂.unpair.2 + 1) := by
-  have h₁ : (0 : ℚ) < (m₁.unpair.2 : ℚ) + 1 := by positivity
-  have h₂ : (0 : ℚ) < (m₂.unpair.2 : ℚ) + 1 := by positivity
-  rw [ratOfCode, ratOfCode, div_lt_div_iff₀ h₁ h₂, sub_mul, sub_mul, sub_lt_sub_iff]
-  exact_mod_cast Iff.rfl
-
-/-- Strict comparison of primitively computed rational codes is a `PrimrecPred` — the
-decidable-atom builder for the coded Σ₁ matrices. -/
-private theorem primrecPred_ratLt {α : Type*} [Primcodable α] {f g : α → ℕ}
-    (hf : Primrec f) (hg : Primrec g) :
-    PrimrecPred fun a => ratOfCode (f a) < ratOfCode (g a) := by
-  have hnat : PrimrecPred fun a : α =>
-      (f a).unpair.1.unpair.1 * ((g a).unpair.2 + 1)
-          + (g a).unpair.1.unpair.2 * ((f a).unpair.2 + 1)
-        < (g a).unpair.1.unpair.1 * ((f a).unpair.2 + 1)
-            + (f a).unpair.1.unpair.2 * ((g a).unpair.2 + 1) :=
-    Primrec.nat_lt.comp
-      (Primrec.nat_add.comp
-        (Primrec.nat_mul.comp (primrec_numA.comp hf) (primrec_den1.comp hg))
-        (Primrec.nat_mul.comp (primrec_numB.comp hg) (primrec_den1.comp hf)))
-      (Primrec.nat_add.comp
-        (Primrec.nat_mul.comp (primrec_numA.comp hg) (primrec_den1.comp hf))
-        (Primrec.nat_mul.comp (primrec_numB.comp hf) (primrec_den1.comp hg)))
-  exact hnat.of_eq fun a => (ratOfCode_lt_iff' (f a) (g a)).symm
-
 /-! ### `testBit`, powers of two, and subset bitmasks -/
 
 private theorem primrec_pow2 : Primrec fun k : ℕ => 2 ^ k := by

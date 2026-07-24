@@ -215,7 +215,7 @@ Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
 | 37 | Part B: the bounded-Lipschitz everywhere-positive specialization | done |
 | 38 | Head-cons function-space name emitter | done |
 | 39 | Generic reduce-to-Lim input/jump table | done |
-| 40 | Cantor Dirac decoder (representation level) | — |
+| 40 | Cantor Dirac decoder (representation level) | done |
 | 41 | Part C1 lower headline: lim_le_disintegrate | — |
 | 42 | Part C1 upper headline: disintegrate_le_lim | reopened — the pointwise-ball route is falsified; see the units 38–42 appendix |
 | — | Part C2: basis-parameterized/measurable disintegration (computable Vitali data) | deferred — own signature review |
@@ -1086,15 +1086,26 @@ theorem limTable_dom (p : Baire) : Lim.Dom (limTable p)
 theorem exists_limTableCode : ∃ K : OracleCode, ∀ p : Baire, limTable p ∈ K.evalStream p
   -- echo track via exists_prefixPostCode; jump track via computable_evalnPrefix on streamTake.
 
--- Unit 40 (Measure/WeakRepresentation.lean): the Cantor Dirac decoder. PUBLIC, and stated
--- purely at the representation level — from a weak name known to denote the Dirac measure at
--- a point, uniformly recover a `cantorRep` name of that point. An atomic measure within
--- Lévy–Prokhorov distance `2^-(t+2)` of `δ z` gives the `t`-cylinder of `z` mass exceeding
--- `1/2`, which decides bit `t`. No calibration or encoding vocabulary enters the contract.
+-- Unit 40 (Measure/DiracDecode.lean — NOT WeakRepresentation.lean, which the cylinder-mass
+-- route depends on rather than the other way round): the Cantor Dirac decoder. PUBLIC, and
+-- stated purely at the representation level — from a weak name known to denote the Dirac
+-- measure at a point, uniformly recover a `cantorRep` name of that point. No calibration or
+-- encoding vocabulary enters the contract.
 theorem exists_diracDecodeCode :
-    ∃ D : OracleCode, ∀ r z, WeakMeasureNames cantorPresentation r (diracProba z) →
-      ∃ w ∈ D.evalStream r, cantorRep.Names w z
-  -- exact binder form fixed at implementation.
+    ∃ D : OracleCode, ∀ (r : Baire) (z : Cantor),
+      (weakMeasureRep cantorPresentation).Names r (diracProba z) →
+        ∃ w ∈ D.evalStream r, cantorRep.Names w z
+  -- Route: translate the weak name into cylinder masses through the unit 28 equivalence,
+  -- then decide bit t by locating, among the words of length t+1, the one whose mass
+  -- approximation at precision 2 exceeds 1/2. Exactly one qualifies, since the masses of a
+  -- Dirac measure are 0 or 1: a value beating 1/2 forces mass 1, hence membership, hence
+  -- that the word is the point's own prefix — which does qualify, its mass being 1.
+-- The one substrate this needed, exposed as the narrow code-builder rather than by
+-- unprivating internals, and placed in the module that owns the coding:
+theorem primrecPred_ratLt {α} [Primcodable α] {f g : α → ℕ} (hf : Primrec f) (hg : Primrec g) :
+    PrimrecPred fun a => ratOfCode (f a) < ratOfCode (g a)   -- Metric/Presentation.lean
+  -- `repred_of_ratLt` is now a corollary, and WeakRepresentation's private duplicate of the
+  -- comparison is gone: one installment of the issue #6 coded-rational consolidation.
 
 -- Unit 41 (Measure/DisintegrateLower.lean): the lower headline. PUBLIC: `lim_le_disintegrate`
 -- alone. PRIVATE: the discrete full-support base measure and its support, the unary
