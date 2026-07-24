@@ -283,7 +283,14 @@ def headlineDecls : List Name :=
    -- Unit 33: division away from zero + funRep currying
    ``ComputableAnalysis.computableMap_realInv_pos,
    ``ComputableAnalysis.computableMap_funRep_curry,
-   ``ComputableAnalysis.RealizableFun.computablePoint_curry]
+   ``ComputableAnalysis.RealizableFun.computablePoint_curry,
+   -- Unit 34: converse admissibility + Cantor standard-Borel + fair-coin full support
+   ``ComputableAnalysis.continuous_of_advisedRealizes,
+   ``ComputableAnalysis.RealizableFun.continuous_toFun_of_cauchy,
+   ``ComputableAnalysis.PiNatInstances.polishSpace_cantor,
+   ``ComputableAnalysis.PiNatInstances.standardBorelSpace_cantor,
+   ``ComputableAnalysis.isOpenPosMeasure_bernoulliProduct,
+   ``ComputableAnalysis.support_bernoulliProduct]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

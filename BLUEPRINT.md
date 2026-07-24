@@ -209,7 +209,7 @@ Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
 | ---- | ------- | ------ |
 | 32 | Shared conditioning layer (CMP.prod, ≡sW, IsCondKernel/CondKernelAEEq, spaces, Disintegrate, uniqueness, borelSpace_prod, funRep_computablePoint_iff) | done |
 | 33 | Substrate riders I: realInv-pos; funRep currying | done |
-| 34 | Substrate riders II: realizable ⇒ continuous (converse admissibility); StandardBorelSpace Cantor; full-support bernoulliProduct ½ | — |
+| 34 | Substrate riders II: realizable ⇒ continuous (converse admissibility); StandardBorelSpace Cantor; full-support bernoulliProduct ½ | done |
 | 35 | Substrate riders III: countable mixtures / cylinder-mass route; deinterleave pushforward | — |
 | 36 | Part A: condition_noncomputable | — |
 | 37 | Part B: the bounded-Lipschitz everywhere-positive specialization | — |
