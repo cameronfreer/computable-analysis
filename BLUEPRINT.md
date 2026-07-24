@@ -213,7 +213,11 @@ Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
 | 35 | Substrate riders III: countable mixtures / cylinder-mass route; deinterleave pushforward | done |
 | 36 | Part A: condition_noncomputable | done |
 | 37 | Part B: the bounded-Lipschitz everywhere-positive specialization | done |
-| 38 | Part C1: disintegrate_le_lim + lim_le_disintegrate | — |
+| 38 | Head-cons function-space name emitter | — |
+| 39 | Generic reduce-to-Lim input/jump table | — |
+| 40 | Cantor Dirac decoder (representation level) | — |
+| 41 | Part C1 lower headline: lim_le_disintegrate | — |
+| 42 | Part C1 upper headline: disintegrate_le_lim | reopened — the pointwise-ball route is falsified; see the units 38–42 appendix |
 | — | Part C2: basis-parameterized/measurable disintegration (computable Vitali data) | deferred — own signature review |
 
 ## Signatures appendix (grows before each review stop)
@@ -1030,6 +1034,8 @@ theorem disintegrate_le_lim :             -- generic upper bound, complete-separ
   -- radii to it) — not only fixed dyadic radii.
 theorem lim_le_disintegrate :             -- lower bound, Cantor on both sides
     Lim ≤sW Disintegrate cantorPresentation cantorPresentation
+-- Both statements stand. The upper bound's PROOF ROUTE was reopened at the units 38–42
+-- decomposition review; see that appendix entry for what was falsified and what replaces it.
 -- PART C2 (basis-parameterized/measurable disintegration via computable Vitali data;
 -- the MSCS paper's separate basis result) — SPLIT OFF and DEFERRED as its own subtask:
 -- "Vitali unnecessary for C1" does NOT complete C2; C2 gets its own signature review.
@@ -1044,6 +1050,96 @@ theorem realizable ⇒ pointwise-continuous converse (the other admissibility ha
 -- plus: countable-atomic mixtures (or the direct cylinder-mass route), the deinterleave
 -- pushforward into weakMeasureRep (CMP.prod), StandardBorelSpace Cantor under the
 -- scoped metric, full support of bernoulliProduct ½.
+```
+
+### For units 38–42 — part C1 decomposition (frozen at the decomposition review, 2026-07-24)
+
+Each of part C1's two theorems is a strong-reduction pair `(K, H)` whose residual content is
+machine realizers. Five atomic units, each with its own gate, commit, and push, each
+placeholder-free with no new heartbeat scopes and standard axioms. Reusable machinery is
+public; the calibration construction stays private, so it never enters the permanent API.
+`K` depends on the problem input name only and `H` on the oracle answer name only — the
+`IsStrongReductionPair` shape enforces this, and each unit records it.
+
+```lean
+-- Unit 38 (RepresentedSpace/FunctionSpace.lean, function-space namespace): the head-cons
+-- name emitter. PUBLIC. Reusable wherever a postprocessor must emit a `funRep` name built
+-- from a fixed code and a stream of advice.
+def consName (c₀ : OracleCode) (a : Baire) : Baire   -- code in the head, advice in the tail
+theorem consName_head / consName_tail                -- the specification pair
+theorem exists_consCode (c₀ : OracleCode) :
+    ∃ H : OracleCode, ∀ a : Baire, consName c₀ a ∈ H.evalStream a
+  -- via exists_prefixPostCode; needs a `Primrec` last-element extractor.
+
+-- Unit 39 (Weihrauch/Principles/Limit.lean): the reduce-to-Lim input/jump table. PUBLIC and
+-- generic — reusable by any `_ ≤sW Lim`. Even columns echo the input (making the reduction
+-- strong: the postprocessor never revisits it); odd columns carry a bounded-simulation
+-- halting bit, monotone in the stage, so every column is eventually constant and the limit
+-- is the input paired with its jump.
+def jumpBit (p : Baire) (e t : ℕ) : ℕ
+def limTable (p : Baire) : Baire
+theorem limTable_dom (p : Baire) : Lim.Dom (limTable p)
+theorem exists_limTableCode : ∃ K : OracleCode, ∀ p : Baire, limTable p ∈ K.evalStream p
+  -- echo track via exists_prefixPostCode; jump track via computable_evalnPrefix on streamTake.
+
+-- Unit 40 (Measure/WeakRepresentation.lean): the Cantor Dirac decoder. PUBLIC, and stated
+-- purely at the representation level — from a weak name known to denote the Dirac measure at
+-- a point, uniformly recover a `cantorRep` name of that point. An atomic measure within
+-- Lévy–Prokhorov distance `2^-(t+2)` of `δ z` gives the `t`-cylinder of `z` mass exceeding
+-- `1/2`, which decides bit `t`. No calibration or encoding vocabulary enters the contract.
+theorem exists_diracDecodeCode :
+    ∃ D : OracleCode, ∀ r z, WeakMeasureNames cantorPresentation r (diracProba z) →
+      ∃ w ∈ D.evalStream r, cantorRep.Names w z
+  -- exact binder form fixed at implementation.
+
+-- Unit 41 (Measure/DisintegrateLower.lean): the lower headline. PUBLIC: `lim_le_disintegrate`
+-- alone. PRIVATE: the discrete full-support base measure and its support, the unary
+-- encoding/decoding pair, the calibration construction (encoding map and its continuity, the
+-- kernel, the point, the joint law, and the acceptance lemma), and both residual realizers.
+-- `exists_calibK` and `exists_calibH` are named theorems, proved and gated independently
+-- before the headline is assembled, rather than inlined into it.
+theorem lim_le_disintegrate :
+    Lim ≤sW Disintegrate cantorPresentation cantorPresentation
+  -- K emits a weak name of the calibration joint from the Lim input alone: the joint is
+  -- independent of the limit, because the base measure is atomic with full support on a
+  -- computable shell, so each atom's value is read from a finite prefix of the input. H
+  -- consumes the accepted kernel name alone — it evaluates at a fixed name, decodes the
+  -- resulting Dirac measure through unit 40, and reads the limit off block by block.
+  -- Uniqueness of the accepted output is `disintegrate_accepts_unique`.
+
+-- Unit 42 (upper headline `disintegrate_le_lim`): REOPENED at the decomposition review; not
+-- scoped, and deliberately not assigned a module. The theorem itself is not in doubt — it is
+-- the upper half of Ackerman–Freer–Roy, "On computability and disintegration", Thm. 4.7,
+-- which needs neither completeness nor a standard-Borel hypothesis, so the frozen statement
+-- stands. What was falsified is the proposed proof route.
+--
+-- Why the pointwise-ball route fails: the postprocessor's advice is the limit of `limTable p`,
+-- namely the input paired with the jump OF THE INPUT ALONE. The evaluator's dependence on the
+-- argument x arises later, at evaluation time, where no jump is available. Certifying that an
+-- atomic measure is within `2^-n` of the disintegration at x, from ball conditionals centred
+-- at x, requires either a modulus of continuity at x or a Cauchy criterion in the radius at x;
+-- both are semidecidable only relative to the input AND the argument name, which the
+-- input-only jump cannot decide. Weak convergence of the ball conditionals at every x
+-- (arbitrary positive radii) is true but carries no rate, so it cannot supply the certificate.
+--
+-- The route that does work makes the certificate independent of x: condition on µ-continuity
+-- SETS drawn from a computed µ-continuity basis (loc. cit. Lemmas 3.16, 3.19), which is
+-- computable from the measure with no jump (Lemma 4.4 and Cor. 4.5); the single jump then
+-- decides the stability predicate "no later basis conditional differs by more than 2^-k",
+-- which mentions only basis indices and the input. At evaluation the machine searches for a
+-- stable basis index whose set contains x — membership in an open set is semidecidable from
+-- x's name alone — and both soundness and termination follow from the Tjur property, which
+-- holds at every point here (Prop. 2.9). Unit 39's table is exactly the jump this route needs,
+-- so that abstraction is confirmed rather than disturbed.
+--
+-- Before the upper direction is refrozen, three separate spikes: (1) weak-name evaluation and
+-- conditioning on represented continuity sets; (2) effective construction of a µ-continuity
+-- basis; (3) end-to-end assembly of K and H over those APIs. Likely eventual shape is
+-- continuity-set access, then continuity-basis construction, then the headline — but unit
+-- boundaries wait on what representations and uniformity contracts the first two spikes fix.
+-- The atomic Lévy–Prokhorov comparisons the assembly needs are NOT to be published by
+-- deleting `private`: the upper freeze exposes the narrow semantic or code-builder theorem
+-- actually required.
 ```
 
 ## Worked-example checklist (acceptance test; each in its owning unit)
