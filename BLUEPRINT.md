@@ -203,6 +203,19 @@ Measure/kernel-interface phase (post-Stop-D re-plan; tracked in issue #4):
 | 30 | Continuous Markov kernel carrier + bridges | done |
 | 31 | Bounded-Lipschitz integration | done |
 
+Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
+
+| Unit | Content | Status |
+| ---- | ------- | ------ |
+| 32 | Shared conditioning layer (CMP.prod, ≡sW, IsCondKernel/CondKernelAEEq, spaces, Disintegrate, uniqueness, borelSpace_prod, funRep_computablePoint_iff) | — |
+| 33 | Substrate riders I: realInv-pos; funRep currying | — |
+| 34 | Substrate riders II: realizable ⇒ continuous (converse admissibility); StandardBorelSpace Cantor; full-support bernoulliProduct ½ | — |
+| 35 | Substrate riders III: countable mixtures / cylinder-mass route; deinterleave pushforward | — |
+| 36 | Part A: condition_noncomputable | — |
+| 37 | Part B: the bounded-Lipschitz everywhere-positive specialization | — |
+| 38 | Part C1: disintegrate_le_lim + lim_le_disintegrate | — |
+| — | Part C2: basis-parameterized/measurable disintegration (computable Vitali data) | deferred — own signature review |
+
 ## Signatures appendix (grows before each review stop)
 
 ### For Review Stop A — units 2–6 operational layer
@@ -969,20 +982,68 @@ theorem disintegrate_accepts_unique :     -- full support ⇒ the accepted outpu
 theorem disintegrate_dom_iff : (Disintegrate P Q).Dom μ ↔
     FullFirstMarginalSupport μ ∧ ∃ f, IsCondKernel μ (inducedKernel f)
 
--- Part statements (INDEPENDENT spikes; part-specific signatures stay UNFROZEN until
--- their spikes return):
--- A (noncomputability; AckermanFreerRoyCompCondProb): a computable point μ of a concrete
---    jointMeasureSpace with Condition.Dom μ such that NO computable point of condFunSpace
---    is Condition-accepted at μ (interpreted through funRep_computablePoint_iff).
--- B (positive): conditioning under the paper's exact hypotheses (pinned at the spike),
---    in ComputableMap / computable-point-preserving form.
--- C (calibration; AFR-Tjur Thm 4.7 + its upper-bound argument), SPLIT — the generic
---    equivalence is FALSE (trivial outcome spaces):
+-- Shared-layer delta (spike-mandated): the product-Borel instance is DERIVED, never a
+-- hypothesis; and the discipline notes are binding (keep repred_comp results in composed
+-- form with directed `simp only` — Nat.unpair defeq unification diverges; elaborate-
+-- then-defeq around Kernel.withDensity's dite).
+theorem ComputableMetricPresentation.borelSpace_prod : BorelSpace (X × Y)
+```
+
+**Parts freeze** (approved against the four spikes, 2026-07-24). Shared layer, part A,
+and part C1 approved as spiked; part B frozen as an explicitly labeled specialization;
+part C2 split off and deferred.
+
+```lean
+-- PART A (noncomputability; AFR "On the computability of conditional probability").
+-- Pinned spaces: Cantor × Cantor (preferable FOR THIS CONSTRUCTION — clopen computable
+-- digits; the paper's own [0,1] setting would need dyadic-boundary machinery and an
+-- interval presentation). Construction: geometric index + fair coin + bit-forced-at-
+-- halting-time; fst marginal = bernoulliProduct ½; Dom witness continuous but
+-- noncomputable.
+theorem condition_noncomputable : ∃ μ : ProbabilityMeasure (Cantor × Cantor),
+    (jointMeasureSpace P₀ P₀).rep.ComputablePoint μ ∧ (Condition P₀ P₀).Dom μ ∧
+      ∀ f, (condFunSpace P₀ P₀).rep.ComputablePoint f → ¬ (Condition P₀ P₀).accepts μ f
+  -- P₀ := cantorPresentation; interpreted through funRep_computablePoint_iff.
+
+-- PART B — the BOUNDED-LIPSCHITZ, EVERYWHERE-POSITIVE SPECIALIZATION of AFR Prop. 9.4
+-- (NOT the paper's exact hypotheses: the paper assumes a positive bounded computable
+-- conditional density; bounded-Lipschitz is strictly narrower. The full computable-
+-- density and independent-noise corollaries are DEFERRED.) The density is genuinely q
+-- itself: nonnegativity is a FIELD, never a silent ENNReal.ofReal clamp.
+def IsCondDensityPair (μ : ProbabilityMeasure (X × Y)) (q : BoundedLipschitzFun (X × Y)) :
+    Prop :=  -- ∃ ρ, SFinite ρ ∧ μ = (ρ.prod μ.snd).withDensity (ofReal ∘ q) ∧
+             --   (∀ z, 0 ≤ q.toFun z) ∧ ∀ x, bayesZ μ.snd q x ≠ 0
+theorem isCondKernel_bayesKernel : ... -- the Bayes kernel is a version (spiked sorry-free)
+theorem computableMap_bayesCond : ...  -- uncurried evaluator form (spiked, route pinned)
+-- The CURRIED headline (a theorem, not a Prop-def; needs the funRep currying rider):
+theorem computableMap_bayesCond_curried :
+    ComputableMap (densityPairRep P Q) (condFunSpace P Q).rep
+      (fun d => bayesCondFun d) ∧-shape with: the output is Condition-accepted at d's μ
+  -- exact binder form fixed at implementation; the acceptance clause is part of the
+  -- frozen statement.
+
+-- PART C1 (unique-continuous calibration; AFR-Tjur) — FROZEN:
 theorem disintegrate_le_lim :             -- generic upper bound, complete-separable hyps
     Disintegrate P Q ≤sW Lim
-theorem lim_le_disintegrate :             -- lower bound on concrete rich spaces P₀, Q₀
-    Lim ≤sW Disintegrate P₀ Q₀            -- chosen by the part C spike; equivalence
-                                          -- (≡sW) then holds for those instances
+  -- via ball-conditional convergence; the convergence lemma must hold for ANY positive
+  -- radii tending to zero (or explicitly connect the algorithm's boundary-controlled
+  -- radii to it) — not only fixed dyadic radii.
+theorem lim_le_disintegrate :             -- lower bound, Cantor on both sides
+    Lim ≤sW Disintegrate cantorPresentation cantorPresentation
+-- PART C2 (basis-parameterized/measurable disintegration via computable Vitali data;
+-- the MSCS paper's separate basis result) — SPLIT OFF and DEFERRED as its own subtask:
+-- "Vitali unnecessary for C1" does NOT complete C2; C2 gets its own signature review.
+
+-- Substrate rider units (implemented BEFORE the parts, in this order):
+theorem computableMap_realInv_pos :       -- division-away-from-zero, NO ε datum
+    ComputableMap (realRep.subtype fun x => 0 < x) realRep (fun x => x.1⁻¹)
+theorem funRep currying/exponential rider -- shape fixed at its unit (feeds B's curried)
+theorem realizable ⇒ pointwise-continuous converse (the other admissibility half; part
+  A's extraction consumes it; needs the partial-operator continuity + name-extension
+  lemmas scoped at unit 29 time)
+-- plus: countable-atomic mixtures (or the direct cylinder-mass route), the deinterleave
+-- pushforward into weakMeasureRep (CMP.prod), StandardBorelSpace Cantor under the
+-- scoped metric, full support of bernoulliProduct ½.
 ```
 
 ## Worked-example checklist (acceptance test; each in its owning unit)
