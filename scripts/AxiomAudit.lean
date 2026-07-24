@@ -290,7 +290,13 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.PiNatInstances.polishSpace_cantor,
    ``ComputableAnalysis.PiNatInstances.standardBorelSpace_cantor,
    ``ComputableAnalysis.isOpenPosMeasure_bernoulliProduct,
-   ``ComputableAnalysis.support_bernoulliProduct]
+   ``ComputableAnalysis.support_bernoulliProduct,
+   -- Unit 35: the deinterleave pushforward and its computability bridge
+   ``ComputableAnalysis.cantorDeinterleave_preimage_prod,
+   ``ComputableAnalysis.jointOfCantor,
+   ``ComputableAnalysis.jointOfCantor_apply_prod,
+   ``ComputableAnalysis.jointOfCantor_rectangle,
+   ``ComputableAnalysis.computableMap_jointOfCantor]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
