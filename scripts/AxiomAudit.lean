@@ -296,7 +296,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.jointOfCantor,
    ``ComputableAnalysis.jointOfCantor_apply_prod,
    ``ComputableAnalysis.jointOfCantor_rectangle,
-   ``ComputableAnalysis.computableMap_jointOfCantor]
+   ``ComputableAnalysis.computableMap_jointOfCantor,
+   -- Unit 36 (Part A): noncomputability of conditional probability
+   ``ComputableAnalysis.condition_noncomputable]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

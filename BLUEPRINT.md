@@ -211,7 +211,7 @@ Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
 | 33 | Substrate riders I: realInv-pos; funRep currying | done |
 | 34 | Substrate riders II: realizable ⇒ continuous (converse admissibility); StandardBorelSpace Cantor; full-support bernoulliProduct ½ | done |
 | 35 | Substrate riders III: countable mixtures / cylinder-mass route; deinterleave pushforward | done |
-| 36 | Part A: condition_noncomputable | — |
+| 36 | Part A: condition_noncomputable | done |
 | 37 | Part B: the bounded-Lipschitz everywhere-positive specialization | — |
 | 38 | Part C1: disintegrate_le_lim + lim_le_disintegrate | — |
 | — | Part C2: basis-parameterized/measurable disintegration (computable Vitali data) | deferred — own signature review |
