@@ -739,4 +739,75 @@ private theorem abs_headE_sub_cylMass_le (p : Baire) (w : List Bool) (n : ℕ) :
   rw [abs_le]
   constructor <;> linarith
 
+/-! ### The mass as a dyadic rational code -/
+
+/-- The numerator of the level-`n` mass: the atoms `i < n` lying in the cylinder, weighted
+so that the common denominator is `2^n`. -/
+private def massNum (L : List ℕ) (w : List Bool) (n : ℕ) : ℕ :=
+  ((List.range n).map fun i => if memCylL L i w then 2 ^ (n - 1 - i) else 0).sum
+
+/-- The level-`n` mass of the cylinder of `w`, as a rational code. -/
+private def massCode (L : List ℕ) (w : List Bool) (n : ℕ) : RatCode :=
+  Nat.pair (Nat.pair (massNum L w n) 0) (2 ^ n - 1)
+
+private theorem ratOfCode_massCode (L : List ℕ) (w : List Bool) (n : ℕ) :
+    ratOfCode (massCode L w n) = (massNum L w n : ℚ) / 2 ^ n := by
+  have h1 : (1 : ℕ) ≤ 2 ^ n := Nat.one_le_two_pow
+  rw [ratOfCode, massCode]
+  simp only [Nat.unpair_pair, Nat.cast_zero, sub_zero]
+  congr 1
+  rw [Nat.cast_sub h1]
+  push_cast
+  ring
+
+private theorem two_pow_div (n i : ℕ) (hi : i < n) :
+    ((2 : ℝ) ^ (n - 1 - i)) / 2 ^ n = ((2 : ℝ)⁻¹) ^ (i + 1) := by
+  have hsum : (n - 1 - i) + (i + 1) = n := by omega
+  have h2 : ((2 : ℝ) ^ (n - 1 - i)) * 2 ^ (i + 1) = 2 ^ n := by rw [← pow_add, hsum]
+  rw [inv_pow, div_eq_iff (by positivity : ((2 : ℝ) ^ n) ≠ 0), inv_mul_eq_div,
+    eq_div_iff (by positivity : ((2 : ℝ) ^ (i + 1)) ≠ 0)]
+  exact h2
+
+/-- The retained mass is exactly the dyadic rational the code names. -/
+private theorem headE_toReal_eq {L : List ℕ} {p : Baire} {w : List Bool} {n : ℕ}
+    (hL : ∀ i, i < n → ∀ m, m ≤ w.length → guessL L i m = atomGuess p i m) :
+    (headE p w n).toReal = (massNum L w n : ℝ) / 2 ^ n := by
+  have hterm : ∀ i ∈ Finset.range n,
+      ((2 : ℝ≥0∞)⁻¹ ^ (i + 1) *
+        (cylinder w : Set Cantor).indicator (1 : Cantor → ℝ≥0∞) (atomPoint p i)) ≠ ⊤ := by
+    intro i _
+    refine ENNReal.mul_ne_top (by simp) ?_
+    by_cases h : atomPoint p i ∈ (cylinder w : Set Cantor)
+    · rw [Set.indicator_of_mem h]; simp
+    · rw [Set.indicator_of_notMem h]; simp
+  rw [headE, ENNReal.toReal_sum hterm]
+  have hcast : (massNum L w n : ℝ)
+      = ∑ i ∈ Finset.range n, (if memCylL L i w then (2 : ℝ) ^ (n - 1 - i) else 0) := by
+    rw [massNum, listSum_range_map]
+    push_cast
+    exact Finset.sum_congr rfl fun i _ => by by_cases h : memCylL L i w <;> simp [h]
+  rw [hcast, Finset.sum_div]
+  refine Finset.sum_congr rfl fun i hi => ?_
+  have hin : i < n := Finset.mem_range.mp hi
+  have hmem : memCylL L i w = true ↔ atomPoint p i ∈ (cylinder w : Set Cantor) :=
+    memCylL_eq (hL i hin)
+  by_cases h : atomPoint p i ∈ (cylinder w : Set Cantor)
+  · rw [Set.indicator_of_mem h, if_pos (hmem.mpr h), two_pow_div n i hin]
+    simp
+  · rw [Set.indicator_of_notMem h, if_neg (fun hc => h (hmem.mp hc))]
+    simp
+
+/-- **The level-`n` mass approximation.** The code names a rational within `2^-n` of the
+cylinder mass, reading the input only where `useBound` says. -/
+private theorem abs_ratOfCode_massCode_sub_cylMass_le (p : Baire) (w : List Bool) (n : ℕ) :
+    |((ratOfCode (massCode (streamTake p (useBound w n)) w n) : ℚ) : ℝ)
+        - cylMass (calibNu p) w| ≤ (2 : ℝ)⁻¹ ^ n := by
+  have hL : ∀ i, i < n → ∀ m, m ≤ w.length →
+      guessL (streamTake p (useBound w n)) i m = atomGuess p i m :=
+    fun _ hi _ hm => guessL_streamTake hi hm
+  rw [ratOfCode_massCode]
+  push_cast
+  rw [← headE_toReal_eq hL]
+  exact abs_headE_sub_cylMass_le p w n
+
 end ComputableAnalysis
