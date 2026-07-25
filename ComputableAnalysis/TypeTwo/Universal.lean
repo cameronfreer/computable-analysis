@@ -383,6 +383,74 @@ theorem exists_prefixChainCode {b₀ : ℕ → ℕ} {b₁ b₂ : ℕ → ℕ →
     eval_pair_some (eval_id F n) e₂
   rw [eval_comp_some p₃, hG]
 
+/-! ### Least-witness search over a prefix test -/
+
+/-- **The search test.** At coordinate `a` and search index `k`, the oracle-free postprocessor
+`g` is applied to the packed pair of `(a, k)` with the prefix of `F` of length
+`b (Nat.pair a k) (F 0)`. **Zero means success** — the convention is fixed here and every caller
+inherits it. -/
+def SearchSuccess (b : ℕ → ℕ → ℕ) (g : ℕ → ℕ) (F : Baire) (a k : ℕ) : Prop :=
+  g (Nat.pair (Nat.pair a k) (encode (streamTake F (b (Nat.pair a k) (F 0))))) = 0
+
+instance (b : ℕ → ℕ → ℕ) (g : ℕ → ℕ) (F : Baire) (a k : ℕ) :
+    Decidable (SearchSuccess b g F a k) := by
+  unfold SearchSuccess
+  infer_instance
+
+/-- **Least-witness search over a primitive recursive predicate on an adaptively bounded oracle
+prefix.** The partial counterpart of `exists_prefixPostCode`: one oracle code returns, at
+coordinate `a`, the least search index passing the test — and returns nothing when no index
+passes.
+
+The specification is two-way, so callers get both directions they need: the value is *exactly*
+the least witness, and the code converges *exactly* when a witness exists.
+
+This builder handles search mechanics only. Callers supply `b` (the adaptive prefix length),
+`g` (the test, zero meaning success), and prove for themselves that a witness exists and that
+the witness means what they want it to mean. -/
+theorem exists_prefixSearchCode {b : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
+    (hb : Primrec₂ b) (hg : Primrec g) :
+    ∃ c : OracleCode,
+      (∀ (F : Baire) (a k : ℕ),
+        k ∈ c.eval F a ↔ SearchSuccess b g F a k ∧ ∀ j < k, ¬ SearchSuccess b g F a j) ∧
+      ∀ (F : Baire) (a : ℕ), (c.eval F a).Dom ↔ ∃ k, SearchSuccess b g F a k := by
+  obtain ⟨body, hbody⟩ := exists_prefixPostCode hb hg
+  have hpred : ∀ (F : Baire) (a k : ℕ),
+      ((fun x => decide (x = 0)) <$> body.eval F (Nat.pair a k))
+        = Part.some (decide (g (Nat.pair (Nat.pair a k)
+            (encode (streamTake F (b (Nat.pair a k) (F 0))))) = 0)) := by
+    intro F a k
+    rw [hbody F (Nat.pair a k)]
+    simp
+  have hmem : ∀ (F : Baire) (a k : ℕ),
+      k ∈ (OracleCode.rfind body).eval F a ↔
+        SearchSuccess b g F a k ∧ ∀ j < k, ¬ SearchSuccess b g F a j := by
+    intro F a k
+    rw [eval_rfind, Nat.mem_rfind]
+    constructor
+    · rintro ⟨hk, hmin⟩
+      rw [hpred F a k] at hk
+      refine ⟨of_decide_eq_true (Part.mem_some_iff.mp hk).symm, fun j hj => ?_⟩
+      have hj' := hmin hj
+      rw [hpred F a j] at hj'
+      exact of_decide_eq_false (Part.mem_some_iff.mp hj').symm
+    · rintro ⟨hk, hmin⟩
+      refine ⟨?_, @fun j hj => ?_⟩
+      · rw [hpred F a k]
+        exact Part.mem_some_iff.mpr (decide_eq_true hk).symm
+      · rw [hpred F a j]
+        exact Part.mem_some_iff.mpr (decide_eq_false (hmin j hj)).symm
+  refine ⟨OracleCode.rfind body, hmem, fun F a => ?_⟩
+  constructor
+  · intro hdom
+    obtain ⟨k, hk⟩ := Part.dom_iff_mem.mp hdom
+    exact ⟨k, ((hmem F a k).mp hk).1⟩
+  · rintro ⟨k, hk⟩
+    classical
+    have hex : ∃ k, SearchSuccess b g F a k := ⟨k, hk⟩
+    exact Part.dom_iff_mem.mpr ⟨Nat.find hex,
+      (hmem F a _).mpr ⟨Nat.find_spec hex, fun j hj => Nat.find_min hex hj⟩⟩
+
 end OracleCode
 
 end ComputableAnalysis

@@ -1063,31 +1063,6 @@ private theorem exists_calibK :
   · rw [← jointOfCantor_calibNu p q hLim]
     exact hkname
 
-/-! ### A prefix search builder
-
-The postprocessor has to scan the decoded stream for the `n`-th separator, which no
-bounded-prefix builder can do. This is the partial counterpart of
-`OracleCode.exists_prefixPostCode`: the least `k` passing an oracle-free primitive recursive
-test on a prefix, converging exactly where a witness exists. It is kept private here because
-the decoding below is its only consumer; if a second one appears it belongs beside the
-builders it completes, in `TypeTwo/Universal.lean`. -/
-
-private theorem exists_prefixSearchCode {b : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
-    (hb : Primrec₂ b) (hg : Primrec g) :
-    ∃ c : OracleCode, ∀ (F : Baire) (a k : ℕ),
-      g (Nat.pair (Nat.pair a k) (encode (streamTake F (b (Nat.pair a k) (F 0))))) = 0 →
-      (∀ j, j < k →
-        g (Nat.pair (Nat.pair a j) (encode (streamTake F (b (Nat.pair a j) (F 0))))) ≠ 0) →
-      c.eval F a = Part.some k := by
-  obtain ⟨body, hbody⟩ := OracleCode.exists_prefixPostCode hb hg
-  refine ⟨OracleCode.rfind body, fun F a k hk hmin => ?_⟩
-  rw [OracleCode.eval_rfind]
-  refine Part.eq_some_iff.mpr (Nat.mem_rfind.mpr ⟨?_, @fun m hm => ?_⟩)
-  · rw [hbody F (Nat.pair a k)]
-    simpa [Nat.unpair_pair] using hk
-  · rw [hbody F (Nat.pair a m)]
-    simpa [Nat.unpair_pair] using hmin m hm
-
 /-! ### Separator positions
 
 **The pinned convention.** The search test inspects coordinates `0 … k` through
@@ -1268,7 +1243,7 @@ private theorem exists_unaryDecodeCode :
         (Primrec.succ.comp ((Primrec.fst.comp Primrec.unpair).comp
           (Primrec.fst.comp Primrec.unpair))))
       (Primrec.const 0) (Primrec.const 1)
-  obtain ⟨S, hS⟩ := exists_prefixSearchCode hb hg
+  obtain ⟨S, hSiff, _⟩ := exists_prefixSearchCode hb hg
   obtain ⟨predC, hpred⟩ := exists_ofNatFnCode (g := fun v => v - 1)
     (Primrec.nat_sub.comp Primrec.id (Primrec.const 1)).to_comp
   obtain ⟨combineC, hcombine⟩ := exists_ofNatFnCode
@@ -1286,10 +1261,10 @@ private theorem exists_unaryDecodeCode :
   -- the search finds exactly the `n`-th separator
   have hsearch : ∀ n : ℕ, S.eval w n = Part.some (sepPos q n) := by
     intro n
-    refine hS w n (sepPos q n) ?_ fun j hj => ?_
-    · simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
+    refine Part.eq_some_iff.mpr ((hSiff w n (sepPos q n)).mpr ⟨?_, fun j hj => ?_⟩)
+    · simp only [SearchSuccess, Nat.unpair_pair, Denumerable.ofNat_encode]
       exact if_pos (countF_sepPos hw n)
-    · simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
+    · simp only [SearchSuccess, Nat.unpair_pair, Denumerable.ofNat_encode]
       have hle := countF_le_of_lt_sepPos hw hj
       have hne : ¬ (countF (streamTake w (j + 1)) = n + 1) := by omega
       simp [hne]
