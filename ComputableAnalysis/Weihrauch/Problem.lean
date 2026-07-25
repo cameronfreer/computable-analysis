@@ -114,4 +114,20 @@ the existence of a computable total extensional selection `X → Y`, which is st
 stronger for multivalued problems. -/
 def ComputableProblem (f : Problem X Y) : Prop := ∃ c : OracleCode, f.Realizes c.evalStream
 
+/-- **A computable problem returns a computable answer on every computable in-domain
+input.** The realizer converges there because the input is in the domain, and its stream
+value on a computable name is itself computable
+(`OracleCode.computable_of_mem_evalStream`), so the answer it names is a computable point.
+
+For a multivalued problem this is the operative consequence: it does not select a canonical
+answer, it produces *some* accepted one. Contrapositively, exhibiting a computable in-domain
+input none of whose accepted answers is computable refutes computability of the problem. -/
+theorem ComputableProblem.exists_computablePoint_accepts {f : Problem X Y}
+    (hf : ComputableProblem f) {x : X} (hx : X.rep.ComputablePoint x) (hdom : f.Dom x) :
+    ∃ y, Y.rep.ComputablePoint y ∧ f.accepts x y := by
+  obtain ⟨c, hc⟩ := hf
+  obtain ⟨p, hp, hpx⟩ := hx
+  obtain ⟨q, hq, y, hqy, hacc⟩ := hc p x hpx hdom
+  exact ⟨y, ⟨q, OracleCode.computable_of_mem_evalStream hp hq, hqy⟩, hacc⟩
+
 end ComputableAnalysis

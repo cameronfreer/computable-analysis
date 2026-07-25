@@ -1985,4 +1985,23 @@ theorem condition_noncomputable :
   ⟨condJoint, computablePoint_condJoint, condDom,
     fun f hf hacc => no_computable_accepted f hf hacc⟩
 
+/-- **Conditioning is not a computable problem.** No oracle machine takes names of joint
+laws to names of accepted conditional versions.
+
+This is the operational form of `condition_noncomputable`, and for a multivalued problem it
+is the stronger reading: the claim is not that some chosen canonical conditioning map fails
+to be computable, but that no machine can uniformly return *even one* accepted version. A
+realizer would converge on the witness's computable name, and its stream value there would be
+computable, so it would exhibit a computable accepted version — which the witness has none of.
+
+The scope is the repository's output representation: advice-realizable conditional maps taken
+modulo the acceptance relation. A differently represented quotient of measurable kernels would
+need its own transfer theorem. -/
+theorem not_computableProblem_condition :
+    ¬ ComputableProblem (Condition cantorPresentation cantorPresentation) := by
+  intro hc
+  obtain ⟨μ, hμ, hdom, hnone⟩ := condition_noncomputable
+  obtain ⟨f, hf, hacc⟩ := hc.exists_computablePoint_accepts hμ hdom
+  exact hnone f hf hacc
+
 end ComputableAnalysis

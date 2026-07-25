@@ -218,6 +218,7 @@ Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
 | 40 | Cantor Dirac decoder (representation level) | done |
 | 41 | Part C1 lower headline: lim_le_disintegrate | done |
 | 42 | Part C1 upper headline: disintegrate_le_lim | reopened — the pointwise-ball route is falsified; see the units 38–42 appendix |
+| — | Rider: `ComputableProblem.exists_computablePoint_accepts` + `not_computableProblem_condition` — the operational form of unit 36 | done |
 | — | Part C2: basis-parameterized/measurable disintegration (computable Vitali data) | deferred — own signature review |
 
 ## Signatures appendix (grows before each review stop)

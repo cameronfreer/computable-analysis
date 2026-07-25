@@ -321,7 +321,10 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.primrecPred_ratLt,
    ``ComputableAnalysis.exists_diracDecodeCode,
    -- Unit 41 (Part C1, lower half): the calibration lower bound
-   ``ComputableAnalysis.lim_le_disintegrate]
+   ``ComputableAnalysis.lim_le_disintegrate,
+   -- Rider: computable problems return computable answers; conditioning is not computable
+   ``ComputableAnalysis.ComputableProblem.exists_computablePoint_accepts,
+   ``ComputableAnalysis.not_computableProblem_condition]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
