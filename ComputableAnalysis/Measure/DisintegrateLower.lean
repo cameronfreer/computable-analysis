@@ -810,4 +810,184 @@ private theorem abs_ratOfCode_massCode_sub_cylMass_le (p : Baire) (w : List Bool
   rw [← headE_toReal_eq hL]
   exact abs_headE_sub_cylMass_le p w n
 
+/-! ### Fold-shaped executable twins
+
+`List.sum`, `List.any` and `List.all` are the semantic forms the estimates above are stated
+in. The primitive-recursion witnesses go through these fold-shaped twins, each tied to its
+semantic form by an agreement lemma, so no definition is duplicated without a bridge. -/
+
+private def foldSum (l : List ℕ) : ℕ := l.foldr (fun a b => a + b) 0
+
+private theorem foldSum_eq : ∀ l : List ℕ, foldSum l = l.sum
+  | [] => rfl
+  | a :: l => by
+      have ih := foldSum_eq l
+      unfold foldSum at ih ⊢
+      rw [List.foldr_cons, List.sum_cons, ih]
+
+private theorem primrec_foldSum : Primrec foldSum :=
+  Primrec.list_foldr Primrec.id (Primrec.const 0)
+    ((Primrec.nat_add.comp (Primrec.fst.comp Primrec.snd) (Primrec.snd.comp Primrec.snd)).to₂)
+
+private def foldAny (f : ℕ → Bool) (l : List ℕ) : Bool := l.foldr (fun a b => f a || b) false
+
+private theorem foldAny_eq (f : ℕ → Bool) : ∀ l : List ℕ, foldAny f l = l.any f
+  | [] => rfl
+  | a :: l => by
+      have ih := foldAny_eq f l
+      unfold foldAny at ih ⊢
+      rw [List.foldr_cons, List.any_cons, ih]
+
+private theorem primrec_foldAny {α : Type*} [Primcodable α] {l : α → List ℕ} {p : α → ℕ → Bool}
+    (hl : Primrec l) (hp : Primrec₂ p) : Primrec fun a => foldAny (p a) (l a) :=
+  Primrec.list_foldr hl (Primrec.const false)
+    ((Primrec.or.comp (hp.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
+      (Primrec.snd.comp Primrec.snd)).to₂)
+
+private def foldAll (f : ℕ → Bool) (l : List ℕ) : Bool := l.foldr (fun a b => f a && b) true
+
+private theorem foldAll_eq (f : ℕ → Bool) : ∀ l : List ℕ, foldAll f l = l.all f
+  | [] => rfl
+  | a :: l => by
+      have ih := foldAll_eq f l
+      unfold foldAll at ih ⊢
+      rw [List.foldr_cons, List.all_cons, ih]
+
+private theorem primrec_foldAll {α : Type*} [Primcodable α] {l : α → List ℕ} {p : α → ℕ → Bool}
+    (hl : Primrec l) (hp : Primrec₂ p) : Primrec fun a => foldAll (p a) (l a) :=
+  Primrec.list_foldr hl (Primrec.const true)
+    ((Primrec.and.comp (hp.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
+      (Primrec.snd.comp Primrec.snd)).to₂)
+
+/-! ### The primitive recursion witnesses
+
+The coded layer is sealed while the witnesses are built: without this the unifier unfolds
+the fold bodies during composition and the elaboration explodes. -/
+
+attribute [local irreducible] guessL cumL encL atomL memCylL massNum massCode useBound
+
+private theorem primrec_baseWord : Primrec baseWord :=
+  Primrec.list_append.comp primrec_denseWord (Primrec.const [true])
+
+private theorem primrec_shellIdx : Primrec shellIdx :=
+  Primrec.list_findIdx primrec_baseWord Primrec.snd
+
+private theorem primrec_guessL :
+    Primrec fun v : (List ℕ × ℕ) × ℕ => guessL v.1.1 v.1.2 v.2 := by
+  refine ((Primrec.list_getD 0).comp (Primrec.fst.comp Primrec.fst)
+    (Primrec₂.natPair.comp Primrec.snd
+      (primrec_shellIdx.comp (Primrec.snd.comp Primrec.fst)))).of_eq fun v => ?_
+  rw [guessL]
+
+private theorem primrec_cumL : Primrec fun v : (List ℕ × ℕ) × ℕ => cumL v.1.1 v.1.2 v.2 := by
+  have hmap : Primrec fun v : (List ℕ × ℕ) × ℕ =>
+      (List.range v.2).map fun m => guessL v.1.1 v.1.2 m :=
+    Primrec.list_map (Primrec.list_range.comp Primrec.snd)
+      ((primrec_guessL.comp ((Primrec.fst.comp Primrec.fst).pair Primrec.snd)).to₂)
+  refine (Primrec.nat_add.comp Primrec.snd (primrec_foldSum.comp hmap)).of_eq fun v => ?_
+  rw [cumL, foldSum_eq]
+
+private theorem primrec_encL : Primrec fun v : (List ℕ × ℕ) × ℕ => encL v.1.1 v.1.2 v.2 := by
+  have hcum : Primrec fun w : ((List ℕ × ℕ) × ℕ) × ℕ => cumL w.1.1.1 w.1.1.2 w.2 :=
+    primrec_cumL.comp ((Primrec.fst.comp Primrec.fst).pair Primrec.snd)
+  have hg : Primrec fun w : ((List ℕ × ℕ) × ℕ) × ℕ => guessL w.1.1.1 w.1.1.2 w.2 :=
+    primrec_guessL.comp ((Primrec.fst.comp Primrec.fst).pair Primrec.snd)
+  have hj : Primrec fun w : ((List ℕ × ℕ) × ℕ) × ℕ => w.1.2 := Primrec.snd.comp Primrec.fst
+  have hpred : Primrec₂ fun (v : (List ℕ × ℕ) × ℕ) (n : ℕ) =>
+      decide (cumL v.1.1 v.1.2 n ≤ v.2 ∧ v.2 < cumL v.1.1 v.1.2 n + guessL v.1.1 v.1.2 n) := by
+    have hp : PrimrecPred fun w : ((List ℕ × ℕ) × ℕ) × ℕ =>
+        cumL w.1.1.1 w.1.1.2 w.2 ≤ w.1.2 ∧
+          w.1.2 < cumL w.1.1.1 w.1.1.2 w.2 + guessL w.1.1.1 w.1.1.2 w.2 :=
+      PrimrecPred.and (Primrec.nat_le.comp hcum hj)
+        (Primrec.nat_lt.comp hj (Primrec.nat_add.comp hcum hg))
+    obtain ⟨_, hp'⟩ := hp
+    exact Primrec.of_eq hp' fun _ => by simp
+  refine (primrec_foldAny (Primrec.list_range.comp (Primrec.succ.comp Primrec.snd))
+    hpred).of_eq fun v => ?_
+  rw [encL, foldAny_eq]
+
+private theorem primrec_atomL : Primrec fun v : (List ℕ × ℕ) × ℕ => atomL v.1.1 v.1.2 v.2 := by
+  have hhalf : Primrec fun v : (List ℕ × ℕ) × ℕ => v.2 / 2 :=
+    Primrec.nat_div.comp Primrec.snd (Primrec.const 2)
+  have heven : Primrec fun v : (List ℕ × ℕ) × ℕ =>
+      (baseWord v.1.2).getD (v.2 / 2) false :=
+    (Primrec.list_getD false).comp (primrec_baseWord.comp (Primrec.snd.comp Primrec.fst)) hhalf
+  have hodd : Primrec fun v : (List ℕ × ℕ) × ℕ => encL v.1.1 v.1.2 (v.2 / 2) :=
+    primrec_encL.comp (Primrec.fst.pair hhalf)
+  refine (Primrec.ite
+    (Primrec.eq.comp (Primrec.nat_mod.comp Primrec.snd (Primrec.const 2)) (Primrec.const 0))
+    heven hodd).of_eq fun v => ?_
+  rw [atomL]
+
+private theorem primrec_memCylL :
+    Primrec fun v : (List ℕ × ℕ) × List Bool => memCylL v.1.1 v.1.2 v.2 := by
+  have hatom : Primrec fun x : ((List ℕ × ℕ) × List Bool) × ℕ =>
+      atomL x.1.1.1 x.1.1.2 x.2 :=
+    primrec_atomL.comp ((Primrec.fst.comp Primrec.fst).pair Primrec.snd)
+  have hgetd : Primrec fun x : ((List ℕ × ℕ) × List Bool) × ℕ =>
+      x.1.2.getD x.2 false :=
+    (Primrec.list_getD false).comp (Primrec.snd.comp Primrec.fst) Primrec.snd
+  refine (primrec_foldAll (Primrec.list_range.comp (Primrec.list_length.comp Primrec.snd))
+    (Primrec.to₂ (Primrec.beq.comp hatom hgetd))).of_eq fun v => ?_
+  rw [memCylL, foldAll_eq]
+
+/-- Powers of two, primitively. (A private re-derivation; the same fact is private to
+`WeakRepresentation`, and is on the issue #6 consolidation list.) -/
+private theorem primrec_pow2 : Primrec fun k : ℕ => 2 ^ k := by
+  have h : Primrec fun k : ℕ =>
+      Nat.rec (motive := fun _ => ℕ) 1 (fun _ ih => 2 * ih) k :=
+    Primrec.nat_rec' Primrec.id (Primrec.const 1)
+      ((Primrec.nat_mul.comp (Primrec.const 2) (Primrec.snd.comp Primrec.snd)).to₂)
+  refine h.of_eq fun k => ?_
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+      rw [show Nat.rec (motive := fun _ => ℕ) 1 (fun _ ih => 2 * ih) (k + 1)
+        = 2 * Nat.rec (motive := fun _ => ℕ) 1 (fun _ ih => 2 * ih) k from rfl, ih,
+        pow_succ, Nat.mul_comm]
+
+private theorem primrec_massNum :
+    Primrec fun v : (List ℕ × List Bool) × ℕ => massNum v.1.1 v.1.2 v.2 := by
+  have hmem : Primrec fun x : ((List ℕ × List Bool) × ℕ) × ℕ =>
+      memCylL x.1.1.1 x.2 x.1.1.2 :=
+    primrec_memCylL.comp
+      (((Primrec.fst.comp (Primrec.fst.comp Primrec.fst)).pair Primrec.snd).pair
+        (Primrec.snd.comp (Primrec.fst.comp Primrec.fst)))
+  have hwt : Primrec fun x : ((List ℕ × List Bool) × ℕ) × ℕ =>
+      (2 : ℕ) ^ (x.1.2 - 1 - x.2) :=
+    primrec_pow2.comp
+      (Primrec.nat_sub.comp
+        (Primrec.nat_sub.comp (Primrec.snd.comp Primrec.fst) (Primrec.const 1))
+        Primrec.snd)
+  have hstep : Primrec fun x : ((List ℕ × List Bool) × ℕ) × ℕ =>
+      if memCylL x.1.1.1 x.2 x.1.1.2 then (2 : ℕ) ^ (x.1.2 - 1 - x.2) else 0 := by
+    refine (Primrec.cond hmem hwt (Primrec.const 0)).of_eq fun x => ?_
+    by_cases h : memCylL x.1.1.1 x.2 x.1.1.2 <;> simp [h]
+  refine (primrec_foldSum.comp
+    (Primrec.list_map (Primrec.list_range.comp Primrec.snd) hstep.to₂)).of_eq fun v => ?_
+  rw [massNum, foldSum_eq]
+
+private theorem primrec_massCode :
+    Primrec fun v : (List ℕ × List Bool) × ℕ => massCode v.1.1 v.1.2 v.2 := by
+  refine (Primrec₂.natPair.comp (Primrec₂.natPair.comp primrec_massNum (Primrec.const 0))
+    (Primrec.nat_sub.comp (primrec_pow2.comp Primrec.snd) (Primrec.const 1))).of_eq fun v => ?_
+  rw [massCode]
+
+private theorem primrec_useBound : Primrec fun v : List Bool × ℕ => useBound v.1 v.2 := by
+  have hinner : Primrec₂ fun (v : List Bool × ℕ) (i : ℕ) =>
+      (List.range (v.1.length + 1)).map fun m => Nat.pair m (shellIdx i) + 1 :=
+    (Primrec.list_map
+      (Primrec.list_range.comp (Primrec.succ.comp (Primrec.list_length.comp
+        (Primrec.fst.comp Primrec.fst))))
+      ((Primrec.succ.comp (Primrec₂.natPair.comp Primrec.snd
+        (primrec_shellIdx.comp (Primrec.snd.comp Primrec.fst)))).to₂)).to₂
+  have hflat : Primrec fun v : List Bool × ℕ =>
+      (List.range v.2).flatMap fun i =>
+        (List.range (v.1.length + 1)).map fun m => Nat.pair m (shellIdx i) + 1 :=
+    Primrec.list_flatMap (Primrec.list_range.comp Primrec.snd) hinner
+  refine (Primrec.list_foldr hflat (Primrec.const 0)
+    ((Primrec.nat_max.comp (Primrec.fst.comp Primrec.snd)
+      (Primrec.snd.comp Primrec.snd)).to₂)).of_eq fun v => ?_
+  rw [useBound]
+
 end ComputableAnalysis
