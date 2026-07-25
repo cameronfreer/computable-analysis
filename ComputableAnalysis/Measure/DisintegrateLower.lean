@@ -1243,4 +1243,73 @@ private theorem countF_le_of_lt_sepPos {w q : Baire}
           omega
         rw [hgap, countF_sepPos hw n]
 
+/-! ### The block decoder -/
+
+private theorem primrec_countF : Primrec countF :=
+  Primrec.list_foldr Primrec.id (Primrec.const 0)
+    ((Primrec.nat_add.comp
+      (Primrec.ite (Primrec.eq.comp (Primrec.fst.comp Primrec.snd) (Primrec.const 1))
+        (Primrec.const 0) (Primrec.const 1))
+      (Primrec.snd.comp Primrec.snd)).to₂)
+
+/-- **The block decoder.** One code recovers the Baire point from any `cantorRep` name of
+its unary encoding: search for the `n`-th separator, then read block `n` as the gap to its
+predecessor. -/
+private theorem exists_unaryDecodeCode :
+    ∃ c : OracleCode, ∀ w q : Baire,
+      (∀ k, w k = 1 ↔ unaryEncode q k = true) → q ∈ c.evalStream w := by
+  have hb : Primrec₂ fun (coord : ℕ) (_ : ℕ) => coord.unpair.2 + 1 :=
+    (Primrec.succ.comp ((Primrec.snd.comp Primrec.unpair).comp Primrec.fst)).to₂
+  have hg : Primrec fun v : ℕ =>
+      if countF (ofNat (List ℕ) v.unpair.2) = v.unpair.1.unpair.1 + 1 then 0 else 1 :=
+    Primrec.ite
+      (Primrec.eq.comp (primrec_countF.comp
+          ((Primrec.ofNat (List ℕ)).comp (Primrec.snd.comp Primrec.unpair)))
+        (Primrec.succ.comp ((Primrec.fst.comp Primrec.unpair).comp
+          (Primrec.fst.comp Primrec.unpair))))
+      (Primrec.const 0) (Primrec.const 1)
+  obtain ⟨S, hS⟩ := exists_prefixSearchCode hb hg
+  obtain ⟨predC, hpred⟩ := exists_ofNatFnCode (g := fun v => v - 1)
+    (Primrec.nat_sub.comp Primrec.id (Primrec.const 1)).to_comp
+  obtain ⟨combineC, hcombine⟩ := exists_ofNatFnCode
+    (g := fun v => if v.unpair.1 = 0 then v.unpair.2.unpair.1
+      else v.unpair.2.unpair.1 - v.unpair.2.unpair.2 - 1)
+    (Primrec.ite (Primrec.eq.comp (Primrec.fst.comp Primrec.unpair) (Primrec.const 0))
+      ((Primrec.fst.comp Primrec.unpair).comp (Primrec.snd.comp Primrec.unpair))
+      (Primrec.nat_sub.comp
+        (Primrec.nat_sub.comp
+          ((Primrec.fst.comp Primrec.unpair).comp (Primrec.snd.comp Primrec.unpair))
+          ((Primrec.snd.comp Primrec.unpair).comp (Primrec.snd.comp Primrec.unpair)))
+        (Primrec.const 1))).to_comp
+  refine ⟨.comp combineC (.pair OracleCode.id
+    (.pair (.comp S OracleCode.id) (.comp S predC))), fun w q hw => ?_⟩
+  -- the search finds exactly the `n`-th separator
+  have hsearch : ∀ n : ℕ, S.eval w n = Part.some (sepPos q n) := by
+    intro n
+    refine hS w n (sepPos q n) ?_ fun j hj => ?_
+    · simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
+      exact if_pos (countF_sepPos hw n)
+    · simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
+      have hle := countF_le_of_lt_sepPos hw hj
+      have hne : ¬ (countF (streamTake w (j + 1)) = n + 1) := by omega
+      simp [hne]
+  refine OracleCode.mem_evalStream.mpr fun n => ?_
+  have hid : (OracleCode.id : OracleCode).eval w n = Part.some n := OracleCode.eval_id w n
+  have h1 : (OracleCode.comp S OracleCode.id).eval w n = Part.some (sepPos q n) :=
+    (OracleCode.eval_comp_some hid).trans (hsearch n)
+  have h2 : (OracleCode.comp S predC).eval w n = Part.some (sepPos q (n - 1)) :=
+    (OracleCode.eval_comp_some (hpred w n)).trans (hsearch (n - 1))
+  have h3 : (OracleCode.pair (.comp S OracleCode.id) (.comp S predC)).eval w n
+      = Part.some (Nat.pair (sepPos q n) (sepPos q (n - 1))) :=
+    OracleCode.eval_pair_some h1 h2
+  have h4 : (OracleCode.pair OracleCode.id
+      (.pair (.comp S OracleCode.id) (.comp S predC))).eval w n
+      = Part.some (Nat.pair n (Nat.pair (sepPos q n) (sepPos q (n - 1)))) :=
+    OracleCode.eval_pair_some hid h3
+  rw [OracleCode.eval_comp_some h4, hcombine]
+  refine Part.mem_some_iff.mpr ?_
+  cases n with
+  | zero => simpa using gap_zero q
+  | succ m => simpa using gap_succ q m
+
 end ComputableAnalysis
