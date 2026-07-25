@@ -1063,4 +1063,29 @@ private theorem exists_calibK :
   · rw [← jointOfCantor_calibNu p q hLim]
     exact hkname
 
+/-! ### A prefix search builder
+
+The postprocessor has to scan the decoded stream for the `n`-th separator, which no
+bounded-prefix builder can do. This is the partial counterpart of
+`OracleCode.exists_prefixPostCode`: the least `k` passing an oracle-free primitive recursive
+test on a prefix, converging exactly where a witness exists. It is kept private here because
+the decoding below is its only consumer; if a second one appears it belongs beside the
+builders it completes, in `TypeTwo/Universal.lean`. -/
+
+private theorem exists_prefixSearchCode {b : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
+    (hb : Primrec₂ b) (hg : Primrec g) :
+    ∃ c : OracleCode, ∀ (F : Baire) (a k : ℕ),
+      g (Nat.pair (Nat.pair a k) (encode (streamTake F (b (Nat.pair a k) (F 0))))) = 0 →
+      (∀ j, j < k →
+        g (Nat.pair (Nat.pair a j) (encode (streamTake F (b (Nat.pair a j) (F 0))))) ≠ 0) →
+      c.eval F a = Part.some k := by
+  obtain ⟨body, hbody⟩ := OracleCode.exists_prefixPostCode hb hg
+  refine ⟨OracleCode.rfind body, fun F a k hk hmin => ?_⟩
+  rw [OracleCode.eval_rfind]
+  refine Part.eq_some_iff.mpr (Nat.mem_rfind.mpr ⟨?_, @fun m hm => ?_⟩)
+  · rw [hbody F (Nat.pair a k)]
+    simpa [Nat.unpair_pair] using hk
+  · rw [hbody F (Nat.pair a m)]
+    simpa [Nat.unpair_pair] using hmin m hm
+
 end ComputableAnalysis
