@@ -1088,4 +1088,70 @@ private theorem exists_prefixSearchCode {b : ℕ → ℕ → ℕ} {g : ℕ → �
   · rw [hbody F (Nat.pair a m)]
     simpa [Nat.unpair_pair] using hmin m hm
 
+/-! ### Separator positions
+
+**The pinned convention.** The search test inspects coordinates `0 … k` through
+`streamTake · (k + 1)`, so the least successful *search index* for block `n` is `sepPos q n`
+itself — the `−1` conversion happens once, inside the test's prefix length, and nowhere
+else. The block lengths are then read off as gaps between consecutive separators. -/
+
+/-- The position of the `n`-th separator of `unaryEncode q`. -/
+private def sepPos (q : Baire) (n : ℕ) : ℕ := unaryCum q n + q n
+
+private theorem sepPos_zero (q : Baire) : sepPos q 0 = q 0 := by
+  rw [sepPos, show unaryCum q 0 = 0 from rfl, Nat.zero_add]
+
+private theorem sepPos_succ (q : Baire) (n : ℕ) :
+    sepPos q (n + 1) = sepPos q n + 1 + q (n + 1) := by
+  rw [sepPos, sepPos, unaryCum_succ]
+
+private theorem sepPos_strictMono (q : Baire) : StrictMono (sepPos q) :=
+  strictMono_nat_of_lt_succ fun n => by rw [sepPos_succ]; omega
+
+/-- **The gap equations.** Block `0` ends at the first separator, and every later block is
+the gap between consecutive separators. -/
+private theorem gap_zero (q : Baire) : q 0 = sepPos q 0 := (sepPos_zero q).symm
+
+private theorem gap_succ (q : Baire) (n : ℕ) :
+    q (n + 1) = sepPos q (n + 1) - sepPos q n - 1 := by
+  rw [sepPos_succ]
+  omega
+
+private theorem unaryEncode_sepPos (q : Baire) (n : ℕ) : unaryEncode q (sepPos q n) = false :=
+  unaryEncode_apply_sep q n
+
+/-- The separators are exactly the `false` positions: every coordinate lies in some block or
+is that block's separator. -/
+private theorem exists_sepPos_of_false {q : Baire} {j : ℕ} (h : unaryEncode q j = false) :
+    ∃ m, j = sepPos q m := by
+  have hP0 : unaryCum q 0 ≤ j := Nat.zero_le j
+  set m := Nat.findGreatest (fun m => unaryCum q m ≤ j) j with hm
+  have hmle : unaryCum q m ≤ j :=
+    Nat.findGreatest_spec (P := fun m => unaryCum q m ≤ j) (Nat.zero_le j) hP0
+  have hnext : j < unaryCum q (m + 1) := by
+    by_cases hle : m + 1 ≤ j
+    · have hng := Nat.findGreatest_is_greatest (by omega : m < m + 1) hle
+      omega
+    · have hmj : m ≤ j := Nat.findGreatest_le j
+      have hcum := le_unaryCum q (m + 1)
+      omega
+  rw [unaryCum_succ] at hnext
+  refine ⟨m, ?_⟩
+  by_contra hne
+  have hlt : j < unaryCum q m + q m := by
+    rw [sepPos] at hne
+    omega
+  have hin := unaryEncode_apply_mem q m (j - unaryCum q m) (by omega)
+  rw [show unaryCum q m + (j - unaryCum q m) = j from by omega] at hin
+  rw [hin] at h
+  exact Bool.noConfusion h
+
+/-- Coordinates that are not separators sit inside a block, hence are `true`. -/
+private theorem unaryEncode_eq_true_of_ne_sepPos {q : Baire} {j : ℕ}
+    (h : ∀ m, j ≠ sepPos q m) : unaryEncode q j = true := by
+  rcases Bool.eq_false_or_eq_true (unaryEncode q j) with hj | hj
+  · exact hj
+  · obtain ⟨m, hm⟩ := exists_sepPos_of_false hj
+    exact absurd hm (h m)
+
 end ComputableAnalysis
