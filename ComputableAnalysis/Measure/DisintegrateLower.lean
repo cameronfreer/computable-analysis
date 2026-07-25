@@ -990,4 +990,77 @@ private theorem primrec_useBound : Primrec fun v : List Bool × ℕ => useBound 
       (Primrec.snd.comp Primrec.snd)).to₂)).of_eq fun v => ?_
   rw [useBound]
 
+/-! ### The preprocessor `K`
+
+One fixed code emits the cylinder-mass name of the calibration measure from the input, and
+one fixed realizer from `computableMap_jointOfCantor` turns that into the weak name of the
+joint law on the product. Neither depends on the input, so the composite is a single code
+uniform in `p`. -/
+
+/-- Names of the unit interval, unpacked into rational approximation (re-derived here
+because the copy in `Real.lean` is private to that file). -/
+private theorem unitIntervalRep_names_iff' {r : Baire} {x : Set.Icc (0 : ℝ) 1} :
+    unitIntervalRep.Names r x ↔
+      ∀ n : ℕ, |((ratOfCode (r n) : ℚ) : ℝ) - x.val| ≤ (2 : ℝ)⁻¹ ^ n := by
+  constructor
+  · intro h n
+    have h1 : realPresentation.NamesPoint r x.val :=
+      realPresentation.cauchyRep_names_iff.mp (Representation.subtype_names_iff.mp h)
+    have := h1 n
+    rwa [Real.dist_eq] at this
+  · intro h
+    refine Representation.subtype_names_iff.mpr
+      (realPresentation.cauchyRep_names_iff.mpr fun n => ?_)
+    rw [Real.dist_eq]
+    exact h n
+
+/-- **The cylinder-mass name of the calibration measure**, from the input alone. -/
+private theorem exists_calibMassCode :
+    ∃ c : OracleCode, ∀ p : Baire, ∃ F ∈ c.evalStream p, MeasureNames F (calibNu p) := by
+  have hb : Primrec₂ fun (v : ℕ) (_ : ℕ) =>
+      useBound (denseWord v.unpair.1) v.unpair.2 :=
+    (primrec_useBound.comp
+      ((primrec_denseWord.comp
+        ((Primrec.fst.comp Primrec.unpair).comp Primrec.fst)).pair
+        ((Primrec.snd.comp Primrec.unpair).comp Primrec.fst))).to₂
+  have hg : Primrec fun v : ℕ =>
+      massCode (ofNat (List ℕ) v.unpair.2) (denseWord v.unpair.1.unpair.1)
+        v.unpair.1.unpair.2 := by
+    have hcoord : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
+    exact primrec_massCode.comp
+      ((((Primrec.ofNat (List ℕ)).comp (Primrec.snd.comp Primrec.unpair)).pair
+        (primrec_denseWord.comp (Primrec.fst.comp (Primrec.unpair.comp hcoord)))).pair
+        (Primrec.snd.comp (Primrec.unpair.comp hcoord)))
+  obtain ⟨c, hc⟩ := OracleCode.exists_prefixPostCode hb hg
+  refine ⟨c, fun p => ?_⟩
+  refine ⟨fun v => massCode (streamTake p (useBound (denseWord v.unpair.1) v.unpair.2))
+      (denseWord v.unpair.1) v.unpair.2, ?_, ?_⟩
+  · refine OracleCode.mem_evalStream.mpr fun v => ?_
+    rw [hc p v]
+    refine Part.mem_some_iff.mpr ?_
+    rw [Nat.unpair_pair, Denumerable.ofNat_encode]
+  · intro s
+    refine unitIntervalRep_names_iff'.mpr fun n => ?_
+    simp only [Nat.unpair_pair, denseWord_encode]
+    exact abs_ratOfCode_massCode_sub_cylMass_le p s n
+
+/-- **The preprocessor.** A single code sends the `Lim` input to a weak name of the
+calibration joint law on the product — the same code for every input, and the limit is
+nowhere in it. -/
+private theorem exists_calibK :
+    ∃ K : OracleCode, ∀ (p q : Baire) (hLim : Lim.accepts p q),
+      ∃ k ∈ K.evalStream p,
+        (weakMeasureRep (cantorPresentation.prod cantorPresentation)).Names k
+          (calibJoint p q calibBase hLim) := by
+  obtain ⟨c, hc⟩ := exists_calibMassCode
+  obtain ⟨c₂, hc₂⟩ := computableMap_jointOfCantor
+  refine ⟨c₂.subst c, fun p q hLim => ?_⟩
+  obtain ⟨F, hF, hFname⟩ := hc p
+  obtain ⟨k, hk, hkname⟩ := hc₂ F (calibNu p) (cantorMeasureRep_names_iff.mpr hFname)
+  refine ⟨k, ?_, ?_⟩
+  · rw [OracleCode.evalStream_subst hF]
+    exact hk
+  · rw [← jointOfCantor_calibNu p q hLim]
+    exact hkname
+
 end ComputableAnalysis
