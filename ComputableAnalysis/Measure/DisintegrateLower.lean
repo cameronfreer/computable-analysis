@@ -524,4 +524,219 @@ private theorem jointOfCantor_calibNu (p q : Baire) (hLim : Lim.accepts p q) :
     simp
   · rw [Set.indicator_of_notMem h, Set.indicator_of_notMem fun hc => h (hmem.mpr hc)]
 
+/-! ### Reading the atoms off a finite prefix of the input
+
+At precision `n` only the atoms `i < n` are inspected, and each of those reads the input at
+finitely many places determined by the cylinder word and `n`. These are the prefix forms of
+the atom coordinates, together with the agreement lemmas that identify them with the real
+thing once the prefix is long enough. -/
+
+private theorem listSum_range_map {M : Type*} [AddCommMonoid M] (f : ℕ → M) (k : ℕ) :
+    ((List.range k).map f).sum = ∑ i ∈ Finset.range k, f i := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [List.range_succ, List.map_append, List.sum_append, ih,
+      Finset.sum_range_succ]; simp
+
+/-- Cumulative block starts in closed form. -/
+private theorem unaryCum_eq_sum (g : Baire) (n : ℕ) :
+    unaryCum g n = n + ∑ m ∈ Finset.range n, g m := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [unaryCum_succ, ih, Finset.sum_range_succ]; omega
+
+private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
+    (streamTake p m).getD j 0 = p j := by
+  rw [List.getD_eq_getElem _ _ (by simpa using h), getElem_streamTake]
+
+/-- The stage-`m` guess of atom `i`, read off a prefix of the input. -/
+private def guessL (L : List ℕ) (i m : ℕ) : ℕ := L.getD (Nat.pair m (shellIdx i)) 0
+
+/-- Cumulative block starts of atom `i`'s guess, from a prefix. -/
+private def cumL (L : List ℕ) (i n : ℕ) : ℕ := n + ((List.range n).map (guessL L i)).sum
+
+/-- Coordinate `j` of the encoded guess of atom `i`, from a prefix. -/
+private def encL (L : List ℕ) (i j : ℕ) : Bool :=
+  (List.range (j + 1)).any fun n => decide (cumL L i n ≤ j ∧ j < cumL L i n + guessL L i n)
+
+/-- Coordinate `k` of atom `i`, from a prefix: the base word on the even track, the encoded
+guess on the odd track. -/
+private def atomL (L : List ℕ) (i k : ℕ) : Bool :=
+  if k % 2 = 0 then (baseWord i).getD (k / 2) false else encL L i (k / 2)
+
+/-- Whether atom `i` lies in the cylinder of `w`, from a prefix. -/
+private def memCylL (L : List ℕ) (i : ℕ) (w : List Bool) : Bool :=
+  (List.range w.length).all fun k => atomL L i k == w.getD k false
+
+private theorem any_congr_mem {f g : ℕ → Bool} :
+    ∀ {l : List ℕ}, (∀ n ∈ l, f n = g n) → l.any f = l.any g
+  | [], _ => rfl
+  | a :: l, h => by
+      rw [List.any_cons, List.any_cons, h a List.mem_cons_self,
+        any_congr_mem fun c hc => h c (List.mem_cons_of_mem _ hc)]
+
+private theorem all_congr_mem {f g : ℕ → Bool} :
+    ∀ {l : List ℕ}, (∀ n ∈ l, f n = g n) → l.all f = l.all g
+  | [], _ => rfl
+  | a :: l, h => by
+      rw [List.all_cons, List.all_cons, h a List.mem_cons_self,
+        all_congr_mem fun c hc => h c (List.mem_cons_of_mem _ hc)]
+
+private theorem cumL_eq {L : List ℕ} {p : Baire} {i j : ℕ}
+    (hL : ∀ m, m ≤ j → guessL L i m = atomGuess p i m) {n : ℕ} (hn : n ≤ j) :
+    cumL L i n = unaryCum (atomGuess p i) n := by
+  rw [cumL, unaryCum_eq_sum, listSum_range_map]
+  congr 1
+  exact Finset.sum_congr rfl fun m hm =>
+    hL m (le_trans (le_of_lt (Finset.mem_range.mp hm)) hn)
+
+private theorem encL_eq {L : List ℕ} {p : Baire} {i j : ℕ}
+    (hL : ∀ m, m ≤ j → guessL L i m = atomGuess p i m) :
+    encL L i j = unaryEncode (atomGuess p i) j := by
+  rw [encL, unaryEncode]
+  refine any_congr_mem fun n hn => ?_
+  have hnj : n ≤ j := Nat.lt_succ_iff.mp (List.mem_range.mp hn)
+  rw [cumL_eq hL hnj, hL n hnj]
+
+private theorem atomL_eq {L : List ℕ} {p : Baire} {i k : ℕ}
+    (hL : ∀ m, m ≤ k → guessL L i m = atomGuess p i m) :
+    atomL L i k = atomPoint p i k := by
+  rw [atomL, atomPoint, Cantor.interleave]
+  by_cases hk : k % 2 = 0
+  · rw [if_pos hk, if_pos hk, baseAtom_eq_wordPoint, wordPoint_apply]
+  · rw [if_neg hk, if_neg hk]
+    exact encL_eq fun m hm => hL m (le_trans hm (Nat.div_le_self k 2))
+
+private theorem memCylL_eq {L : List ℕ} {p : Baire} {i : ℕ} {w : List Bool}
+    (hL : ∀ m, m ≤ w.length → guessL L i m = atomGuess p i m) :
+    memCylL L i w = true ↔ atomPoint p i ∈ (cylinder w : Set Cantor) := by
+  have hstep : ∀ k ∈ List.range w.length,
+      (atomL L i k == w.getD k false) = (decide (atomPoint p i k = w.getD k false)) := by
+    intro k hk
+    rw [atomL_eq fun m hm => hL m (le_trans hm (le_of_lt (List.mem_range.mp hk)))]
+    cases atomPoint p i k <;> cases w.getD k false <;> simp
+  rw [memCylL, all_congr_mem hstep, List.all_eq_true]
+  constructor
+  · intro h k hk
+    have := of_decide_eq_true (h k (List.mem_range.mpr hk))
+    rwa [List.getD_eq_getElem _ _ hk] at this
+  · intro h k hk
+    have hk' := List.mem_range.mp hk
+    rw [decide_eq_true_iff, List.getD_eq_getElem _ _ hk']
+    exact h k hk'
+
+/-! ### The oracle use bound
+
+At precision `n` the mass of the cylinder of `w` inspects atoms `i < n`, and atom `i` reads
+the input only at `Nat.pair m (shellIdx i)` for `m ≤ w.length`. That is a finite set of
+places determined by `w` and `n` alone. -/
+
+private theorem le_foldr_max : ∀ {l : List ℕ} {x : ℕ}, x ∈ l → x ≤ l.foldr max 0
+  | [], _, h => absurd h (by simp)
+  | a :: l, x, h => by
+      rcases List.mem_cons.mp h with rfl | h'
+      · exact le_max_left _ _
+      · exact le_trans (le_foldr_max h') (le_max_right _ _)
+
+/-- The prefix of the input that the level-`n` mass of the cylinder of `w` reads. -/
+private def useBound (w : List Bool) (n : ℕ) : ℕ :=
+  ((List.range n).flatMap fun i =>
+    (List.range (w.length + 1)).map fun m => Nat.pair m (shellIdx i) + 1).foldr max 0
+
+private theorem lt_useBound {w : List Bool} {n i m : ℕ} (hi : i < n) (hm : m ≤ w.length) :
+    Nat.pair m (shellIdx i) < useBound w n := by
+  refine lt_of_lt_of_le (Nat.lt_succ_self _) (le_foldr_max ?_)
+  exact List.mem_flatMap.mpr ⟨i, List.mem_range.mpr hi,
+    List.mem_map.mpr ⟨m, List.mem_range.mpr (by omega), rfl⟩⟩
+
+private theorem guessL_streamTake {p : Baire} {w : List Bool} {n i : ℕ} (hi : i < n)
+    {m : ℕ} (hm : m ≤ w.length) :
+    guessL (streamTake p (useBound w n)) i m = atomGuess p i m := by
+  rw [guessL, streamTake_getD p (lt_useBound hi hm), atomGuess]
+
+/-! ### The exact cylinder-mass approximation
+
+The mass of a cylinder under the atomic measure is a geometric series whose `i`-th term is
+either `2^-(i+1)` or `0`. Keeping the atoms `i < n` leaves a tail bounded by exactly `2^-n`,
+and the retained part is a dyadic multiple of `2^-n`. -/
+
+private theorem tsum_split (f : ℕ → ℝ≥0∞) (n : ℕ) :
+    ∑' i, f i = (∑ i ∈ Finset.range n, f i) + ∑' i, f (i + n) := by
+  have hpt : ∀ i, f i = (if i < n then f i else 0) + (if i < n then 0 else f i) := by
+    intro i; by_cases h : i < n <;> simp [h]
+  have hsupp : Function.support (fun i => if i < n then (0 : ℝ≥0∞) else f i) ⊆
+      Set.range (fun j : ℕ => j + n) := by
+    intro i hi
+    by_cases h : i < n
+    · exact absurd (by simp [h] : (if i < n then (0 : ℝ≥0∞) else f i) = 0) hi
+    · exact ⟨i - n, Nat.sub_add_cancel (Nat.le_of_not_lt h)⟩
+  rw [tsum_congr hpt, ENNReal.tsum_add]
+  congr 1
+  · refine (tsum_eq_sum (s := Finset.range n) (f := fun a => if a < n then f a else 0)
+      fun b hb => if_neg (by simpa using hb)).trans ?_
+    exact Finset.sum_congr rfl fun i hi => if_pos (Finset.mem_range.mp hi)
+  · rw [← Function.Injective.tsum_eq (g := fun j : ℕ => j + n)
+      (fun a b h => Nat.add_right_cancel h) hsupp]
+    exact tsum_congr fun j => if_neg (by omega)
+
+private theorem tsum_tail_half (n : ℕ) :
+    ∑' i : ℕ, (2 : ℝ≥0∞)⁻¹ ^ (i + n + 1) = (2 : ℝ≥0∞)⁻¹ ^ n := by
+  have hpt : ∀ i : ℕ, (2 : ℝ≥0∞)⁻¹ ^ (i + n + 1) = (2 : ℝ≥0∞)⁻¹ ^ n * (2 : ℝ≥0∞)⁻¹ ^ (i + 1) := by
+    intro i
+    rw [← pow_add]
+    ring_nf
+  rw [tsum_congr hpt, ENNReal.tsum_mul_left, tsum_ehalf_one, mul_one]
+
+/-- The retained part of the mass: the atoms `i < n` that lie in the cylinder. -/
+private noncomputable def headE (p : Baire) (w : List Bool) (n : ℕ) : ℝ≥0∞ :=
+  ∑ i ∈ Finset.range n,
+    (2 : ℝ≥0∞)⁻¹ ^ (i + 1) * (cylinder w : Set Cantor).indicator 1 (atomPoint p i)
+
+private theorem measure_cylinder_calibNu (p : Baire) (w : List Bool) :
+    calibNuM p (cylinder w)
+      = ∑' i, (2 : ℝ≥0∞)⁻¹ ^ (i + 1) *
+          (cylinder w : Set Cantor).indicator 1 (atomPoint p i) := by
+  rw [calibNuM, Measure.sum_apply _ (measurableSet_cylinder w)]
+  exact tsum_congr fun i => by
+    rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ (measurableSet_cylinder w)]
+
+/-- **The truncation estimate**: dropping the atoms past `n` costs exactly `2^-n`. -/
+private theorem abs_headE_sub_cylMass_le (p : Baire) (w : List Bool) (n : ℕ) :
+    |(headE p w n).toReal - cylMass (calibNu p) w| ≤ (2 : ℝ)⁻¹ ^ n := by
+  set f : ℕ → ℝ≥0∞ := fun i =>
+    (2 : ℝ≥0∞)⁻¹ ^ (i + 1) * (cylinder w : Set Cantor).indicator 1 (atomPoint p i) with hf
+  have hbound : ∀ i, f i ≤ (2 : ℝ≥0∞)⁻¹ ^ (i + 1) := by
+    intro i
+    have hind : (cylinder w : Set Cantor).indicator (1 : Cantor → ℝ≥0∞) (atomPoint p i)
+        ≤ 1 := by
+      by_cases h : atomPoint p i ∈ (cylinder w : Set Cantor)
+      · rw [Set.indicator_of_mem h]; simp
+      · rw [Set.indicator_of_notMem h]; exact zero_le_one
+    calc f i = (2 : ℝ≥0∞)⁻¹ ^ (i + 1) *
+          (cylinder w : Set Cantor).indicator 1 (atomPoint p i) := rfl
+      _ ≤ (2 : ℝ≥0∞)⁻¹ ^ (i + 1) * 1 := by gcongr
+      _ = (2 : ℝ≥0∞)⁻¹ ^ (i + 1) := mul_one _
+  have htotal : calibNuM p (cylinder w) = ∑' i, f i := measure_cylinder_calibNu p w
+  have hsplit : (∑' i, f i) = headE p w n + ∑' i, f (i + n) := tsum_split f n
+  have htail : (∑' i, f (i + n)) ≤ (2 : ℝ≥0∞)⁻¹ ^ n := by
+    refine le_of_le_of_eq (ENNReal.tsum_le_tsum fun i => hbound (i + n)) ?_
+    exact tsum_tail_half n
+  have hfin : calibNuM p (cylinder w) ≠ ⊤ := measure_ne_top _ _
+  have hheadfin : headE p w n ≠ ⊤ := by
+    refine ne_top_of_le_ne_top hfin ?_
+    rw [htotal, hsplit]
+    exact le_self_add
+  have htailfin : (∑' i, f (i + n)) ≠ ⊤ :=
+    ne_top_of_le_ne_top (by simp) htail
+  have hmass : cylMass (calibNu p) w = (headE p w n).toReal + (∑' i, f (i + n)).toReal := by
+    rw [cylMass, show (calibNu p).toMeasure = calibNuM p from rfl, htotal, hsplit,
+      ENNReal.toReal_add hheadfin htailfin]
+  rw [hmass]
+  have hnonneg : 0 ≤ (∑' i, f (i + n)).toReal := ENNReal.toReal_nonneg
+  have hle : (∑' i, f (i + n)).toReal ≤ (2 : ℝ)⁻¹ ^ n := by
+    have := ENNReal.toReal_mono (by simp) htail
+    simpa using this
+  rw [abs_le]
+  constructor <;> linarith
+
 end ComputableAnalysis
