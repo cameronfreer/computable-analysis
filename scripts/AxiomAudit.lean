@@ -319,7 +319,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_limTableCode,
    -- Unit 40: the Cantor Dirac decoder (and the coded-comparison builder it needs)
    ``ComputableAnalysis.primrecPred_ratLt,
-   ``ComputableAnalysis.exists_diracDecodeCode]
+   ``ComputableAnalysis.exists_diracDecodeCode,
+   -- Unit 41 (Part C1, lower half): the calibration lower bound
+   ``ComputableAnalysis.lim_le_disintegrate]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

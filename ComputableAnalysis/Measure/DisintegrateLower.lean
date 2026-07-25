@@ -1312,4 +1312,115 @@ private theorem exists_unaryDecodeCode :
   | zero => simpa using gap_zero q
   | succ m => simpa using gap_succ q m
 
+/-! ### The postprocessor `H`
+
+Four fixed codes in sequence: the constant name of `0^ω`, the advised evaluator, the Dirac
+decoder of unit 40, and the block decoder. The limit enters only the correctness proof — the
+code itself depends on nothing but the kernel-answer name it is handed. -/
+
+/-- The fixed name of the accumulation point: every coordinate decodes to the empty word,
+whose dense point is `0^ω` exactly. -/
+private def zeroName : Baire := fun _ => encode ([] : List Bool)
+
+private theorem wordPoint_nil : wordPoint ([] : List Bool) = (fun _ => false : Cantor) := by
+  funext n
+  rw [wordPoint_apply]
+  rfl
+
+private theorem zeroName_names :
+    cantorPresentation.cauchyRep.Names zeroName (fun _ => false : Cantor) := by
+  refine cantorPresentation.cauchyRep_names_iff.mpr fun n => ?_
+  have hdense : cantorPresentation.dense (zeroName n) = (fun _ => false : Cantor) := by
+    rw [zeroName]
+    change densePoint (encode ([] : List Bool)) = _
+    rw [densePoint, denseWord_encode, wordPoint_nil]
+  rw [hdense, dist_self]
+  positivity
+
+/-- **The postprocessor.** A single code sends the accepted kernel's name to the limit
+stream: evaluate at `0^ω`, decode the resulting Dirac measure, read off the blocks. -/
+private theorem exists_calibH :
+    ∃ H : OracleCode, ∀ (p q : Baire) (hLim : Lim.accepts p q) (a : Baire),
+      (continuousKernelSpace cantorPresentation cantorPresentation).rep.Names a
+          (calibPoint p q hLim) →
+        ∃ qo ∈ H.evalStream a, baireRep.Names qo q := by
+  obtain ⟨e, he⟩ := computableMap_funRep_eval cantorPresentation.cauchyRep
+    (weakMeasureRep cantorPresentation)
+  obtain ⟨D, hD⟩ := exists_diracDecodeCode
+  obtain ⟨Dec, hDec⟩ := exists_unaryDecodeCode
+  refine ⟨Dec.subst (D.subst (e.subst (OracleCode.pairCode .query
+    (OracleCode.const (encode ([] : List Bool)))))), fun p q hLim a ha => ?_⟩
+  -- the interleaved argument: the answer on the even track, the fixed zero name on the odd
+  have hquery : a ∈ (OracleCode.query : OracleCode).evalStream a :=
+    OracleCode.mem_evalStream.mpr fun n => by
+      rw [OracleCode.eval_query]; exact Part.mem_some _
+  have hconst : zeroName ∈ (OracleCode.const (encode ([] : List Bool))).evalStream a :=
+    OracleCode.mem_evalStream.mpr fun n => by
+      rw [OracleCode.eval_const]; exact Part.mem_some _
+  have hpair : Baire.interleave a zeroName ∈
+      (OracleCode.pairCode .query (OracleCode.const (encode ([] : List Bool)))).evalStream a :=
+    OracleCode.pairCode_spec hquery hconst
+  have hprod : ((funRep cantorPresentation.cauchyRep
+      (weakMeasureRep cantorPresentation)).prod cantorPresentation.cauchyRep).Names
+      (Baire.interleave a zeroName)
+      ((calibPoint p q hLim).val, (fun _ => false : Cantor)) := by
+    refine Representation.prod_names_iff.mpr ⟨?_, ?_⟩
+    · rw [Baire.evenPart_interleave]
+      exact Representation.subtype_names_iff.mp ha
+    · rw [Baire.oddPart_interleave]
+      exact zeroName_names
+  obtain ⟨out, hout, houtname⟩ := he _ _ hprod
+  -- the value at the accumulation point is exactly the Dirac measure at the encoded limit
+  have hval : (calibPoint p q hLim).val.toFun (fun _ => false : Cantor)
+      = diracProba (unaryEncode q) :=
+    ProbabilityMeasure.toMeasure_injective (by
+      rw [calibPoint_toMeasure, encodingMap_allFalse]
+      rfl)
+  obtain ⟨w, hw, hwname⟩ := hD out (unaryEncode q) (by rw [← hval]; exact houtname)
+  -- a `cantorRep` name reads the bits of the encoding
+  obtain ⟨hle, hmem⟩ := hwname
+  have heq : (fun n => w n == 1) = unaryEncode q := hmem
+  have hbits : ∀ k, w k = 1 ↔ unaryEncode q k = true := by
+    intro k
+    have hk := congrFun heq k
+    constructor
+    · intro h; rw [← hk, h]; rfl
+    · intro h; rw [← hk] at h; simpa using h
+  refine ⟨q, ?_, Part.mem_some q⟩
+  rw [OracleCode.evalStream_subst (OracleCode.evalStream_subst
+    (OracleCode.evalStream_subst hpair ▸ hout) ▸ hw)]
+  exact hDec w q hbits
+
+/-! ### The headline -/
+
+/-- **The calibration lower bound.** `Lim` strong-Weihrauch reduces to continuous
+disintegration on `Cantor × Cantor`: an oracle for the disintegration operator answers the
+limit problem.
+
+The preprocessor sends the `Lim` input to a weak name of the calibration joint law, which it
+can do from the input alone because the base measure is atomic on finite shells, where the
+encoding map reads a guess with no limit in it. The postprocessor evaluates whatever kernel
+the oracle returns at the accumulation point and reads the limit off the resulting Dirac
+measure. Correctness rests on the accepted output being unique
+(`disintegrate_accepts_unique`, under the full-support hypothesis supplied by
+`calibBase_support`), which pins the oracle's answer to `calibPoint`. Neither half of the
+pair sees the other's data, which is what makes the reduction strong. -/
+theorem lim_le_disintegrate :
+    Lim ≤sW Disintegrate cantorPresentation cantorPresentation := by
+  haveI : Nonempty Cantor := ⟨fun _ => false⟩
+  obtain ⟨K, hK⟩ := exists_calibK
+  obtain ⟨H, hH⟩ := exists_calibH
+  refine strongReduction_iff_exists_reductionPair.mpr ⟨K, H, fun p x hpx hdom => ?_⟩
+  obtain rfl : x = p := baireRep_names_iff.mp hpx
+  obtain ⟨q, hq⟩ := hdom
+  obtain ⟨k, hkK, hkname⟩ := hK x q hq
+  refine ⟨k, hkK, calibJoint x q calibBase hq, hkname,
+    ⟨calibPoint x q hq, calibPoint_accepts x q calibBase hq calibBase_support⟩,
+    fun a y' hay' hacc => ?_⟩
+  have huniq : y' = calibPoint x q hq :=
+    disintegrate_accepts_unique hacc (calibPoint_accepts x q calibBase hq calibBase_support)
+  subst huniq
+  obtain ⟨qo, hqoH, hqoname⟩ := hH x q hq a hay'
+  exact ⟨qo, hqoH, q, hqoname, hq⟩
+
 end ComputableAnalysis

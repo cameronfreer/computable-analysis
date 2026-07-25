@@ -216,7 +216,7 @@ Conditioning phase (issue #5; shared architecture + parts frozen 2026-07-24):
 | 38 | Head-cons function-space name emitter | done |
 | 39 | Generic reduce-to-Lim input/jump table | done |
 | 40 | Cantor Dirac decoder (representation level) | done |
-| 41 | Part C1 lower headline: lim_le_disintegrate | — |
+| 41 | Part C1 lower headline: lim_le_disintegrate | done |
 | 42 | Part C1 upper headline: disintegrate_le_lim | reopened — the pointwise-ball route is falsified; see the units 38–42 appendix |
 | — | Part C2: basis-parameterized/measurable disintegration (computable Vitali data) | deferred — own signature review |
 
@@ -1121,6 +1121,23 @@ theorem lim_le_disintegrate :
   -- consumes the accepted kernel name alone — it evaluates at a fixed name, decodes the
   -- resulting Dirac measure through unit 40, and reads the limit off block by block.
   -- Uniqueness of the accepted output is `disintegrate_accepts_unique`.
+  --
+  -- ROUTE AS BUILT (better than the frozen plan, which called for a Lévy–Prokhorov estimate
+  -- with a new second-coordinate prefix term): K needs no LP argument at all. The joint law
+  -- is the interleaving image of an atomic Cantor measure (jointOfCantor_calibNu), so K
+  -- emits EXACT CYLINDER MASSES — at precision n only the atoms i < n are inspected, the
+  -- omitted geometric tail is bounded by exactly 2^-n, the retained sum is a dyadic multiple
+  -- of 2^-n, and the oracle use is bounded uniformly from the cylinder word and n — and then
+  -- composes with the PUBLIC unit 35 bridge `computableMap_jointOfCantor`. CantorJoint's
+  -- private LP machinery is untouched.
+  --
+  -- H reads the limit off separator positions rather than through `unaryDecode`: `sepPos q n`
+  -- is the n-th separator, block 0 is `sepPos q 0` and block n+1 is the gap
+  -- `sepPos q (n+1) - sepPos q n - 1`. Convention pinned once: the search test inspects
+  -- coordinates 0…k via a length-(k+1) prefix, so the least successful search index is
+  -- `sepPos q n` itself. The search needs the partial counterpart of `exists_prefixPostCode`,
+  -- kept PRIVATE here (`exists_prefixSearchCode`) as its only consumer; a promotion candidate
+  -- for TypeTwo/Universal.lean if the upper route becomes a second one.
 
 -- Unit 42 (upper headline `disintegrate_le_lim`): REOPENED at the decomposition review; not
 -- scoped, and deliberately not assigned a module. The theorem itself is not in doubt — it is
