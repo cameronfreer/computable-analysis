@@ -392,6 +392,9 @@ inherits it. -/
 def SearchSuccess (b : ℕ → ℕ → ℕ) (g : ℕ → ℕ) (F : Baire) (a k : ℕ) : Prop :=
   g (Nat.pair (Nat.pair a k) (encode (streamTake F (b (Nat.pair a k) (F 0))))) = 0
 
+/-- Syntactic decidability of the finite packed test — a numeral comparison on a prefix, and
+nothing more. It is emphatically NOT decidability of whatever semantic property the caller is
+certifying with that test; the caller still owes that separately. -/
 instance (b : ℕ → ℕ → ℕ) (g : ℕ → ℕ) (F : Baire) (a k : ℕ) :
     Decidable (SearchSuccess b g F a k) := by
   unfold SearchSuccess
