@@ -1154,4 +1154,93 @@ private theorem unaryEncode_eq_true_of_ne_sepPos {q : Baire} {j : ℕ}
   · obtain ⟨m, hm⟩ := exists_sepPos_of_false hj
     exact absurd hm (h m)
 
+/-! ### Counting separators in a prefix -/
+
+/-- The search test's counter: how many entries of the prefix are not `1`, i.e. how many
+coordinates the decoded stream makes `false`. -/
+private def countF (L : List ℕ) : ℕ := L.foldr (fun a b => (if a = 1 then 0 else 1) + b) 0
+
+private theorem countF_append : ∀ L₁ L₂ : List ℕ, countF (L₁ ++ L₂) = countF L₁ + countF L₂
+  | [], L₂ => by rw [List.nil_append]; unfold countF; rw [List.foldr_nil]; omega
+  | a :: L₁, L₂ => by
+      have ih := countF_append L₁ L₂
+      unfold countF at ih ⊢
+      rw [List.cons_append, List.foldr_cons, List.foldr_cons, ih]
+      omega
+
+private theorem countF_streamTake_succ (w : Baire) (k : ℕ) :
+    countF (streamTake w (k + 1))
+      = countF (streamTake w k) + (if w k = 1 then 0 else 1) := by
+  rw [streamTake_succ, countF_append]
+  congr 1
+
+/-- Over an interval containing no separator the count does not move. -/
+private theorem countF_const_of_no_sep {w q : Baire}
+    (hw : ∀ k, w k = 1 ↔ unaryEncode q k = true) {a : ℕ} :
+    ∀ {b : ℕ}, a ≤ b → (∀ j, a ≤ j → j < b → ∀ m, j ≠ sepPos q m) →
+      countF (streamTake w b) = countF (streamTake w a)
+  | 0, hab, _ => by
+      rw [Nat.le_zero.mp hab]
+  | b + 1, hab, hsep => by
+      rcases Nat.eq_or_lt_of_le hab with heq | hlt
+      · rw [heq]
+      · have hb : a ≤ b := by omega
+        have hprev : countF (streamTake w b) = countF (streamTake w a) :=
+          countF_const_of_no_sep hw hb fun j hj₁ hj₂ => hsep j hj₁ (by omega)
+        have htrue : unaryEncode q b = true :=
+          unaryEncode_eq_true_of_ne_sepPos fun m => hsep b hb (by omega) m
+        rw [countF_streamTake_succ, hprev, if_pos ((hw b).mpr htrue), Nat.add_zero]
+
+/-- At the `n`-th separator the prefix count is exactly `n + 1`. -/
+private theorem countF_sepPos {w q : Baire} (hw : ∀ k, w k = 1 ↔ unaryEncode q k = true) :
+    ∀ n : ℕ, countF (streamTake w (sepPos q n + 1)) = n + 1
+  | 0 => by
+      have hzero : countF (streamTake w (sepPos q 0)) = countF (streamTake w 0) := by
+        refine countF_const_of_no_sep hw (Nat.zero_le _) fun j _ hj m hm => ?_
+        exact absurd (hm ▸ hj) (by simpa using (sepPos_strictMono q).le_iff_le.mpr (Nat.zero_le m))
+      have hsep : ¬ (w (sepPos q 0) = 1) := by
+        rw [hw]
+        rw [unaryEncode_sepPos]
+        exact Bool.noConfusion
+      rw [countF_streamTake_succ, hzero, if_neg hsep]
+      unfold countF
+      rw [streamTake, List.ofFn_zero, List.foldr_nil]
+  | n + 1 => by
+      have hgap : countF (streamTake w (sepPos q (n + 1)))
+          = countF (streamTake w (sepPos q n + 1)) := by
+        refine countF_const_of_no_sep hw (by rw [sepPos_succ]; omega) fun j hj₁ hj₂ m hm => ?_
+        have h1 : sepPos q n < sepPos q m := by omega
+        have h2 : sepPos q m < sepPos q (n + 1) := by omega
+        have hn : n < m := (sepPos_strictMono q).lt_iff_lt.mp h1
+        have hm' : m < n + 1 := (sepPos_strictMono q).lt_iff_lt.mp h2
+        omega
+      have hsep : ¬ (w (sepPos q (n + 1)) = 1) := by
+        rw [hw, unaryEncode_sepPos]
+        exact Bool.noConfusion
+      rw [countF_streamTake_succ, hgap, countF_sepPos hw n, if_neg hsep]
+
+/-- Before the `n`-th separator the prefix count has not yet reached `n + 1`. -/
+private theorem countF_le_of_lt_sepPos {w q : Baire}
+    (hw : ∀ k, w k = 1 ↔ unaryEncode q k = true) :
+    ∀ {n j : ℕ}, j < sepPos q n → countF (streamTake w (j + 1)) ≤ n
+  | 0, j, hj => by
+      have hzero : countF (streamTake w (j + 1)) = countF (streamTake w 0) := by
+        refine countF_const_of_no_sep hw (Nat.zero_le _) fun i _ hi m hm => ?_
+        have : sepPos q 0 ≤ sepPos q m := (sepPos_strictMono q).monotone (Nat.zero_le m)
+        omega
+      rw [hzero]
+      unfold countF
+      rw [streamTake, List.ofFn_zero, List.foldr_nil]
+  | n + 1, j, hj => by
+      rcases lt_or_ge j (sepPos q n) with hlt | hge
+      · exact le_trans (countF_le_of_lt_sepPos hw hlt) (Nat.le_succ n)
+      · have hgap : countF (streamTake w (j + 1)) = countF (streamTake w (sepPos q n + 1)) := by
+          refine countF_const_of_no_sep hw (by omega) fun i hi₁ hi₂ m hm => ?_
+          have h1 : sepPos q n < sepPos q m := by omega
+          have h2 : sepPos q m < sepPos q (n + 1) := by omega
+          have := (sepPos_strictMono q).lt_iff_lt.mp h1
+          have := (sepPos_strictMono q).lt_iff_lt.mp h2
+          omega
+        rw [hgap, countF_sepPos hw n]
+
 end ComputableAnalysis
