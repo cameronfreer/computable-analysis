@@ -124,9 +124,14 @@ private theorem exists_clampStreamCode :
 
 /-- **The two representations of `[0, 1]` agree.** The Cauchy representation induced by
 `unitIntervalPresentation` is computably equivalent to `unitIntervalRep`, so point names
-transfer between them. Both directions are the same coordinatewise `clampCode` realizer, at
-the same rate: clamping only moves a point closer to a target already in `[0, 1]`, so no
-precision shift is needed in either direction. -/
+transfer between them.
+
+The two directions are *not* symmetric. Forward, a presentation name is clamped
+coordinatewise by `clampCode`, landing its dense points in `[0, 1]`. Backward, the name is
+reused unchanged — the realizer is `.query` — because the presentation already interprets
+each coordinate through clamping, so a name good for the underlying real is good as it
+stands. Both hold at the same rate `(2⁻¹)^n` with no precision shift, since clamping only
+moves a point closer to a target that is already in `[0, 1]`. -/
 theorem unitIntervalPresentation_cauchyRep_equiv :
     unitIntervalPresentation.cauchyRep ≡c unitIntervalRep := by
   constructor

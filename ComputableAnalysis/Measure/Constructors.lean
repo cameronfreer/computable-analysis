@@ -30,9 +30,10 @@ law and a computability theorem:
   (`productMeasure_eq_map_prod`) and computable (`computableMap_productMeasure`).
 
 The code-level rational arithmetic (`addCode`, `mulCode`, `clampCode`, …) comes from
-`ComputableAnalysis/Metric/RatCodeArith.lean`; the clamped-approximation estimates are
-still re-derived privately here (they are `private` in
-`ComputableAnalysis/Metric/Real.lean`) and will be consolidated in a later API pass.
+`ComputableAnalysis/Metric/RatCodeArith.lean`, and the clamped-approximation estimates
+(`clamp_mem_Icc`, `clamp_eq_self`, `abs_clamp_sub_clamp_le`) from
+`ComputableAnalysis/Metric/Real.lean`, where they are public; the local copies this module
+once carried have been deleted.
 -/
 
 open MeasureTheory
