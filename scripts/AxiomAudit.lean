@@ -330,6 +330,13 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.bernoulliProduct_toMeasure,
    ``ComputableAnalysis.measurable_bernoulliProduct_toMeasure,
    ``ComputableAnalysis.cylMass_bernoulliProduct_eq_pow,
+   -- The computable metric presentation of [0,1]
+   ``ComputableAnalysis.clamp_mem_Icc,
+   ``ComputableAnalysis.clamp_eq_self,
+   ``ComputableAnalysis.abs_clamp_sub_clamp_le,
+   ``ComputableAnalysis.unitIntervalPresentation,
+   ``ComputableAnalysis.unitIntervalMeasureRep,
+   ``ComputableAnalysis.unitIntervalPresentation_cauchyRep_equiv,
    -- Moments on the unit interval: foundations and determinacy
    ``ComputableAnalysis.moment_mem_unitInterval,
    ``ComputableAnalysis.moment_zero,

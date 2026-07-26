@@ -78,25 +78,6 @@ private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
     (streamTake p m).getD j 0 = p j := by
   rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
 
-/-- The clamped value lies in `[0,1]`. -/
-private theorem clamp_mem_Icc (r : ℝ) : max 0 (min 1 r) ∈ Set.Icc (0 : ℝ) 1 :=
-  ⟨le_max_left _ _, max_le zero_le_one (min_le_left _ _)⟩
-
-/-- Clamping fixes points of `[0,1]`. -/
-private theorem clamp_eq_self {x : ℝ} (hx : x ∈ Set.Icc (0 : ℝ) 1) :
-    max 0 (min 1 x) = x := by
-  rw [min_eq_right hx.2, max_eq_right hx.1]
-
-/-- Clamping is 1-Lipschitz. -/
-private theorem abs_clamp_sub_clamp_le (p q : ℝ) :
-    |max 0 (min 1 p) - max 0 (min 1 q)| ≤ |p - q| := by
-  have h2 : |min 1 p - min 1 q| ≤ |p - q| := by
-    refine (abs_min_sub_min_le_max 1 p 1 q).trans ?_
-    rw [sub_self, abs_zero]
-    exact max_le (abs_nonneg _) le_rfl
-  refine (abs_max_sub_max_le_max 0 (min 1 p) 0 (min 1 q)).trans ?_
-  rw [sub_self, abs_zero]
-  exact max_le (abs_nonneg _) h2
 
 /-- Products of `[0,1]`-families stay in `[0,1]`. -/
 private theorem prod_mem_Icc {k : ℕ} (a : Fin k → ℝ)

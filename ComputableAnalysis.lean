@@ -47,3 +47,4 @@ import ComputableAnalysis.Measure.DiracDecode
 import ComputableAnalysis.Measure.DisintegrateLower
 import ComputableAnalysis.Measure.BernoulliProduct
 import ComputableAnalysis.Measure.HausdorffMoments
+import ComputableAnalysis.Measure.UnitInterval

@@ -301,16 +301,6 @@ private theorem levyProkhorovDist_le_sum_abs {k : ℕ} (x : Fin k → Cantor × 
         add_le_add (measure_mono (self_subset_thickening hε0 B))
           (ENNReal.ofReal_le_ofReal hε.le)
 
-/-- Clamping is 1-Lipschitz. -/
-private theorem abs_clamp_sub_clamp_le (p q : ℝ) :
-    |max 0 (min 1 p) - max 0 (min 1 q)| ≤ |p - q| := by
-  have h2 : |min 1 p - min 1 q| ≤ |p - q| := by
-    refine (abs_min_sub_min_le_max 1 p 1 q).trans ?_
-    rw [sub_self, abs_zero]
-    exact max_le (abs_nonneg _) le_rfl
-  refine (abs_max_sub_max_le_max 0 (min 1 p) 0 (min 1 q)).trans ?_
-  rw [sub_self, abs_zero]
-  exact max_le (abs_nonneg _) h2
 
 /-! ### Word machinery -/
 
