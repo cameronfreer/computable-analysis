@@ -1659,6 +1659,84 @@ section Presentation
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 variable (P : ComputableMetricPresentation X)
 
+
+/-! ### Certified weights: the narrow public interface for masked atomic lower bounds -/
+
+/-- The certified-weight accumulator: the summed weights of the atoms a bitmask certifies.
+The branch is on **zero total raw weight**, not on the list being empty — `atomicOfList` then
+denotes the default Dirac regardless of what atoms are listed, so a masked weight sum would
+overshoot its mass. Returning `zeroCode` there is what makes the bound below unconditional.
+Bits at or beyond the list length are ignored, since the sum runs to `(atomList m).length`. -/
+private def certWtCode (m mask : ℕ) : RatCode :=
+  if ratOfCode zeroCode < ratOfCode (wSumCode (atomList m)) then
+    maskWtSumCode m (atomList m).length mask
+  else zeroCode
+
+private theorem primrec_certWtCode : Primrec₂ certWtCode :=
+  Primrec.ite
+    (primrecPred_ratLt (Primrec.const zeroCode)
+      (primrec_wSumCode.comp (primrec_atomList.comp Primrec.fst)))
+    (primrec_maskWtSumCode.comp
+      (Primrec.fst.pair
+        ((Primrec.list_length.comp (primrec_atomList.comp Primrec.fst)).pair Primrec.snd)))
+    (Primrec.const zeroCode)
+
+omit [BorelSpace X] in
+/-- **Certified weights under-estimate the atomic mass.** One primitive recursive accumulator
+takes an atom-list index and a bitmask of atoms *certified* to lie in `A`, and returns a
+rational code whose value is at most the mass `atomic P m` gives `A`.
+
+This is the interface a realizer needs when it can only decide atom membership
+semidecidably: certifying fewer atoms yields a smaller — still valid — lower bound, so
+positive information alone suffices and no negative membership decision is ever required.
+
+Deliberately narrow: the weight layer this is proved from stays private, and this is the only
+statement about atomic masses exposed. -/
+theorem exists_certifiedWeightCode :
+    ∃ acc : ℕ → ℕ → RatCode, Primrec₂ acc ∧
+      ∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
+        (∀ i, i < (ofNat (List (ℕ × ℕ)) m).length → mask.testBit i = true →
+          P.dense ((ofNat (List (ℕ × ℕ)) m).getD i (0, 0)).1 ∈ A) →
+        ENNReal.ofReal ((ratOfCode (acc m mask) : ℚ) : ℝ) ≤ (atomic P m).toMeasure A := by
+  classical
+  refine ⟨certWtCode, primrec_certWtCode, fun m mask A hA hcert => ?_⟩
+  rw [certWtCode]
+  by_cases hdeg : ratOfCode zeroCode < ratOfCode (wSumCode (atomList m))
+  · rw [if_pos hdeg]
+    have hne : ¬ wSumL (atomList m) = 0 := (wSum_pos_iff m).mp hdeg
+    set l := atomList m with hl
+    -- the atomic mass as a `Fin l.length` sum, then as a `range` sum
+    have hmass : (atomic P m).toMeasure A
+        = ∑ i ∈ Finset.range l.length,
+            ENNReal.ofReal ((atomWt l i : ℚ) : ℝ) *
+              Set.indicator A 1 (P.dense (l.getD i (0, 0)).1) := by
+      rw [show (atomic P m) = atomicOfList P l from rfl,
+        toMeasure_atomicOfList_of_ne P hne, Measure.finsetSum_apply]
+      rw [← Fin.sum_univ_eq_sum_range
+        (fun i => ENNReal.ofReal ((atomWt l i : ℚ) : ℝ) *
+          Set.indicator A 1 (P.dense (l.getD i (0, 0)).1)) l.length]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hA, atomWt, if_neg hne,
+        List.getD_eq_getElem _ _ i.2]
+      rfl
+    rw [hmass, ratOfCode_maskWtSumCode]
+    have hnn : ∀ i ∈ Finset.range l.length,
+        (0 : ℝ) ≤ ((if mask.testBit i = true then atomWt l i else 0 : ℚ) : ℝ) := by
+      intro i _
+      by_cases hb : mask.testBit i = true
+      · rw [if_pos hb]; exact_mod_cast atomWt_nonneg l i
+      · rw [if_neg hb]; norm_num
+    rw [Rat.cast_sum, ENNReal.ofReal_sum_of_nonneg hnn]
+    refine Finset.sum_le_sum fun i hi => ?_
+    by_cases hb : mask.testBit i = true
+    · have hmem : P.dense (l.getD i (0, 0)).1 ∈ A := hcert i (Finset.mem_range.mp hi) hb
+      rw [if_pos hb, Set.indicator_of_mem hmem]
+      simp
+    · rw [if_neg hb]
+      simp
+  · rw [if_neg hdeg, ratOfCode_zeroCode]
+    simp
+
 omit [MeasurableSpace X] [BorelSpace X] in
 /-- **The fully coded form of the witnessed strict finite condition** between two
 decoded atomics at a coded threshold: subset tables as bounded bitmasks, rational-sum

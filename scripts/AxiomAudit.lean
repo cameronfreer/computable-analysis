@@ -322,6 +322,8 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_diracDecodeCode,
    -- Unit 41 (Part C1, lower half): the calibration lower bound
    ``ComputableAnalysis.lim_le_disintegrate,
+   -- Rider: certified weights under-estimate the atomic mass (unit 42 prerequisite)
+   ``ComputableAnalysis.exists_certifiedWeightCode,
    -- Rider: the least-witness prefix search builder, promoted on its second consumer
    ``ComputableAnalysis.OracleCode.exists_prefixSearchCode,
    -- Rider: computable problems return computable answers; conditioning is not computable
