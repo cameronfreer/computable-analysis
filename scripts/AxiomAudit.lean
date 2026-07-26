@@ -336,6 +336,10 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.isCompletelyMonotone_moment,
    ``ComputableAnalysis.eq_of_forall_moment_eq,
    ``ComputableAnalysis.moment_injective,
+   -- The moment-sequence representation
+   ``ComputableAnalysis.momentNames_unique,
+   ``ComputableAnalysis.hausdorffMomentRep,
+   ``ComputableAnalysis.hausdorffMomentRep_names_iff,
    -- Rider: certified weights under-estimate the atomic mass (unit 42 prerequisite)
    ``ComputableAnalysis.exists_certifiedWeightCode,
    -- Rider: the least-witness prefix search builder, promoted on its second consumer

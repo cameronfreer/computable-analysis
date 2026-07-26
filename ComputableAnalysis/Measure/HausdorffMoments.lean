@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.Metric.Real
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
@@ -27,7 +28,9 @@ sequence is realized by some measure — is a genuinely separate classical theor
 needed by anything downstream of this module, since the representations built on moments have
 *measures* as their carrier and so only ever need names for measures that already exist.
 
-Everything in this module is classical analysis; no computability content enters.
+The module closes with `hausdorffMomentRep`, the representation of a measure by a packed
+family of names of all its moments. Determinacy is exactly what makes that a representation:
+it is what forces a moment name to determine its measure.
 -/
 
 namespace ComputableAnalysis
@@ -147,5 +150,57 @@ theorem eq_of_forall_moment_eq {η ν : ProbabilityMeasure (Set.Icc (0 : ℝ) 1)
 /-- Moment determinacy, as injectivity of the moment sequence map. -/
 theorem moment_injective : Function.Injective moment :=
   fun _ _ h => eq_of_forall_moment_eq (congrFun h)
+
+/-! ### The moment-sequence representation -/
+
+/-- A moment name of `η` packs, at slice `n`, a `[0, 1]`-name of the `n`-th moment; slices are
+indexed by `Nat.pair`, matching the repository's packing convention. -/
+def MomentNames (F : Baire) (η : ProbabilityMeasure (Set.Icc (0 : ℝ) 1)) : Prop :=
+  ∀ n : ℕ,
+    unitIntervalRep.Names (fun k => F (Nat.pair n k)) ⟨moment η n, moment_mem_unitInterval η n⟩
+
+/-- A moment name determines its measure: names of reals are single-valued, so the two
+measures share every moment, and moments are determining. -/
+theorem momentNames_unique {F : Baire} {η ν : ProbabilityMeasure (Set.Icc (0 : ℝ) 1)}
+    (hη : MomentNames F η) (hν : MomentNames F ν) : η = ν :=
+  eq_of_forall_moment_eq fun n =>
+    congrArg Subtype.val (Representation.names_unique (hη n) (hν n))
+
+/-- **The moment-sequence representation**: a name is a packed family of `[0, 1]`-names of all
+moments. Genuinely partial (convention 2) — a stream naming no measure denotes nothing, and
+there is no default measure.
+
+The carrier is *measures*, so surjectivity only ever needs names for measures that already
+exist; nothing here asserts that an arbitrary completely monotone sequence is realized. -/
+noncomputable def hausdorffMomentRep :
+    Representation (ProbabilityMeasure (Set.Icc (0 : ℝ) 1)) where
+  rep F := ⟨∃ η, MomentNames F η, fun h => h.choose⟩
+  onto η := by
+    classical
+    have hname : ∀ n : ℕ, ∃ p : Baire,
+        unitIntervalRep.Names p ⟨moment η n, moment_mem_unitInterval η n⟩ :=
+      fun n => unitIntervalRep.onto _
+    set g : ℕ → Baire := fun n => (hname n).choose with hg
+    refine ⟨fun z => g z.unpair.1 z.unpair.2, ?_⟩
+    have hM : MomentNames (fun z => g z.unpair.1 z.unpair.2) η := by
+      intro n
+      have hslice : (fun k => g (Nat.pair n k).unpair.1 (Nat.pair n k).unpair.2) = g n := by
+        funext k
+        rw [Nat.unpair_pair]
+      rw [hslice, hg]
+      exact (hname n).choose_spec
+    exact ⟨⟨η, hM⟩, momentNames_unique (Exists.choose_spec _) hM⟩
+
+/-- Names of the moment representation are exactly moment names — the chosen witness stays
+hidden behind determinacy. -/
+@[simp]
+theorem hausdorffMomentRep_names_iff {F : Baire}
+    {η : ProbabilityMeasure (Set.Icc (0 : ℝ) 1)} :
+    hausdorffMomentRep.Names F η ↔ MomentNames F η := by
+  constructor
+  · rintro ⟨hex, rfl⟩
+    exact hex.choose_spec
+  · intro h
+    exact ⟨⟨η, h⟩, momentNames_unique (Exists.choose_spec _) h⟩
 
 end ComputableAnalysis
