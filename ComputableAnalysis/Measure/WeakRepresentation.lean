@@ -20,6 +20,11 @@ topology on `ProbabilityMeasure X` (unit 27):
   finite weighted sums of Dirac measures at dense points, with a total decoding scheme
   (an index decodes to a list of `(dense-index, weight-code)` pairs; weights are clamped
   to `[0,1]` and renormalized; zero total weight defaults to `dirac (P.dense 0)`).
+  The decoder carries a public specification — `clampedWeight`, `clampedWeightSum`,
+  `clampedWeight_eq_ratOfCode_clampCode`, `atomic_encode_eq_atomicOfList` and the two
+  branch equations `toMeasure_atomicOfList_of_ne_zero` /
+  `toMeasure_atomicOfList_of_eq_zero` — so that a weak name can be *constructed* outside
+  this file, not only consumed.
 * `exists_atomic_close` — generic Lévy–Prokhorov density of the atomics: the
   first-dense-point cell decomposition, finite truncation by countable additivity (no
   tightness theorem), and rational-weight perturbation.
@@ -49,18 +54,31 @@ open MeasureTheory Metric Encodable Denumerable
 
 /-! ### The total atomic decoding: clamped weights of a decoded atom list -/
 
-/-- The clamped rational weight of a weight code. -/
-private def wRaw (c : ℕ) : ℚ := max 0 (min 1 (ratOfCode c))
+/-- The clamped rational weight of a weight code: the atomic decoder reads the second
+component of every decoded pair through this function. -/
+def clampedWeight (c : ℕ) : ℚ := max 0 (min 1 (ratOfCode c))
 
-private theorem wRaw_nonneg (c : ℕ) : 0 ≤ wRaw c := le_max_left _ _
+/-- The decoded weight of a code is the public rational-code clamp `clampCode` read
+through `ratOfCode`.  This ties the atomic decoder to the coded-rational API, so a
+weight code may be produced — and its decoded weight computed — without unfolding
+`clampedWeight`. -/
+theorem clampedWeight_eq_ratOfCode_clampCode (c : ℕ) :
+    clampedWeight c = ratOfCode (clampCode c) :=
+  (ratOfCode_clampCode c).symm
 
-/-- The (rational) total clamped weight of a decoded atom list. -/
-private def wSumL (l : List (ℕ × ℕ)) : ℚ := (l.map fun pr => wRaw pr.2).sum
+/-- Decoded weights are nonnegative. -/
+theorem clampedWeight_nonneg (c : ℕ) : 0 ≤ clampedWeight c := le_max_left _ _
 
-private theorem wSumL_nonneg (l : List (ℕ × ℕ)) : 0 ≤ wSumL l :=
+/-- The (rational) total clamped weight of a decoded atom list: the normalizing constant
+of `atomicOfList`, whose vanishing selects the default branch. -/
+def clampedWeightSum (l : List (ℕ × ℕ)) : ℚ := (l.map fun pr => clampedWeight pr.2).sum
+
+/-- The total clamped weight is nonnegative, so the branch test `clampedWeightSum l ≠ 0`
+of `atomicOfList` is equivalent to `0 < clampedWeightSum l`. -/
+theorem clampedWeightSum_nonneg (l : List (ℕ × ℕ)) : 0 ≤ clampedWeightSum l :=
   List.sum_nonneg fun x hx => by
     obtain ⟨pr, -, rfl⟩ := List.mem_map.mp hx
-    exact wRaw_nonneg _
+    exact clampedWeight_nonneg _
 
 /-- A mapped list sum as a `Fin` sum over positions. -/
 private theorem listSum_map_eq_finSum {β M : Type*} [AddCommMonoid M] (l : List β)
@@ -68,43 +86,50 @@ private theorem listSum_map_eq_finSum {β M : Type*} [AddCommMonoid M] (l : List
   rw [← List.ofFn_getElem_eq_map, List.sum_ofFn]
   rfl
 
-private theorem sum_normWt {l : List (ℕ × ℕ)} (h0 : wSumL l ≠ 0) :
-    ∑ i : Fin l.length, ((wRaw l[i].2 / wSumL l : ℚ) : ℝ) = 1 := by
-  have : ∑ i : Fin l.length, ((wRaw l[i].2 / wSumL l : ℚ) : ℝ)
-      = (((∑ i : Fin l.length, wRaw l[i].2) / wSumL l : ℚ) : ℝ) := by
+/-- The normalized weights of a decoded atom list sum to `1`.  Together with
+`normalizedWeight_nonneg` this exhibits the weights of
+`toMeasure_atomicOfList_of_ne_zero` as a probability vector. -/
+theorem sum_normalizedWeight {l : List (ℕ × ℕ)} (h0 : clampedWeightSum l ≠ 0) :
+    ∑ i : Fin l.length, ((clampedWeight l[i].2 / clampedWeightSum l : ℚ) : ℝ) = 1 := by
+  have : ∑ i : Fin l.length, ((clampedWeight l[i].2 / clampedWeightSum l : ℚ) : ℝ)
+      = (((∑ i : Fin l.length, clampedWeight l[i].2) / clampedWeightSum l : ℚ) : ℝ) := by
     push_cast
     rw [Finset.sum_div]
   rw [this]
-  have hsum : ∑ i : Fin l.length, wRaw l[i].2 = wSumL l :=
-    (listSum_map_eq_finSum l fun pr => wRaw pr.2).symm
+  have hsum : ∑ i : Fin l.length, clampedWeight l[i].2 = clampedWeightSum l :=
+    (listSum_map_eq_finSum l fun pr => clampedWeight pr.2).symm
   rw [hsum, div_self h0]
   norm_num
 
-private theorem normWt_nonneg {l : List (ℕ × ℕ)} (h0 : wSumL l ≠ 0) (i : Fin l.length) :
-    (0 : ℝ) ≤ ((wRaw l[i].2 / wSumL l : ℚ) : ℝ) := by
-  have hpos : (0 : ℚ) < wSumL l := lt_of_le_of_ne (wSumL_nonneg l) (Ne.symm h0)
-  exact_mod_cast div_nonneg (wRaw_nonneg _) hpos.le
+/-- The normalized weights of a decoded atom list are nonnegative. -/
+theorem normalizedWeight_nonneg {l : List (ℕ × ℕ)} (h0 : clampedWeightSum l ≠ 0)
+    (i : Fin l.length) :
+    (0 : ℝ) ≤ ((clampedWeight l[i].2 / clampedWeightSum l : ℚ) : ℝ) := by
+  have hpos : (0 : ℚ) < clampedWeightSum l :=
+    lt_of_le_of_ne (clampedWeightSum_nonneg l) (Ne.symm h0)
+  exact_mod_cast div_nonneg (clampedWeight_nonneg _) hpos.le
 
 /-! Uniform (total, `ℕ`-indexed) atomic data of a decoded list: atom count, dense-point
 index, and rational weight (the default zero-weight branch has one atom at index `0`). -/
 
 /-- Number of atoms of the decoded measure (the default branch has one atom). -/
-private def atomCount (l : List (ℕ × ℕ)) : ℕ := if wSumL l = 0 then 1 else l.length
+private def atomCount (l : List (ℕ × ℕ)) : ℕ := if clampedWeightSum l = 0 then 1 else l.length
 
 /-- Dense-point index of the `i`-th atom. -/
 private def atomIdx (l : List (ℕ × ℕ)) (i : ℕ) : ℕ :=
-  if wSumL l = 0 then 0 else (l.getD i (0, 0)).1
+  if clampedWeightSum l = 0 then 0 else (l.getD i (0, 0)).1
 
 /-- Rational weight of the `i`-th atom. -/
 private def atomWt (l : List (ℕ × ℕ)) (i : ℕ) : ℚ :=
-  if wSumL l = 0 then 1 else wRaw (l.getD i (0, 0)).2 / wSumL l
+  if clampedWeightSum l = 0 then 1 else clampedWeight (l.getD i (0, 0)).2 / clampedWeightSum l
 
 private theorem atomWt_nonneg (l : List (ℕ × ℕ)) (i : ℕ) : 0 ≤ atomWt l i := by
   rw [atomWt]
   split_ifs with h0
   · exact zero_le_one
-  · have hpos : (0 : ℚ) < wSumL l := lt_of_le_of_ne (wSumL_nonneg l) (Ne.symm h0)
-    exact div_nonneg (wRaw_nonneg _) hpos.le
+  · have hpos : (0 : ℚ) < clampedWeightSum l :=
+      lt_of_le_of_ne (clampedWeightSum_nonneg l) (Ne.symm h0)
+    exact div_nonneg (clampedWeight_nonneg _) hpos.le
 
 section Atomics
 
@@ -127,11 +152,12 @@ Dirac measures at dense points of the presentation.  Weight codes decode through
 `ratOfCode`, clamped to `[0,1]` and renormalized by their positive rational sum; zero
 total weight (in particular the empty list) denotes the default `dirac (P.dense 0)`. -/
 noncomputable def atomicOfList (l : List (ℕ × ℕ)) : ProbabilityMeasure X :=
-  if h0 : wSumL l = 0 then ⟨Measure.dirac (P.dense 0), inferInstance⟩
+  if h0 : clampedWeightSum l = 0 then ⟨Measure.dirac (P.dense 0), inferInstance⟩
   else
     ⟨∑ i : Fin l.length,
-        ENNReal.ofReal ((wRaw l[i].2 / wSumL l : ℚ) : ℝ) • Measure.dirac (P.dense l[i].1),
-      isProbabilityMeasure_sum_smul_dirac _ (normWt_nonneg h0) (sum_normWt h0)⟩
+        ENNReal.ofReal ((clampedWeight l[i].2 / clampedWeightSum l : ℚ) : ℝ)
+          • Measure.dirac (P.dense l[i].1),
+      isProbabilityMeasure_sum_smul_dirac _ (normalizedWeight_nonneg h0) (sum_normalizedWeight h0)⟩
 
 /-- The rational-atomic dense sequence of the weak topology on `ProbabilityMeasure X`:
 an index `m` decodes (via `Denumerable (List (ℕ × ℕ))`) to a list of
@@ -140,21 +166,32 @@ noncomputable def atomic (m : ℕ) : ProbabilityMeasure X :=
   atomicOfList P (ofNat (List (ℕ × ℕ)) m)
 
 omit [BorelSpace X] in
-private theorem atomic_encode (l : List (ℕ × ℕ)) :
+/-- The atomic sequence hits every decoded atom list: at the index encoding `l` it is
+`atomicOfList P l`.  This is what lets an explicit atom list be used as an index into
+the dense sequence, hence inside `WeakMeasureNames`. -/
+theorem atomic_encode_eq_atomicOfList (l : List (ℕ × ℕ)) :
     atomic P (Encodable.encode l) = atomicOfList P l := by
   rw [atomic, Denumerable.ofNat_encode]
 
 omit [BorelSpace X] in
-private theorem toMeasure_atomicOfList_of_ne {l : List (ℕ × ℕ)} (h0 : wSumL l ≠ 0) :
+/-- **Specification of `atomicOfList`, main branch.**  When the total clamped weight is
+nonzero, the decoded measure is the weighted sum of Dirac masses at the dense points
+named by the first components, with the normalized clamped weights of the second
+components. -/
+theorem toMeasure_atomicOfList_of_ne_zero {l : List (ℕ × ℕ)}
+    (h0 : clampedWeightSum l ≠ 0) :
     (atomicOfList P l).toMeasure
       = ∑ i : Fin l.length,
-          ENNReal.ofReal ((wRaw l[i].2 / wSumL l : ℚ) : ℝ)
+          ENNReal.ofReal ((clampedWeight l[i].2 / clampedWeightSum l : ℚ) : ℝ)
             • Measure.dirac (P.dense l[i].1) := by
   rw [atomicOfList, dif_neg h0]
   rfl
 
 omit [BorelSpace X] in
-private theorem toMeasure_atomicOfList_of_eq {l : List (ℕ × ℕ)} (h0 : wSumL l = 0) :
+/-- **Specification of `atomicOfList`, default branch.**  Zero total clamped weight (in
+particular the empty list) denotes the point mass at the first dense point. -/
+theorem toMeasure_atomicOfList_of_eq_zero {l : List (ℕ × ℕ)}
+    (h0 : clampedWeightSum l = 0) :
     (atomicOfList P l).toMeasure = Measure.dirac (P.dense 0) := by
   rw [atomicOfList, dif_pos h0]
   rfl
@@ -166,12 +203,12 @@ private theorem toMeasure_atomic_eq_sum (l : List (ℕ × ℕ)) :
     (atomicOfList P l).toMeasure
       = ∑ i : Fin (atomCount l),
           ENNReal.ofReal ((atomWt l i : ℚ) : ℝ) • Measure.dirac (P.dense (atomIdx l i)) := by
-  by_cases h0 : wSumL l = 0
-  · rw [toMeasure_atomicOfList_of_eq P h0]
+  by_cases h0 : clampedWeightSum l = 0
+  · rw [toMeasure_atomicOfList_of_eq_zero P h0]
     have hc : (1 : ℕ) = atomCount l := (if_pos h0).symm
     rw [← Fin.sum_congr' _ hc, Fin.sum_univ_one]
     simp [atomWt, atomIdx, h0]
-  · rw [toMeasure_atomicOfList_of_ne P h0]
+  · rw [toMeasure_atomicOfList_of_ne_zero P h0]
     have hc : l.length = atomCount l := (if_neg h0).symm
     rw [← Fin.sum_congr' _ hc]
     refine Finset.sum_congr rfl fun j _ => ?_
@@ -589,30 +626,30 @@ theorem exists_atomic_close (μ : ProbabilityMeasure X) {ε : ℝ} (hε : 0 < ε
       l[j] = (truncIdx N ((Fin.cast hlen j : Fin K) : ℕ),
         (ratOfCode_surjective (q (Fin.cast hlen j))).choose) := fun j =>
     List.getElem_ofFn j.isLt
-  have hwRaw : ∀ i : Fin K, wRaw ((ratOfCode_surjective (q i)).choose) = q i := by
+  have hclampedWeight : ∀ i : Fin K, clampedWeight ((ratOfCode_surjective (q i)).choose) = q i := by
     intro i
-    rw [wRaw, (ratOfCode_surjective (q i)).choose_spec,
+    rw [clampedWeight, (ratOfCode_surjective (q i)).choose_spec,
       min_eq_right (hq1 i), max_eq_right (hq0 i)]
-  have hwS : wSumL l = ∑ i, q i := by
-    rw [wSumL, listSum_map_eq_finSum,
+  have hwS : clampedWeightSum l = ∑ i, q i := by
+    rw [clampedWeightSum, listSum_map_eq_finSum,
       ← Fin.sum_congr' (fun i : Fin K => q i) hlen]
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [hget j]
-    exact hwRaw _
-  have hS0' : wSumL l ≠ 0 := by
+    exact hclampedWeight _
+  have hS0' : clampedWeightSum l ≠ 0 := by
     rw [hwS]
     exact hSne
   have hQ : (atomic P (Encodable.encode l)).toMeasure
       = ∑ i : Fin K,
           ENNReal.ofReal ((q i / ∑ j, q j : ℚ) : ℝ)
             • Measure.dirac (P.dense (truncIdx N (i : ℕ))) := by
-    rw [atomic_encode, toMeasure_atomicOfList_of_ne P hS0',
+    rw [atomic_encode_eq_atomicOfList, toMeasure_atomicOfList_of_ne_zero P hS0',
       ← Fin.sum_congr' (fun i : Fin K =>
         ENNReal.ofReal ((q i / ∑ j, q j : ℚ) : ℝ)
           • Measure.dirac (P.dense (truncIdx N (i : ℕ)))) hlen]
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [hget j]
-    simp only [hwS, hwRaw]
+    simp only [hwS, hclampedWeight]
   -- the weight-difference estimate
   have hq0R : ∀ i, (0 : ℝ) ≤ (q i : ℝ) := fun i => by exact_mod_cast hq0 i
   have hterm : ∀ i : Fin K,
@@ -1278,16 +1315,16 @@ private theorem ratOfCode_ratAddCode (c₁ c₂ : RatCode) :
   field_simp
   ring
 
-/-- Code-level clamp to `[0, 1]`: decodes to `wRaw`. -/
+/-- Code-level clamp to `[0, 1]`: decodes to `clampedWeight`. -/
 private def ratClampCode (c : RatCode) : RatCode :=
   if c.unpair.1.unpair.1 ≤ c.unpair.1.unpair.2 then zeroCode
   else if c.unpair.1.unpair.2 + c.unpair.2 + 1 ≤ c.unpair.1.unpair.1 then oneCode
   else c
 
 private theorem ratOfCode_ratClampCode (c : RatCode) :
-    ratOfCode (ratClampCode c) = wRaw c := by
+    ratOfCode (ratClampCode c) = clampedWeight c := by
   have hd : (0 : ℚ) < (c.unpair.2 : ℚ) + 1 := by positivity
-  rw [ratClampCode, wRaw]
+  rw [ratClampCode, clampedWeight]
   split_ifs with h1 h2
   · have hx : ratOfCode c ≤ 0 := by
       have hnum : (c.unpair.1.unpair.1 : ℚ) - c.unpair.1.unpair.2 ≤ 0 := by
@@ -1470,19 +1507,19 @@ private def wSumCode : List (ℕ × ℕ) → RatCode
   | [] => zeroCode
   | pr :: l => ratAddCode (ratClampCode pr.2) (wSumCode l)
 
-private theorem wSumL_cons (pr : ℕ × ℕ) (l : List (ℕ × ℕ)) :
-    wSumL (pr :: l) = wRaw pr.2 + wSumL l := by
-  rw [wSumL, List.map_cons, List.sum_cons]
+private theorem clampedWeightSum_cons (pr : ℕ × ℕ) (l : List (ℕ × ℕ)) :
+    clampedWeightSum (pr :: l) = clampedWeight pr.2 + clampedWeightSum l := by
+  rw [clampedWeightSum, List.map_cons, List.sum_cons]
   rfl
 
 private theorem ratOfCode_wSumCode (l : List (ℕ × ℕ)) :
-    ratOfCode (wSumCode l) = wSumL l := by
+    ratOfCode (wSumCode l) = clampedWeightSum l := by
   induction l with
   | nil =>
     rw [wSumCode, ratOfCode_zeroCode]
-    rw [wSumL, List.map_nil, List.sum_nil]
+    rw [clampedWeightSum, List.map_nil, List.sum_nil]
   | cons pr l ih =>
-    rw [wSumCode, ratOfCode_ratAddCode, ratOfCode_ratClampCode, ih, wSumL_cons]
+    rw [wSumCode, ratOfCode_ratAddCode, ratOfCode_ratClampCode, ih, clampedWeightSum_cons]
 
 private theorem primrec_wSumCode : Primrec wSumCode := by
   have h : Primrec fun l : List (ℕ × ℕ) =>
@@ -1496,13 +1533,15 @@ private theorem primrec_wSumCode : Primrec wSumCode := by
   | nil => rfl
   | cons pr l ih => rw [List.foldr_cons, ih, wSumCode]
 
-/-- The coded-side test `0 < wSumL (atomList m)` as it appears in the uniform data. -/
+/-- The coded-side test `0 < clampedWeightSum (atomList m)` as it appears in the uniform
+data. -/
 private theorem wSum_pos_iff (m : ℕ) :
-    ratOfCode zeroCode < ratOfCode (wSumCode (atomList m)) ↔ ¬ wSumL (atomList m) = 0 := by
+    ratOfCode zeroCode < ratOfCode (wSumCode (atomList m))
+      ↔ ¬ clampedWeightSum (atomList m) = 0 := by
   rw [ratOfCode_zeroCode, ratOfCode_wSumCode]
   constructor
   · exact fun h => h.ne'
-  · exact fun h => lt_of_le_of_ne (wSumL_nonneg _) (Ne.symm h)
+  · exact fun h => lt_of_le_of_ne (clampedWeightSum_nonneg _) (Ne.symm h)
 
 /-- Uniform atom count, computed on codes. -/
 private def natAtomCount (m : ℕ) : ℕ :=
@@ -1510,7 +1549,7 @@ private def natAtomCount (m : ℕ) : ℕ :=
 
 private theorem natAtomCount_eq (m : ℕ) : natAtomCount m = atomCount (atomList m) := by
   rw [natAtomCount, atomCount]
-  by_cases h : wSumL (atomList m) = 0
+  by_cases h : clampedWeightSum (atomList m) = 0
   · rw [if_neg (fun hc => (wSum_pos_iff m).mp hc h), if_pos h]
   · rw [if_pos ((wSum_pos_iff m).mpr h), if_neg h]
 
@@ -1528,7 +1567,7 @@ private def natAtomIdx (m i : ℕ) : ℕ :=
 
 private theorem natAtomIdx_eq (m i : ℕ) : natAtomIdx m i = atomIdx (atomList m) i := by
   rw [natAtomIdx, atomIdx]
-  by_cases h : wSumL (atomList m) = 0
+  by_cases h : clampedWeightSum (atomList m) = 0
   · rw [if_neg (fun hc => (wSum_pos_iff m).mp hc h), if_pos h]
   · rw [if_pos ((wSum_pos_iff m).mpr h), if_neg h]
 
@@ -1550,9 +1589,10 @@ private def natAtomWtCode (m i : ℕ) : RatCode :=
 private theorem ratOfCode_natAtomWtCode (m i : ℕ) :
     ratOfCode (natAtomWtCode m i) = atomWt (atomList m) i := by
   rw [natAtomWtCode, atomWt]
-  by_cases h : wSumL (atomList m) = 0
+  by_cases h : clampedWeightSum (atomList m) = 0
   · rw [if_neg (fun hc => (wSum_pos_iff m).mp hc h), if_pos h, ratOfCode_oneCode]
-  · have hpos : 0 < wSumL (atomList m) := lt_of_le_of_ne (wSumL_nonneg _) (Ne.symm h)
+  · have hpos : 0 < clampedWeightSum (atomList m) :=
+      lt_of_le_of_ne (clampedWeightSum_nonneg _) (Ne.symm h)
     have hnum : (wSumCode (atomList m)).unpair.1.unpair.2
         < (wSumCode (atomList m)).unpair.1.unpair.1 :=
       (ratOfCode_pos_iff _).mp (by rw [ratOfCode_wSumCode]; exact hpos)
@@ -1698,7 +1738,7 @@ theorem exists_certifiedWeightCode :
   rw [certWtCode]
   by_cases hdeg : ratOfCode zeroCode < ratOfCode (wSumCode (atomList m))
   · rw [if_pos hdeg]
-    have hne : ¬ wSumL (atomList m) = 0 := (wSum_pos_iff m).mp hdeg
+    have hne : ¬ clampedWeightSum (atomList m) = 0 := (wSum_pos_iff m).mp hdeg
     set l := atomList m with hl
     -- the atomic mass as a `Fin l.length` sum, then as a `range` sum
     have hmass : (atomic P m).toMeasure A
@@ -1706,7 +1746,7 @@ theorem exists_certifiedWeightCode :
             ENNReal.ofReal ((atomWt l i : ℚ) : ℝ) *
               Set.indicator A 1 (P.dense (l.getD i (0, 0)).1) := by
       rw [show (atomic P m) = atomicOfList P l from rfl,
-        toMeasure_atomicOfList_of_ne P hne, Measure.finsetSum_apply]
+        toMeasure_atomicOfList_of_ne_zero P hne, Measure.finsetSum_apply]
       rw [← Fin.sum_univ_eq_sum_range
         (fun i => ENNReal.ofReal ((atomWt l i : ℚ) : ℝ) *
           Set.indicator A 1 (P.dense (l.getD i (0, 0)).1)) l.length]
