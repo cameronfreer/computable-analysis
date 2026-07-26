@@ -329,6 +329,12 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.bernoulliProduct_toMeasure,
    ``ComputableAnalysis.measurable_bernoulliProduct_toMeasure,
    ``ComputableAnalysis.cylMass_bernoulliProduct_eq_pow,
+   -- Moments on the unit interval: foundations and determinacy
+   ``ComputableAnalysis.moment_mem_unitInterval,
+   ``ComputableAnalysis.moment_zero,
+   ``ComputableAnalysis.isCompletelyMonotone_moment,
+   ``ComputableAnalysis.eq_of_forall_moment_eq,
+   ``ComputableAnalysis.moment_injective,
    -- Rider: certified weights under-estimate the atomic mass (unit 42 prerequisite)
    ``ComputableAnalysis.exists_certifiedWeightCode,
    -- Rider: the least-witness prefix search builder, promoted on its second consumer
