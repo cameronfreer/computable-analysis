@@ -44,3 +44,4 @@ import ComputableAnalysis.Measure.Conditioning
 import ComputableAnalysis.Measure.ConditionPositive
 import ComputableAnalysis.Measure.DiracDecode
 import ComputableAnalysis.Measure.DisintegrateLower
+import ComputableAnalysis.Measure.BernoulliProduct

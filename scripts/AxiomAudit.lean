@@ -322,6 +322,13 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_diracDecodeCode,
    -- Unit 41 (Part C1, lower half): the calibration lower bound
    ``ComputableAnalysis.lim_le_disintegrate,
+   -- Bernoulli product as an infinite product measure (classical API)
+   ``ComputableAnalysis.cylinder_eq_pi,
+   ``ComputableAnalysis.measurableSet_cylinderCoord,
+   ``ComputableAnalysis.bernoulliMeasure_cylinderCoord,
+   ``ComputableAnalysis.bernoulliProduct_toMeasure,
+   ``ComputableAnalysis.measurable_bernoulliProduct_toMeasure,
+   ``ComputableAnalysis.cylMass_bernoulliProduct_eq_pow,
    -- Rider: certified weights under-estimate the atomic mass (unit 42 prerequisite)
    ``ComputableAnalysis.exists_certifiedWeightCode,
    -- Rider: the least-witness prefix search builder, promoted on its second consumer
