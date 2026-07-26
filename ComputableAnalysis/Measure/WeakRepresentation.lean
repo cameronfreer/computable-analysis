@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
 import ComputableAnalysis.Metric.CauchyRepresentation
+import ComputableAnalysis.Metric.RatCodeArith
 import ComputableAnalysis.TypeTwo.REPredClosure
 import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
 import Mathlib.Data.List.GetD
@@ -1249,12 +1250,6 @@ private theorem lt_dist_atomic_iff (m₁ m₂ : ℕ) (t : ℝ) :
 end AtomicSigma
 
 /-! ### `RatCode` arithmetic: code-level `+`, clamp, `/`, and comparisons -/
-
-/-- The canonical code of `1`: the unnormalized fraction `(1 - 0) / (0 + 1)`. -/
-private def oneCode : RatCode := Nat.pair (Nat.pair 1 0) 0
-
-private theorem ratOfCode_oneCode : ratOfCode oneCode = 1 := by
-  simp [ratOfCode, oneCode]
 
 /-- Code-level addition of coded rationals (cross-multiplication of unnormalized
 fractions). -/

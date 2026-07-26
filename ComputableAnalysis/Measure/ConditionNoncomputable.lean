@@ -687,12 +687,6 @@ private theorem ratOfCode_massCodeW (u t : List Bool) :
     ring
   · exact ratOfCode_zeroCode
 
-private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
-  Primrec.fst.comp Primrec.unpair
-
-private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
-  Primrec.snd.comp Primrec.unpair
-
 private theorem primrec_haltsByB : Primrec₂ haltsByB := by
   have h1 : Primrec fun p : ℕ × ℕ =>
       ((p.2, ofNat Nat.Partrec.Code p.1), (0 : ℕ)) :=

@@ -6,6 +6,7 @@ Authors: Cameron Freer
 import ComputableAnalysis.Measure.CantorRepresentation
 import ComputableAnalysis.Measure.WeakRepresentation
 import ComputableAnalysis.Metric.CantorPresentation
+import ComputableAnalysis.Metric.RatCodeArith
 import Mathlib.Data.List.GetD
 import Mathlib.Computability.Halting
 
@@ -413,131 +414,13 @@ private theorem abs_cylMass_sub_le {μ ν : ProbabilityMeasure Cantor} {s : List
 
 /-! ### Coded rational arithmetic
 
-Private copies of the unit 20 coded-fraction helpers (which are private in
-`Metric/Real.lean`), plus the positive-division rider `divPosCode`. -/
+The shared combinators come from `Metric/RatCodeArith.lean`; local here are only the
+positive-division rider `divPosCode` and the `wRaw` restatement of the clamp spec. -/
 
-private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
-  Primrec.fst.comp Primrec.unpair
-
-private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
-  Primrec.snd.comp Primrec.unpair
-
-/-- The canonical code of `1`. -/
-private def oneCode : ℕ := Nat.pair (Nat.pair 1 0) 0
-
-private theorem ratOfCode_oneCode : ratOfCode oneCode = 1 := by
-  simp [ratOfCode, oneCode]
-
-/-- Addition of rational codes. -/
-private def addCode (m₁ m₂ : ℕ) : ℕ :=
-  Nat.pair
-    (Nat.pair
-      (m₁.unpair.1.unpair.1 * (m₂.unpair.2 + 1) + m₂.unpair.1.unpair.1 * (m₁.unpair.2 + 1))
-      (m₁.unpair.1.unpair.2 * (m₂.unpair.2 + 1) + m₂.unpair.1.unpair.2 * (m₁.unpair.2 + 1)))
-    ((m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) - 1)
-
-private theorem ratOfCode_addCode (m₁ m₂ : ℕ) :
-    ratOfCode (addCode m₁ m₂) = ratOfCode m₁ + ratOfCode m₂ := by
-  have hden : (((m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) - 1 : ℕ) : ℚ) + 1
-      = ((m₁.unpair.2 : ℚ) + 1) * ((m₂.unpair.2 : ℚ) + 1) := by
-    have h1 : 1 ≤ (m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) :=
-      Nat.one_le_iff_ne_zero.mpr (by positivity)
-    push_cast [h1]
-    ring
-  have h₁ : ((m₁.unpair.2 : ℚ) + 1) ≠ 0 := by positivity
-  have h₂ : ((m₂.unpair.2 : ℚ) + 1) ≠ 0 := by positivity
-  simp only [ratOfCode, addCode, Nat.unpair_pair, hden]
-  field_simp
-  push_cast
-  ring
-
-/-- Sum of a list of rational codes. -/
-private def sumCode (l : List ℕ) : ℕ := l.foldr addCode 0
-
-private theorem ratOfCode_sumCode (l : List ℕ) :
-    ratOfCode (sumCode l) = (l.map ratOfCode).sum := by
-  induction l with
-  | nil =>
-    simp only [sumCode, List.foldr_nil, List.map_nil, List.sum_nil]
-    simp [ratOfCode]
-  | cons a l ih =>
-    simp only [sumCode, List.foldr_cons, List.map_cons, List.sum_cons, ratOfCode_addCode]
-    rw [← ih]
-    rfl
-
-private theorem primrec₂_addCode : Primrec₂ addCode := by
-  have a₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.1.unpair.1 :=
-    (primrec_unpairFst.comp primrec_unpairFst).comp Primrec.fst
-  have b₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.1.unpair.2 :=
-    (primrec_unpairSnd.comp primrec_unpairFst).comp Primrec.fst
-  have a₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.1.unpair.1 :=
-    (primrec_unpairFst.comp primrec_unpairFst).comp Primrec.snd
-  have b₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.1.unpair.2 :=
-    (primrec_unpairSnd.comp primrec_unpairFst).comp Primrec.snd
-  have d₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.2 + 1 :=
-    Primrec.succ.comp (primrec_unpairSnd.comp Primrec.fst)
-  have d₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.2 + 1 :=
-    Primrec.succ.comp (primrec_unpairSnd.comp Primrec.snd)
-  exact Primrec₂.natPair.comp
-    (Primrec₂.natPair.comp
-      (Primrec.nat_add.comp (Primrec.nat_mul.comp a₁ d₂) (Primrec.nat_mul.comp a₂ d₁))
-      (Primrec.nat_add.comp (Primrec.nat_mul.comp b₁ d₂) (Primrec.nat_mul.comp b₂ d₁)))
-    (Primrec.nat_sub.comp (Primrec.nat_mul.comp d₁ d₂) (Primrec.const 1))
-
-private theorem primrec_sumCode : Primrec sumCode :=
-  (Primrec.list_foldr Primrec.id (Primrec.const 0)
-    (primrec₂_addCode.comp (Primrec.fst.comp Primrec.snd)
-      (Primrec.snd.comp Primrec.snd)).to₂).of_eq fun _ => rfl
-
-/-- Clamp a rational code into `[0,1]`. -/
-private def clampCode (m : ℕ) : ℕ :=
-  if m.unpair.1.unpair.1 ≤ m.unpair.1.unpair.2 then zeroCode
-  else if m.unpair.1.unpair.2 + m.unpair.2 + 1 ≤ m.unpair.1.unpair.1 then oneCode
-  else m
-
-private theorem ratOfCode_clampCode (m : ℕ) : ratOfCode (clampCode m) = wRaw m := by
-  change ratOfCode (clampCode m) = max 0 (min 1 (ratOfCode m))
-  have hden : (0 : ℚ) < (m.unpair.2 : ℚ) + 1 := by positivity
-  by_cases h1 : m.unpair.1.unpair.1 ≤ m.unpair.1.unpair.2
-  · have hab : (m.unpair.1.unpair.1 : ℚ) ≤ (m.unpair.1.unpair.2 : ℚ) := by exact_mod_cast h1
-    have hr : ratOfCode m ≤ 0 := by
-      unfold ratOfCode
-      exact div_nonpos_of_nonpos_of_nonneg (by linarith) hden.le
-    rw [clampCode, if_pos h1, ratOfCode_zeroCode, eq_comm,
-      max_eq_left ((min_le_right _ _).trans hr)]
-  · by_cases h2 : m.unpair.1.unpair.2 + m.unpair.2 + 1 ≤ m.unpair.1.unpair.1
-    · have hcast : (m.unpair.1.unpair.2 : ℚ) + (m.unpair.2 : ℚ) + 1
-          ≤ (m.unpair.1.unpair.1 : ℚ) := by exact_mod_cast h2
-      have hr : 1 ≤ ratOfCode m := by
-        unfold ratOfCode
-        rw [le_div_iff₀ hden]
-        linarith
-      rw [clampCode, if_neg h1, if_pos h2, ratOfCode_oneCode, eq_comm,
-        min_eq_left hr, max_eq_right zero_le_one]
-    · have hba : (m.unpair.1.unpair.2 : ℚ) ≤ (m.unpair.1.unpair.1 : ℚ) := by
-        exact_mod_cast (Nat.lt_of_not_le h1).le
-      have hac : (m.unpair.1.unpair.1 : ℚ)
-          ≤ (m.unpair.1.unpair.2 : ℚ) + (m.unpair.2 : ℚ) := by
-        exact_mod_cast Nat.lt_succ_iff.mp (Nat.lt_of_not_le h2)
-      have hr0 : 0 ≤ ratOfCode m := by
-        unfold ratOfCode
-        exact div_nonneg (by linarith) hden.le
-      have hr1 : ratOfCode m ≤ 1 := by
-        unfold ratOfCode
-        rw [div_le_one hden]
-        linarith
-      rw [clampCode, if_neg h1, if_neg h2, eq_comm, min_eq_right hr1, max_eq_right hr0]
-
-private theorem primrec_clampCode : Primrec clampCode := by
-  have ha : Primrec fun m : ℕ => m.unpair.1.unpair.1 :=
-    primrec_unpairFst.comp primrec_unpairFst
-  have hb : Primrec fun m : ℕ => m.unpair.1.unpair.2 :=
-    primrec_unpairSnd.comp primrec_unpairFst
-  exact Primrec.ite (Primrec.nat_le.comp ha hb) (Primrec.const zeroCode)
-    (Primrec.ite
-      (Primrec.nat_le.comp
-        (Primrec.succ.comp (Primrec.nat_add.comp hb primrec_unpairSnd)) ha)
-      (Primrec.const oneCode) Primrec.id)
+/-- The clamp spec of `Metric/RatCodeArith.lean` restated through the local
+abbreviation `wRaw`. -/
+private theorem ratOfCode_clampCode_wRaw (m : ℕ) : ratOfCode (clampCode m) = wRaw m :=
+  ratOfCode_clampCode m
 
 /-- A rational code decodes to `0` exactly when its two numerator slots agree. -/
 private theorem ratOfCode_eq_zero_iff (m : ℕ) :
@@ -722,7 +605,7 @@ private theorem ratOfCode_sumCode_clamp (l : List (ℕ × ℕ)) :
     ratOfCode (sumCode (l.map fun pr => clampCode pr.2)) = wSumL l := by
   rw [ratOfCode_sumCode, List.map_map, wSumL]
   congr 1
-  exact List.map_congr_left fun pr _ => ratOfCode_clampCode pr.2
+  exact List.map_congr_left fun pr _ => ratOfCode_clampCode_wRaw pr.2
 
 private theorem ratOfCode_sumCode_sel (l : List (ℕ × ℕ)) (s : List Bool) :
     ratOfCode (sumCode (l.map fun pr =>
@@ -736,7 +619,7 @@ private theorem ratOfCode_sumCode_sel (l : List (ℕ × ℕ)) (s : List Bool) :
   cases hc : inCylB (denseWord pr.1) s
   · rw [cond_false, cond_false, ratOfCode_zeroCode]
   · rw [cond_true, cond_true]
-    exact ratOfCode_clampCode pr.2
+    exact ratOfCode_clampCode_wRaw pr.2
 
 /-- The cylinder-weight code: an exact rational code of `cylWtQ`, total in `(l, s)`. -/
 private def cylWtCode (l : List (ℕ × ℕ)) (s : List Bool) : ℕ :=

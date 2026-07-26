@@ -24,21 +24,15 @@ realizer searches for its own lower-bound certificate. Per output coordinate `n`
 The search diverges off valid names (e.g. on names of nonpositive reals), so the realizer
 is partial — precedented by `Metric/Admissibility.lean` — and the `Realizes` witness is
 built directly through `OracleCode.mem_evalStream`, never `Realizes.of_computes`.
-Coded-rational helpers are re-derived privately: the known intentional duplication with
-the private layers of `Metric/Real.lean` and `Metric/Presentation.lean`.
+Coded-rational helpers come from `Metric/RatCodeArith.lean` and `Metric/Presentation.lean`;
+only the names bridge is re-derived privately, since it is `private` in `Metric/Real.lean`.
 -/
 
 namespace ComputableAnalysis
 
 open OracleCode
 
-/-! ### Private re-derivations: unpair projections and the names bridge -/
-
-private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
-  Primrec.fst.comp Primrec.unpair
-
-private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
-  Primrec.snd.comp Primrec.unpair
+/-! ### Private re-derivation: the names bridge -/
 
 /-- Names of `realRep` are exactly the fast rational approximation streams (private
 re-derivation of the `Metric/Real.lean` names bridge). -/

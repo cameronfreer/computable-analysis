@@ -23,6 +23,7 @@ import ComputableAnalysis.Weihrauch.Principles.Limit
 import ComputableAnalysis.Measure.CylinderMass
 import ComputableAnalysis.Measure.Construction
 import ComputableAnalysis.Metric.Presentation
+import ComputableAnalysis.Metric.RatCodeArith
 import ComputableAnalysis.Metric.CauchyRepresentation
 import ComputableAnalysis.Metric.CantorPresentation
 import ComputableAnalysis.Metric.Admissibility

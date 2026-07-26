@@ -6,6 +6,7 @@ Authors: Cameron Freer
 import ComputableAnalysis.Measure.CylinderValues
 import ComputableAnalysis.TypeTwo.PrefixTable
 import ComputableAnalysis.RepresentedSpace.ComputableMap
+import ComputableAnalysis.Metric.RatCodeArith
 
 /-!
 # Pushforward of Cantor probability measures along computable maps
@@ -31,10 +32,10 @@ sums the input mass approximants of the table words at a bumped precision, and t
 postprocessor hypotheses, but the table map runs an unbounded search and is only
 `Computable`; the private `exists_prefixPostCode'` below is the same assembly with
 `Computable` hypotheses (its proof only ever needed `exists_ofNatFnCode`, which takes
-`Computable`). **Deliberate duplication**: the code-level rational arithmetic
-(`addCode`, `sumCode`, …) and the estimate toolkit are re-derived privately here; they
-are `private` in `ComputableAnalysis/Metric/Real.lean` and
-`ComputableAnalysis/Measure/Constructors.lean` and will be consolidated in a later API
+`Computable`). The code-level rational arithmetic (`addCode`, `sumCode`, …) comes from
+`ComputableAnalysis/Metric/RatCodeArith.lean`; the estimate toolkit is still re-derived
+privately here (it is `private` in `ComputableAnalysis/Metric/Real.lean` and
+`ComputableAnalysis/Measure/Constructors.lean`) and will be consolidated in a later API
 pass.
 -/
 
@@ -212,80 +213,12 @@ theorem exists_pushforward_cylinder_table {f : Cantor → Cantor}
   · rw [cylMass_pushforwardMeasure_eq_listSum hf hstream hmem μ,
       List.sum_toFinset _ (OracleCode.uniformPrefixTableSearch_nodup c s hmem)]
 
-/-! ### Coded rational arithmetic and estimates (private duplicates)
+/-! ### Word decoding (private duplicate)
 
 Re-derived from the private sections of `Metric/Real.lean` and
 `Measure/Constructors.lean`; consolidation is deferred to a later API pass. -/
 
-section CodedRationalArithmetic
-
-private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
-  Primrec.fst.comp Primrec.unpair
-
-private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
-  Primrec.snd.comp Primrec.unpair
-
-/-- Addition of rational codes: fraction arithmetic without normalization. -/
-private def addCode (m₁ m₂ : ℕ) : ℕ :=
-  Nat.pair
-    (Nat.pair
-      (m₁.unpair.1.unpair.1 * (m₂.unpair.2 + 1) + m₂.unpair.1.unpair.1 * (m₁.unpair.2 + 1))
-      (m₁.unpair.1.unpair.2 * (m₂.unpair.2 + 1) + m₂.unpair.1.unpair.2 * (m₁.unpair.2 + 1)))
-    ((m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) - 1)
-
-private theorem ratOfCode_addCode (m₁ m₂ : ℕ) :
-    ratOfCode (addCode m₁ m₂) = ratOfCode m₁ + ratOfCode m₂ := by
-  have hden : (((m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) - 1 : ℕ) : ℚ) + 1
-      = ((m₁.unpair.2 : ℚ) + 1) * ((m₂.unpair.2 : ℚ) + 1) := by
-    have h1 : 1 ≤ (m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) :=
-      Nat.one_le_iff_ne_zero.mpr (by positivity)
-    push_cast [h1]
-    ring
-  have h₁ : ((m₁.unpair.2 : ℚ) + 1) ≠ 0 := by positivity
-  have h₂ : ((m₂.unpair.2 : ℚ) + 1) ≠ 0 := by positivity
-  simp only [ratOfCode, addCode, Nat.unpair_pair, hden]
-  field_simp
-  push_cast
-  ring
-
-/-- Sum of a list of rational codes. -/
-private def sumCode (l : List ℕ) : ℕ :=
-  l.foldr addCode 0
-
-private theorem ratOfCode_sumCode (l : List ℕ) :
-    ratOfCode (sumCode l) = (l.map ratOfCode).sum := by
-  induction l with
-  | nil =>
-    simp only [sumCode, List.foldr_nil, List.map_nil, List.sum_nil]
-    simp [ratOfCode]
-  | cons a l ih =>
-    simp only [sumCode, List.foldr_cons, List.map_cons, List.sum_cons, ratOfCode_addCode]
-    rw [← ih]
-    rfl
-
-private theorem primrec₂_addCode : Primrec₂ addCode := by
-  have a₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.1.unpair.1 :=
-    (primrec_unpairFst.comp primrec_unpairFst).comp Primrec.fst
-  have b₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.1.unpair.2 :=
-    (primrec_unpairSnd.comp primrec_unpairFst).comp Primrec.fst
-  have a₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.1.unpair.1 :=
-    (primrec_unpairFst.comp primrec_unpairFst).comp Primrec.snd
-  have b₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.1.unpair.2 :=
-    (primrec_unpairSnd.comp primrec_unpairFst).comp Primrec.snd
-  have d₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.2 + 1 :=
-    Primrec.succ.comp (primrec_unpairSnd.comp Primrec.fst)
-  have d₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.2 + 1 :=
-    Primrec.succ.comp (primrec_unpairSnd.comp Primrec.snd)
-  exact Primrec₂.natPair.comp
-    (Primrec₂.natPair.comp
-      (Primrec.nat_add.comp (Primrec.nat_mul.comp a₁ d₂) (Primrec.nat_mul.comp a₂ d₁))
-      (Primrec.nat_add.comp (Primrec.nat_mul.comp b₁ d₂) (Primrec.nat_mul.comp b₂ d₁)))
-    (Primrec.nat_sub.comp (Primrec.nat_mul.comp d₁ d₂) (Primrec.const 1))
-
-private theorem primrec_sumCode : Primrec sumCode :=
-  (Primrec.list_foldr Primrec.id (Primrec.const 0)
-    (primrec₂_addCode.comp (Primrec.fst.comp Primrec.snd)
-      (Primrec.snd.comp Primrec.snd)).to₂).of_eq fun _ => rfl
+section WordDecoding
 
 /-- Decode a coordinate as the (default-`[]`) binary word it encodes. -/
 private def wordOf (e : ℕ) : List Bool := (decode (α := List Bool) e).getD []
@@ -296,7 +229,7 @@ private theorem primrec_wordOf : Primrec wordOf :=
 private theorem wordOf_encode (s : List Bool) : wordOf (encode s) = s := by
   simp [wordOf]
 
-end CodedRationalArithmetic
+end WordDecoding
 
 section EstimateToolkit
 

@@ -86,10 +86,14 @@ def zeroCode : RatCode := Nat.pair (Nat.pair 0 0) 0
 theorem ratOfCode_zeroCode : ratOfCode zeroCode = 0 := by
   simp [ratOfCode, zeroCode]
 
-private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
+/-- The first `Nat.unpair` projection is primitive recursive. Every projection out of the
+coding is a composite of this and `primrec_unpairSnd`, so both are public; they are used
+just below, so they stay here rather than in the downstream `Metric/RatCodeArith.lean`. -/
+theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
   Primrec.fst.comp Primrec.unpair
 
-private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
+/-- The second `Nat.unpair` projection is primitive recursive. -/
+theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
   Primrec.snd.comp Primrec.unpair
 
 /-- Strict comparison of coded rationals is the ℕ cross-multiplication comparison. -/

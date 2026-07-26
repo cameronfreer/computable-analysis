@@ -751,12 +751,6 @@ private theorem levyProkhorov_jointApproxList_le {F : Baire}
 
 /-! ### The realizer -/
 
-private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
-  Primrec.fst.comp Primrec.unpair
-
-private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
-  Primrec.snd.comp Primrec.unpair
-
 /-- The prefix-length bound of the realizer. -/
 private def jointMaxIdx (n : ℕ) : ℕ :=
   ((wordsOf (2 * n + 4)).map fun s => Nat.pair (Encodable.encode s) (3 * n + 7)).foldr max 0

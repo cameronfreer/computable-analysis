@@ -5,6 +5,7 @@ Authors: Cameron Freer
 -/
 import ComputableAnalysis.Measure.Conditioning
 import ComputableAnalysis.Measure.Integration
+import ComputableAnalysis.Metric.RatCodeArith
 import Mathlib.Probability.Kernel.WithDensity
 
 /-!
@@ -49,15 +50,16 @@ measure `ρ` on X.  Nonnegativity of `q` is an explicit conjunct of the hypothes
   `(Condition P Q).accepts`-ed at the pair's joint law (with everywhere — not just
   a.e. — agreement).
 
-Implementation notes.  The coded-rational layer and the clamped-weight evaluation
-lemmas are private re-derivations of other units' private helpers (the known intentional
-duplication; units 27/28/31/33 carry their own copies).  The Lévy–Prokhorov stability of
+Implementation notes.  The coded-rational combinators come from
+`Metric/RatCodeArith.lean`; the clamped-weight evaluation lemmas and the sign/fusion
+riders on top of them are still private re-derivations of other units' private helpers
+(units 27/28/31/33 carry their own copies).  The Lévy–Prokhorov stability of
 normalized reweighting (`levyProkhorovDist_reweight_le`) is proved by the same
 superlevel-set/interval-integral engine as unit 31's Prokhorov stability estimate,
 applied to restricted measures.
 -/
 
-set_option linter.style.longFile 2700
+set_option linter.style.longFile 2500
 
 namespace ComputableAnalysis
 
@@ -1060,12 +1062,6 @@ private theorem snd_atomicOfList (P : ComputableMetricPresentation X)
     rw [wSumL_projList, Measure.snd, Measure.map_smul, Measure.map_dirac' measurable_snd]
     rfl
 
-private theorem primrec_unpairFst : Primrec fun m : ℕ => m.unpair.1 :=
-  Primrec.fst.comp Primrec.unpair
-
-private theorem primrec_unpairSnd : Primrec fun m : ℕ => m.unpair.2 :=
-  Primrec.snd.comp Primrec.unpair
-
 /-- The encoded projected list is computable. -/
 private theorem computable_projCode :
     Computable fun v => Encodable.encode (projList (ofNat (List (ℕ × ℕ)) v)) := by
@@ -1357,85 +1353,16 @@ theorem computableMap_blSlice (P : ComputableMetricPresentation X)
 
 end SliceRealizer
 
-/-! ### Coded rational arithmetic for the candidate weights (private engine; the known
-intentional duplication — units 27/28/31/33 carry their own private copies) -/
+/-! ### Coded rational riders for the candidate weights (private engine)
+
+The shared combinators live in `Metric/RatCodeArith.lean`; local here are the
+positive-part, inverse-successor and fusion codes this unit needs on top of them. -/
 
 section CodedArithmetic
-
-/-- The canonical code of `1`. -/
-private def oneCode : ℕ := Nat.pair (Nat.pair 1 0) 0
-
-private theorem ratOfCode_oneCode : ratOfCode oneCode = 1 := by
-  simp [ratOfCode, oneCode]
-
-/-- Clamp a rational code into `[0,1]`. -/
-private def clampCode (m : ℕ) : ℕ :=
-  if m.unpair.1.unpair.1 ≤ m.unpair.1.unpair.2 then zeroCode
-  else if m.unpair.1.unpair.2 + m.unpair.2 + 1 ≤ m.unpair.1.unpair.1 then oneCode
-  else m
-
-private theorem ratOfCode_clampCode (m : ℕ) :
-    ratOfCode (clampCode m) = max 0 (min 1 (ratOfCode m)) := by
-  have hden : (0 : ℚ) < (m.unpair.2 : ℚ) + 1 := by positivity
-  by_cases h1 : m.unpair.1.unpair.1 ≤ m.unpair.1.unpair.2
-  · have hab : (m.unpair.1.unpair.1 : ℚ) ≤ (m.unpair.1.unpair.2 : ℚ) := by
-      exact_mod_cast h1
-    have hr : ratOfCode m ≤ 0 := by
-      unfold ratOfCode
-      exact div_nonpos_of_nonpos_of_nonneg (by linarith) hden.le
-    rw [clampCode, if_pos h1, ratOfCode_zeroCode, eq_comm,
-      max_eq_left ((min_le_right _ _).trans hr)]
-  · by_cases h2 : m.unpair.1.unpair.2 + m.unpair.2 + 1 ≤ m.unpair.1.unpair.1
-    · have hcast : (m.unpair.1.unpair.2 : ℚ) + (m.unpair.2 : ℚ) + 1
-          ≤ (m.unpair.1.unpair.1 : ℚ) := by exact_mod_cast h2
-      have hr : 1 ≤ ratOfCode m := by
-        unfold ratOfCode
-        rw [le_div_iff₀ hden]
-        linarith
-      rw [clampCode, if_neg h1, if_pos h2, ratOfCode_oneCode, eq_comm,
-        min_eq_left hr, max_eq_right zero_le_one]
-    · have hba : (m.unpair.1.unpair.2 : ℚ) ≤ (m.unpair.1.unpair.1 : ℚ) := by
-        exact_mod_cast (Nat.lt_of_not_le h1).le
-      have hac : (m.unpair.1.unpair.1 : ℚ)
-          ≤ (m.unpair.1.unpair.2 : ℚ) + (m.unpair.2 : ℚ) := by
-        exact_mod_cast Nat.lt_succ_iff.mp (Nat.lt_of_not_le h2)
-      have hr0 : 0 ≤ ratOfCode m := by
-        unfold ratOfCode
-        exact div_nonneg (by linarith) hden.le
-      have hr1 : ratOfCode m ≤ 1 := by
-        unfold ratOfCode
-        rw [div_le_one hden]
-        linarith
-      rw [clampCode, if_neg h1, if_neg h2, eq_comm, min_eq_right hr1, max_eq_right hr0]
 
 /-- The clamped weight is the decoded clamp code. -/
 private theorem wRaw_eq_ratOfCode_clampCode (c : ℕ) : wRaw c = ratOfCode (clampCode c) :=
   (ratOfCode_clampCode c).symm
-
-/-- Multiplication of rational codes. -/
-private def mulCode (m₁ m₂ : ℕ) : ℕ :=
-  Nat.pair
-    (Nat.pair
-      (m₁.unpair.1.unpair.1 * m₂.unpair.1.unpair.1
-        + m₁.unpair.1.unpair.2 * m₂.unpair.1.unpair.2)
-      (m₁.unpair.1.unpair.1 * m₂.unpair.1.unpair.2
-        + m₁.unpair.1.unpair.2 * m₂.unpair.1.unpair.1))
-    ((m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) - 1)
-
-private theorem ratOfCode_mulCode (m₁ m₂ : ℕ) :
-    ratOfCode (mulCode m₁ m₂) = ratOfCode m₁ * ratOfCode m₂ := by
-  have hden : (((m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) - 1 : ℕ) : ℚ) + 1
-      = ((m₁.unpair.2 : ℚ) + 1) * ((m₂.unpair.2 : ℚ) + 1) := by
-    have h1 : 1 ≤ (m₁.unpair.2 + 1) * (m₂.unpair.2 + 1) :=
-      Nat.one_le_iff_ne_zero.mpr (by positivity)
-    push_cast [h1]
-    ring
-  have h₁ : ((m₁.unpair.2 : ℚ) + 1) ≠ 0 := by positivity
-  have h₂ : ((m₂.unpair.2 : ℚ) + 1) ≠ 0 := by positivity
-  simp only [ratOfCode, mulCode, Nat.unpair_pair, hden]
-  field_simp
-  push_cast
-  ring
 
 /-- The nonnegative part of a rational code: `zeroCode` on nonpositive values. -/
 private def posPartCode (m : ℕ) : ℕ :=
@@ -1482,36 +1409,6 @@ private theorem wRaw_eq_of_mem {m : ℕ} (h0 : 0 ≤ ratOfCode m) (h1 : ratOfCod
 section PrimrecArithmetic
 
 open Primrec
-
-private theorem primrec_clampCode : Primrec clampCode := by
-  have ha : Primrec fun m : ℕ => m.unpair.1.unpair.1 :=
-    primrec_unpairFst.comp primrec_unpairFst
-  have hb : Primrec fun m : ℕ => m.unpair.1.unpair.2 :=
-    primrec_unpairSnd.comp primrec_unpairFst
-  exact Primrec.ite (Primrec.nat_le.comp ha hb) (const zeroCode)
-    (Primrec.ite
-      (Primrec.nat_le.comp
-        (succ.comp (nat_add.comp hb primrec_unpairSnd)) ha)
-      (const oneCode) Primrec.id)
-
-private theorem primrec₂_mulCode : Primrec₂ mulCode := by
-  have a₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.1.unpair.1 :=
-    (primrec_unpairFst.comp primrec_unpairFst).comp fst
-  have b₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.1.unpair.2 :=
-    (primrec_unpairSnd.comp primrec_unpairFst).comp fst
-  have a₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.1.unpair.1 :=
-    (primrec_unpairFst.comp primrec_unpairFst).comp snd
-  have b₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.1.unpair.2 :=
-    (primrec_unpairSnd.comp primrec_unpairFst).comp snd
-  have d₁ : Primrec fun p : ℕ × ℕ => p.1.unpair.2 + 1 :=
-    succ.comp (primrec_unpairSnd.comp fst)
-  have d₂ : Primrec fun p : ℕ × ℕ => p.2.unpair.2 + 1 :=
-    succ.comp (primrec_unpairSnd.comp snd)
-  exact Primrec₂.natPair.comp
-    (Primrec₂.natPair.comp
-      (nat_add.comp (nat_mul.comp a₁ a₂) (nat_mul.comp b₁ b₂))
-      (nat_add.comp (nat_mul.comp a₁ b₂) (nat_mul.comp b₁ a₂)))
-    (nat_sub.comp (nat_mul.comp d₁ d₂) (const 1))
 
 private theorem primrec_posPartCode : Primrec posPartCode :=
   Primrec.ite
