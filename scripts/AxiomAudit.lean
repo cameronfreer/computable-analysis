@@ -266,6 +266,7 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.blRep,
    ``ComputableAnalysis.blRep_names_iff,
    ``ComputableAnalysis.computableMap_integrateBL,
+   ``ComputableAnalysis.exists_boundedLipschitzFamilyIntegration_realizer,
    -- Unit 32: the shared conditioning layer
    ``ComputableAnalysis.ComputableMetricPresentation.prod,
    ``ComputableAnalysis.ComputableMetricPresentation.separableSpace,

@@ -38,6 +38,18 @@ implies continuity):
 * `computableMap_integrateBL : ComputableMap ((blRep P).prod (weakMeasureRep P)) realRep
   fun q => ∫ x, q.1 x ∂q.2.toMeasure` — **the frozen operation**; no completeness
   hypothesis, and the realizer code is independent of `X` and `P`.
+* `exists_boundedLipschitzFamilyIntegration_realizer` — **uniform integration of a whole
+  packed family of integrands against one fixed measure**: a single total oracle code
+  sends the interleaving of a weak measure name with a family name `Ψ` (slice `i` being
+  the integrand name `fun j => Ψ (Nat.pair i j)`) to one output stream whose slice
+  `fun n => q (Nat.pair i n)` is a `realRep` name of `∫ φ i dμ`, uniformly in `i`.
+  Oracle substitution cannot assemble this from the single-integrand statement —
+  `OracleCode.subst` inlines a *fixed* stream transformation, so the consumed stream
+  cannot vary with the output coordinate — but the prefix chain can, since its bounds
+  and postprocessor are primitive-recursive in the output coordinate together with a
+  finite prefix.  The analytic estimates are shared with the single-integrand engine
+  (`abs_integralApprox_sub_integral_le_pow`), not duplicated: only the indexing of the
+  name-reads changes.
 
 The engine stays private: the generic Prokhorov stability estimate
 `|∫ φ dμ − ∫ φ dν| ≤ (K + 2B) · levyProkhorovDist μ ν`, the total realizer built on the
@@ -552,6 +564,12 @@ private theorem pair_le_pair_left {a b : ℕ} (h : a ≤ b) (c : ℕ) :
   · exact (Nat.pair_lt_pair_left c h).le
   · exact le_rfl
 
+private theorem pair_le_pair_right (a : ℕ) {b c : ℕ} (h : b ≤ c) :
+    Nat.pair a b ≤ Nat.pair a c := by
+  rcases lt_or_eq_of_le h with h | rfl
+  · exact (Nat.pair_lt_pair_right a h).le
+  · exact le_rfl
+
 /-! ### The integration realizer's stage function, bounds, and postprocessor
 
 The head-access assembly rides unit 26's `OracleCode.exists_prefixChainCode`: the needed
@@ -782,12 +800,344 @@ private theorem ratOfCode_postValue (M Φ : Baire) {L B : ℕ}
       Finset.sum_div]
     exact Finset.sum_congr rfl fun i _ => by ring
 
+/-! ### The indexed (family) stage bounds and postprocessor
+
+For a whole *family* of integrands packed on one track — slice `i` of `Ψ` being the
+integrand name `fun j => Ψ (Nat.pair i j)` — the same three-stage chain works with the
+family index threaded through the **output** coordinate: at output coordinate
+`v = Nat.pair i n` the code reads slice `i` of the integrand track and emits precision
+`n`.  This is what oracle substitution cannot do: `OracleCode.subst` inlines a *fixed*
+stream transformation, so it cannot make the consumed stream depend on the output
+coordinate; but the prefix chain's bounds and postprocessor are primitive-recursive
+functions *of the output coordinate* together with a finite prefix, so the index rides
+along for free.  Only the indexing changes here — the analytic estimates are the ones
+already proved above. -/
+
+/-- The interleaved coordinate carrying `Ψ (Nat.pair i j)`, i.e. entry `j` of slice `i`
+of the packed integrand track (the odd track of `Baire.interleave M Ψ`). -/
+private def famPos (i j : ℕ) : ℕ := 2 * Nat.pair i j + 1
+
+private theorem primrec₂_famPos : Primrec₂ famPos :=
+  Primrec.nat_add.comp (Primrec.nat_mul.comp (Primrec.const 2) Primrec₂.natPair)
+    (Primrec.const 1)
+
+private theorem famPos_le_famPos (i : ℕ) {a b : ℕ} (h : a ≤ b) :
+    famPos i a ≤ famPos i b := by
+  have := pair_le_pair_right i h
+  simp only [famPos]
+  omega
+
+/-- The Lipschitz head of slice `v.unpair.1`, read out of an encoded prefix. -/
+private def famHeadL (v h : ℕ) : ℕ := (ofNat (List ℕ) h).getD (famPos v.unpair.1 0) 0
+
+/-- The uniform-bound head of slice `v.unpair.1`, read out of an encoded prefix. -/
+private def famHeadB (v h : ℕ) : ℕ := (ofNat (List ℕ) h).getD (famPos v.unpair.1 1) 0
+
+private theorem primrec₂_famHeadL : Primrec₂ famHeadL :=
+  (Primrec.list_getD 0).comp ((Primrec.ofNat (List ℕ)).comp Primrec.snd)
+    (primrec₂_famPos.comp (primrec_unpairFst.comp Primrec.fst) (Primrec.const 0))
+
+private theorem primrec₂_famHeadB : Primrec₂ famHeadB :=
+  (Primrec.list_getD 0).comp ((Primrec.ofNat (List ℕ)).comp Primrec.snd)
+    (primrec₂_famPos.comp (primrec_unpairFst.comp Primrec.fst) (Primrec.const 1))
+
+/-- Indexed stage-1 bound: cover both head coordinates of slice `v.unpair.1`. -/
+private def famBound₀ (v : ℕ) : ℕ := famPos v.unpair.1 1 + 1
+
+/-- Indexed stage-1 → stage-2 bound: from the head prefix read the slice heads and
+additionally cover the atom-list coordinate `2 · stageOf n L B`. -/
+private def famBound₁ (v h : ℕ) : ℕ :=
+  2 * stageOf v.unpair.2 (famHeadL v h) (famHeadB v h) + 1 + famBound₀ v
+
+/-- Indexed stage-2 → stage-3 bound: additionally cover all slice-`v.unpair.1` value
+coordinates of the decoded atom list at value precision `v.unpair.2 + 1`. -/
+private def famBound₂ (v h : ℕ) : ℕ :=
+  famPos v.unpair.1 (2 + Nat.pair (maxIdx (ofNat (List (ℕ × ℕ))
+      ((ofNat (List ℕ) h).getD
+        (2 * stageOf v.unpair.2 (famHeadL v h) (famHeadB v h)) 0)))
+      (v.unpair.2 + 1)) + 1
+    + famBound₁ v h
+
+private theorem primrec_famBound₀ : Primrec famBound₀ :=
+  Primrec.succ.comp (primrec₂_famPos.comp primrec_unpairFst (Primrec.const 1))
+
+private theorem primrec₂_famStage : Primrec fun p : ℕ × ℕ =>
+    stageOf p.1.unpair.2 (famHeadL p.1 p.2) (famHeadB p.1 p.2) :=
+  Primrec.nat_add.comp (Primrec.succ.comp (primrec_unpairSnd.comp Primrec.fst))
+    (Primrec.nat_add.comp primrec₂_famHeadL
+      (Primrec.nat_mul.comp (Primrec.const 2) primrec₂_famHeadB))
+
+private theorem primrec₂_famBound₁ : Primrec₂ famBound₁ :=
+  Primrec.nat_add.comp
+    (Primrec.nat_add.comp (Primrec.nat_mul.comp (Primrec.const 2) primrec₂_famStage)
+      (Primrec.const 1))
+    (primrec_famBound₀.comp Primrec.fst)
+
+private theorem primrec₂_famBound₂ : Primrec₂ famBound₂ := by
+  have hmax : Primrec fun p : ℕ × ℕ =>
+      maxIdx (ofNat (List (ℕ × ℕ)) ((ofNat (List ℕ) p.2).getD
+        (2 * stageOf p.1.unpair.2 (famHeadL p.1 p.2) (famHeadB p.1 p.2)) 0)) :=
+    primrec_maxIdx.comp ((Primrec.ofNat (List (ℕ × ℕ))).comp
+      ((Primrec.list_getD 0).comp ((Primrec.ofNat (List ℕ)).comp Primrec.snd)
+        (Primrec.nat_mul.comp (Primrec.const 2) primrec₂_famStage)))
+  exact Primrec.nat_add.comp
+    (Primrec.succ.comp (primrec₂_famPos.comp (primrec_unpairFst.comp Primrec.fst)
+      (Primrec.nat_add.comp (Primrec.const 2)
+        (Primrec₂.natPair.comp hmax
+          (Primrec.succ.comp (primrec_unpairSnd.comp Primrec.fst))))))
+    primrec₂_famBound₁
+
+/-! #### The indexed oracle-free postprocessor -/
+
+/-- The family index carried by the packed postprocessor input `w = Nat.pair v h`. -/
+private def famIdx (w : ℕ) : ℕ := w.unpair.1.unpair.1
+
+/-- The output precision carried by the packed postprocessor input `w = Nat.pair v h`. -/
+private def famPrec (w : ℕ) : ℕ := w.unpair.1.unpair.2
+
+/-- The stage recomputed from the slice heads in the prefix. -/
+private def famStageIdx (w : ℕ) : ℕ :=
+  stageOf (famPrec w) ((prefList w).getD (famPos (famIdx w) 0) 0)
+    ((prefList w).getD (famPos (famIdx w) 1) 0)
+
+/-- The decoded atom list, read at coordinate `2 · famStageIdx w` of the prefix. -/
+private def famAtomListOf (w : ℕ) : List (ℕ × ℕ) :=
+  ofNat (List (ℕ × ℕ)) ((prefList w).getD (2 * famStageIdx w) 0)
+
+/-- The interleaved coordinate of the slice-`famIdx w` integrand value at dense index
+`m` and value precision `famPrec w + 1`. -/
+private def famValPos (w m : ℕ) : ℕ := famPos (famIdx w) (2 + Nat.pair m (famPrec w + 1))
+
+/-- The indexed denominator code: sum of clamped weight codes. -/
+private def famDenCode (w : ℕ) : ℕ :=
+  sumCode ((famAtomListOf w).map fun pr => clampCode pr.2)
+
+/-- The indexed numerator code: sum of clamped-weight·value codes. -/
+private def famNumCode (w : ℕ) : ℕ :=
+  sumCode ((famAtomListOf w).map fun pr =>
+    mulCode (clampCode pr.2) ((prefList w).getD (famValPos w pr.1) 0))
+
+/-- The oracle-free postprocessor of the family integration realizer. -/
+private def famIntegPost (w : ℕ) : ℕ :=
+  if (famDenCode w).unpair.1.unpair.1 ≤ (famDenCode w).unpair.1.unpair.2 then
+    (prefList w).getD (famValPos w 0) 0
+  else divCode (famNumCode w) (famDenCode w)
+
+private theorem primrec_famIdx : Primrec famIdx :=
+  primrec_unpairFst.comp primrec_unpairFst
+
+private theorem primrec_famPrec : Primrec famPrec :=
+  primrec_unpairSnd.comp primrec_unpairFst
+
+private theorem primrec_famStageIdx : Primrec famStageIdx :=
+  Primrec.nat_add.comp (Primrec.succ.comp primrec_famPrec)
+    (Primrec.nat_add.comp
+      ((Primrec.list_getD 0).comp primrec_prefList
+        (primrec₂_famPos.comp primrec_famIdx (Primrec.const 0)))
+      (Primrec.nat_mul.comp (Primrec.const 2)
+        ((Primrec.list_getD 0).comp primrec_prefList
+          (primrec₂_famPos.comp primrec_famIdx (Primrec.const 1)))))
+
+private theorem primrec_famAtomListOf : Primrec famAtomListOf :=
+  (Primrec.ofNat (List (ℕ × ℕ))).comp ((Primrec.list_getD 0).comp primrec_prefList
+    (Primrec.nat_mul.comp (Primrec.const 2) primrec_famStageIdx))
+
+private theorem primrec_famDenCode : Primrec famDenCode :=
+  primrec_sumCode.comp (Primrec.list_map primrec_famAtomListOf
+    ((primrec_clampCode.comp (Primrec.snd.comp Primrec.snd)).to₂))
+
+private theorem primrec_famNumCode : Primrec famNumCode :=
+  primrec_sumCode.comp (Primrec.list_map primrec_famAtomListOf
+    ((primrec₂_mulCode.comp (primrec_clampCode.comp (Primrec.snd.comp Primrec.snd))
+      ((Primrec.list_getD 0).comp (primrec_prefList.comp Primrec.fst)
+        (primrec₂_famPos.comp (primrec_famIdx.comp Primrec.fst)
+          (Primrec.nat_add.comp (Primrec.const 2)
+            (Primrec₂.natPair.comp (Primrec.fst.comp Primrec.snd)
+              (Primrec.succ.comp (primrec_famPrec.comp Primrec.fst))))))).to₂))
+
+private theorem primrec_famIntegPost : Primrec famIntegPost := by
+  have hdenA : Primrec fun w : ℕ => (famDenCode w).unpair.1.unpair.1 :=
+    (primrec_unpairFst.comp primrec_unpairFst).comp primrec_famDenCode
+  have hdenB : Primrec fun w : ℕ => (famDenCode w).unpair.1.unpair.2 :=
+    (primrec_unpairSnd.comp primrec_unpairFst).comp primrec_famDenCode
+  have hzero : Primrec fun w : ℕ => (prefList w).getD (famValPos w 0) 0 :=
+    (Primrec.list_getD 0).comp primrec_prefList
+      (primrec₂_famPos.comp primrec_famIdx
+        (Primrec.nat_add.comp (Primrec.const 2)
+          (Primrec₂.natPair.comp (Primrec.const 0)
+            (Primrec.succ.comp primrec_famPrec))))
+  exact Primrec.ite (Primrec.nat_le.comp hdenA hdenB) hzero
+    (primrec₂_divCode.comp primrec_famNumCode primrec_famDenCode)
+
+/-- The packed argument the three-stage chain feeds to the indexed postprocessor at
+output coordinate `v` on the stream `F`. -/
+private def famChain (F : Baire) (v : ℕ) : ℕ :=
+  Nat.pair v (encode (streamTake F (famBound₂ v
+    (encode (streamTake F (famBound₁ v (encode (streamTake F (famBound₀ v)))))))))
+
+/-- **Correctness of the indexed postprocessor.** At output coordinate
+`Nat.pair i n` the chained postprocessor value on `Baire.interleave M Ψ` is exactly the
+rational `integralApprox Φ l (n + 1)` for slice `i` of the integrand track — any stream
+`Φ` with `Φ j = Ψ (Nat.pair i j)` — against the stage-`stageOf n L B` atom list. -/
+private theorem ratOfCode_famPostValue (M Ψ Φ : Baire) {i L B : ℕ}
+    (hslice : ∀ j, Ψ (Nat.pair i j) = Φ j) (hL : Φ 0 = L) (hB : Φ 1 = B) (n : ℕ) :
+    ratOfCode (famIntegPost (famChain (Baire.interleave M Ψ) (Nat.pair i n)))
+      = integralApprox Φ (ofNat (List (ℕ × ℕ)) (M (stageOf n L B))) (n + 1) := by
+  rw [famChain]
+  set F : Baire := Baire.interleave M Ψ with hF_def
+  set v : ℕ := Nat.pair i n with hv_def
+  have hv1 : v.unpair.1 = i := by rw [hv_def, Nat.unpair_pair]
+  have hv2 : v.unpair.2 = n := by rw [hv_def, Nat.unpair_pair]
+  have hFodd : ∀ j : ℕ, F (famPos i j) = Φ j := by
+    intro j
+    rw [hF_def, famPos, Baire.interleave_odd]
+    exact hslice j
+  have hFL : F (famPos i 0) = L := by rw [hFodd, hL]
+  have hFB : F (famPos i 1) = B := by rw [hFodd, hB]
+  set k : ℕ := stageOf n L B with hk_def
+  set l : List (ℕ × ℕ) := ofNat (List (ℕ × ℕ)) (M k) with hl_def
+  have hFk : F (2 * k) = M k := Baire.interleave_even M Ψ k
+  have hle01 : famPos i 0 ≤ famPos i 1 := famPos_le_famPos i (Nat.zero_le 1)
+  have hB0 : famBound₀ v = famPos i 1 + 1 := by rw [famBound₀, hv1]
+  have hb1 : famBound₁ v (encode (streamTake F (famBound₀ v)))
+      = 2 * k + 1 + famBound₀ v := by
+    simp only [famBound₁, famHeadL, famHeadB, ofNat_encode, hv1, hv2]
+    rw [streamTake_getD F (by omega : famPos i 0 < famBound₀ v),
+      streamTake_getD F (by omega : famPos i 1 < famBound₀ v), hFL, hFB]
+  have hb2 : famBound₂ v (encode (streamTake F (2 * k + 1 + famBound₀ v)))
+      = famPos i (2 + Nat.pair (maxIdx l) (n + 1)) + 1 + (2 * k + 1 + famBound₀ v) := by
+    simp only [famBound₂, famBound₁, famHeadL, famHeadB, ofNat_encode, hv1, hv2]
+    rw [streamTake_getD F (by omega : famPos i 0 < 2 * k + 1 + famBound₀ v),
+      streamTake_getD F (by omega : famPos i 1 < 2 * k + 1 + famBound₀ v), hFL, hFB,
+      streamTake_getD F (by omega : 2 * k < 2 * k + 1 + famBound₀ v), hFk]
+  rw [hb1, hb2]
+  set m₂ : ℕ :=
+    famPos i (2 + Nat.pair (maxIdx l) (n + 1)) + 1 + (2 * k + 1 + famBound₀ v)
+    with hm₂_def
+  set w : ℕ := Nat.pair v (encode (streamTake F m₂)) with hw_def
+  have hpl : prefList w = streamTake F m₂ := by
+    rw [prefList, hw_def, Nat.unpair_pair, ofNat_encode]
+  have hwi : famIdx w = i := by rw [famIdx, hw_def, Nat.unpair_pair, hv1]
+  have hwn : famPrec w = n := by rw [famPrec, hw_def, Nat.unpair_pair, hv2]
+  have hsi : famStageIdx w = k := by
+    simp only [famStageIdx, hpl, hwi, hwn]
+    rw [streamTake_getD F (by omega : famPos i 0 < m₂),
+      streamTake_getD F (by omega : famPos i 1 < m₂), hFL, hFB]
+  have hal : famAtomListOf w = l := by
+    simp only [famAtomListOf, hsi, hpl]
+    rw [streamTake_getD F (by omega : 2 * k < m₂), hFk]
+  have hval : ∀ pr : ℕ × ℕ, pr ∈ l →
+      (streamTake F m₂).getD (famPos i (2 + Nat.pair pr.1 (n + 1))) 0
+        = Φ (2 + Nat.pair pr.1 (n + 1)) := by
+    intro pr hpr
+    have hple : famPos i (2 + Nat.pair pr.1 (n + 1))
+        ≤ famPos i (2 + Nat.pair (maxIdx l) (n + 1)) :=
+      famPos_le_famPos i (by have := pair_le_pair_left (fst_le_maxIdx hpr) (n + 1); omega)
+    rw [streamTake_getD F (by omega : famPos i (2 + Nat.pair pr.1 (n + 1)) < m₂)]
+    exact hFodd _
+  have hval0 : (streamTake F m₂).getD (famPos i (2 + Nat.pair 0 (n + 1))) 0
+      = Φ (2 + Nat.pair 0 (n + 1)) := by
+    have hple : famPos i (2 + Nat.pair 0 (n + 1))
+        ≤ famPos i (2 + Nat.pair (maxIdx l) (n + 1)) :=
+      famPos_le_famPos i (by have := pair_le_pair_left (Nat.zero_le (maxIdx l)) (n + 1); omega)
+    rw [streamTake_getD F (by omega : famPos i (2 + Nat.pair 0 (n + 1)) < m₂)]
+    exact hFodd _
+  have hden : ratOfCode (sumCode (l.map fun pr => clampCode pr.2)) = wSumL l := by
+    rw [ratOfCode_sumCode, List.map_map, wSumL]
+    exact congrArg List.sum (List.map_congr_left fun pr _ => by
+      change ratOfCode (clampCode pr.2) = wRaw pr.2
+      rw [wRaw_eq_ratOfCode_clampCode])
+  have htest : ((sumCode (l.map fun pr => clampCode pr.2)).unpair.1.unpair.1
+        ≤ (sumCode (l.map fun pr => clampCode pr.2)).unpair.1.unpair.2)
+      ↔ wSumL l = 0 := by
+    rw [← ratOfCode_nonpos_iff, hden]
+    exact ⟨fun h => le_antisymm h (wSumL_nonneg l), fun h => le_of_eq h⟩
+  simp only [famIntegPost, famDenCode, famNumCode, famValPos, hal, hpl, hwi, hwn]
+  by_cases h0 : wSumL l = 0
+  · rw [if_pos (htest.mpr h0), hval0, integralApprox, if_pos h0]
+  · rw [if_neg fun hc => h0 (htest.mp hc)]
+    have hmapnum : (l.map fun pr => mulCode (clampCode pr.2)
+          ((streamTake F m₂).getD (famPos i (2 + Nat.pair pr.1 (n + 1))) 0))
+        = l.map fun pr => mulCode (clampCode pr.2) (Φ (2 + Nat.pair pr.1 (n + 1))) :=
+      List.map_congr_left fun pr hpr => by rw [hval pr hpr]
+    rw [hmapnum]
+    have hpos : 0 < ratOfCode (sumCode (l.map fun pr => clampCode pr.2)) := by
+      rw [hden]
+      exact lt_of_le_of_ne (wSumL_nonneg l) (Ne.symm h0)
+    have hnum : ratOfCode (sumCode (l.map fun pr =>
+          mulCode (clampCode pr.2) (Φ (2 + Nat.pair pr.1 (n + 1)))))
+        = (l.map fun pr => wRaw pr.2 * ratOfCode (Φ (2 + Nat.pair pr.1 (n + 1)))).sum := by
+      rw [ratOfCode_sumCode, List.map_map]
+      exact congrArg List.sum (List.map_congr_left fun pr _ => by
+        change ratOfCode (mulCode (clampCode pr.2) (Φ (2 + Nat.pair pr.1 (n + 1)))) = _
+        rw [ratOfCode_mulCode, ← wRaw_eq_ratOfCode_clampCode])
+    rw [ratOfCode_divCode _ _ ((ratOfCode_pos_iff _).mp hpos), hnum, hden,
+      integralApprox, if_neg h0,
+      listSum_map_eq_finSum l fun pr =>
+        wRaw pr.2 * ratOfCode (Φ (2 + Nat.pair pr.1 (n + 1))),
+      Finset.sum_div]
+    exact Finset.sum_congr rfl fun i _ => by ring
+
 /-! ### The generic bounded-Lipschitz integration realizer (private engine) -/
 
 section MainTheorem
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 variable (P : ComputableMetricPresentation X)
+
+/-- **The whole analytic content of the integration engine.**  The rational approximant
+read off an integrand name against the stage-`stageOf n L B` atom list at value precision
+`n + 1` is within `(2⁻¹)^n` of the true integral: the atomic-layer estimate
+(`abs_integralApprox_sub_integral_le`) plus the generic Prokhorov stability estimate
+(`abs_integral_sub_integral_le_levyProkhorovDist`) at that stage, plus the stage
+arithmetic `(L + 2B) · (2⁻¹)^(n+1+(L+2B)) ≤ (2⁻¹)^(n+1)`.  Both the single-integrand
+realizer and the family realizer consume this lemma, so the estimates are proved once. -/
+private theorem abs_integralApprox_sub_integral_le_pow {M Φ : Baire}
+    {μ : ProbabilityMeasure X} {L B : ℕ} {φ : X → ℝ}
+    (hM : ∀ k : ℕ, levyProkhorovDist μ.toMeasure (atomic P (M k)).toMeasure
+      ≤ (2 : ℝ)⁻¹ ^ k)
+    (hname : IntegrandName P Φ L B φ) (n : ℕ) :
+    |((integralApprox Φ (ofNat (List (ℕ × ℕ)) (M (stageOf n L B))) (n + 1) : ℚ) : ℝ)
+        - ∫ x, φ x ∂μ.toMeasure| ≤ (2 : ℝ)⁻¹ ^ n := by
+  set l : List (ℕ × ℕ) := ofNat (List (ℕ × ℕ)) (M (stageOf n L B)) with hl_def
+  -- the atomic-layer estimate at value precision `n + 1`
+  have h1 : |((integralApprox Φ l (n + 1) : ℚ) : ℝ)
+        - ∫ y, φ y ∂(atomicOfList P l).toMeasure| ≤ (2 : ℝ)⁻¹ ^ (n + 1) :=
+    abs_integralApprox_sub_integral_le P hname l (n + 1)
+  -- the Prokhorov stability estimate at stage `stageOf n L B`
+  have hato : (atomic P (M (stageOf n L B))) = atomicOfList P l := rfl
+  have h2 : |(∫ y, φ y ∂(atomicOfList P l).toMeasure) - ∫ x, φ x ∂μ.toMeasure|
+      ≤ ((L : ℝ) + 2 * B) * (2 : ℝ)⁻¹ ^ stageOf n L B := by
+    have hgen := abs_integral_sub_integral_le_levyProkhorovDist
+      μ.toMeasure (atomic P (M (stageOf n L B))).toMeasure hname.lip hname.bound
+    rw [abs_sub_comm, hato] at hgen
+    refine hgen.trans ?_
+    have hcoe : (((L : ℕ) : ℝ≥0) : ℝ) = (L : ℝ) := by simp
+    rw [hcoe]
+    exact mul_le_mul_of_nonneg_left (hM (stageOf n L B)) (by positivity)
+  -- the stage arithmetic: `(L + 2B) · (2⁻¹)^(n+1+(L+2B)) ≤ (2⁻¹)^(n+1)`
+  have h3 : ((L : ℝ) + 2 * B) * (2 : ℝ)⁻¹ ^ stageOf n L B ≤ (2 : ℝ)⁻¹ ^ (n + 1) := by
+    have hkey : ((L + 2 * B : ℕ) : ℝ) * (2 : ℝ)⁻¹ ^ (L + 2 * B : ℕ) ≤ 1 := by
+      rw [inv_pow, ← div_eq_mul_inv, div_le_one (by positivity)]
+      exact_mod_cast Nat.lt_two_pow_self.le
+    have hsplit : (2 : ℝ)⁻¹ ^ stageOf n L B
+        = (2 : ℝ)⁻¹ ^ (n + 1) * (2 : ℝ)⁻¹ ^ (L + 2 * B : ℕ) := by
+      rw [show stageOf n L B = n + 1 + (L + 2 * B) from rfl, pow_add]
+    calc ((L : ℝ) + 2 * B) * (2 : ℝ)⁻¹ ^ stageOf n L B
+        = (((L + 2 * B : ℕ) : ℝ) * (2 : ℝ)⁻¹ ^ (L + 2 * B : ℕ)) * (2 : ℝ)⁻¹ ^ (n + 1) := by
+          rw [hsplit]
+          push_cast
+          ring
+      _ ≤ 1 * (2 : ℝ)⁻¹ ^ (n + 1) := mul_le_mul_of_nonneg_right hkey (by positivity)
+      _ = (2 : ℝ)⁻¹ ^ (n + 1) := one_mul _
+  calc |((integralApprox Φ l (n + 1) : ℚ) : ℝ) - ∫ x, φ x ∂μ.toMeasure|
+      ≤ |((integralApprox Φ l (n + 1) : ℚ) : ℝ)
+            - ∫ y, φ y ∂(atomicOfList P l).toMeasure|
+          + |(∫ y, φ y ∂(atomicOfList P l).toMeasure) - ∫ x, φ x ∂μ.toMeasure| :=
+        abs_sub_le _ _ _
+    _ ≤ (2 : ℝ)⁻¹ ^ (n + 1) + (2 : ℝ)⁻¹ ^ (n + 1) := add_le_add h1 (h2.trans h3)
+    _ = (2 : ℝ)⁻¹ ^ n * ((2 : ℝ)⁻¹ + (2 : ℝ)⁻¹) := by rw [pow_succ]; ring
+    _ = (2 : ℝ)⁻¹ ^ n := by norm_num
 
 /-- **Generic bounded-Lipschitz integration engine**: a single total oracle code which,
 fed the interleaving (measure even, integrand odd) of a weak measure name — a
@@ -818,45 +1168,49 @@ private theorem exists_boundedLipschitzIntegration_realizer :
         (bound₁ v (encode (streamTake (Baire.interleave M Φ) 4)))))))))) : ℚ) : ℝ)
     (∫ x, φ x ∂μ.toMeasure) ≤ (2 : ℝ)⁻¹ ^ v
   rw [Real.dist_eq, ratOfCode_postValue M Φ hname.headL hname.headB v]
-  set l : List (ℕ × ℕ) := ofNat (List (ℕ × ℕ)) (M (stageOf v L B)) with hl_def
-  -- the atomic-layer estimate at value precision `v + 1`
-  have h1 : |((integralApprox Φ l (v + 1) : ℚ) : ℝ)
-        - ∫ y, φ y ∂(atomicOfList P l).toMeasure| ≤ (2 : ℝ)⁻¹ ^ (v + 1) :=
-    abs_integralApprox_sub_integral_le P hname l (v + 1)
-  -- the Prokhorov stability estimate at stage `stageOf v L B`
-  have hato : (atomic P (M (stageOf v L B))) = atomicOfList P l := rfl
-  have h2 : |(∫ y, φ y ∂(atomicOfList P l).toMeasure) - ∫ x, φ x ∂μ.toMeasure|
-      ≤ ((L : ℝ) + 2 * B) * (2 : ℝ)⁻¹ ^ stageOf v L B := by
-    have hgen := abs_integral_sub_integral_le_levyProkhorovDist
-      μ.toMeasure (atomic P (M (stageOf v L B))).toMeasure hname.lip hname.bound
-    rw [abs_sub_comm, hato] at hgen
-    refine hgen.trans ?_
-    have hcoe : (((L : ℕ) : ℝ≥0) : ℝ) = (L : ℝ) := by simp
-    rw [hcoe]
-    exact mul_le_mul_of_nonneg_left (hM (stageOf v L B)) (by positivity)
-  -- the stage arithmetic: `(L + 2B) · (2⁻¹)^(v+1+(L+2B)) ≤ (2⁻¹)^(v+1)`
-  have h3 : ((L : ℝ) + 2 * B) * (2 : ℝ)⁻¹ ^ stageOf v L B ≤ (2 : ℝ)⁻¹ ^ (v + 1) := by
-    have hkey : ((L + 2 * B : ℕ) : ℝ) * (2 : ℝ)⁻¹ ^ (L + 2 * B : ℕ) ≤ 1 := by
-      rw [inv_pow, ← div_eq_mul_inv, div_le_one (by positivity)]
-      exact_mod_cast Nat.lt_two_pow_self.le
-    have hsplit : (2 : ℝ)⁻¹ ^ stageOf v L B
-        = (2 : ℝ)⁻¹ ^ (v + 1) * (2 : ℝ)⁻¹ ^ (L + 2 * B : ℕ) := by
-      rw [show stageOf v L B = v + 1 + (L + 2 * B) from rfl, pow_add]
-    calc ((L : ℝ) + 2 * B) * (2 : ℝ)⁻¹ ^ stageOf v L B
-        = (((L + 2 * B : ℕ) : ℝ) * (2 : ℝ)⁻¹ ^ (L + 2 * B : ℕ)) * (2 : ℝ)⁻¹ ^ (v + 1) := by
-          rw [hsplit]
-          push_cast
-          ring
-      _ ≤ 1 * (2 : ℝ)⁻¹ ^ (v + 1) := mul_le_mul_of_nonneg_right hkey (by positivity)
-      _ = (2 : ℝ)⁻¹ ^ (v + 1) := one_mul _
-  calc |((integralApprox Φ l (v + 1) : ℚ) : ℝ) - ∫ x, φ x ∂μ.toMeasure|
-      ≤ |((integralApprox Φ l (v + 1) : ℚ) : ℝ)
-            - ∫ y, φ y ∂(atomicOfList P l).toMeasure|
-          + |(∫ y, φ y ∂(atomicOfList P l).toMeasure) - ∫ x, φ x ∂μ.toMeasure| :=
-        abs_sub_le _ _ _
-    _ ≤ (2 : ℝ)⁻¹ ^ (v + 1) + (2 : ℝ)⁻¹ ^ (v + 1) := add_le_add h1 (h2.trans h3)
-    _ = (2 : ℝ)⁻¹ ^ v * ((2 : ℝ)⁻¹ + (2 : ℝ)⁻¹) := by rw [pow_succ]; ring
-    _ = (2 : ℝ)⁻¹ ^ v := by norm_num
+  exact abs_integralApprox_sub_integral_le_pow P hM hname v
+
+/-- **Uniform bounded-Lipschitz integration over a family of integrands.**  A single
+total oracle code which, fed the interleaving of a weak measure name `M` (even track)
+with a *packed family* of bounded-Lipschitz integrand names `Ψ` (odd track, slice `i`
+being `fun j => Ψ (Nat.pair i j)`), outputs one stream `q` carrying, at coordinate
+`Nat.pair i n`, the `n`-th approximant of `∫ φ i dμ` — i.e. `fun n => q (Nat.pair i n)`
+is a `realRep` name of `∫ φ i dμ`, uniformly in `i`.  The measure is fixed; only the
+integrand varies.
+
+This cannot be assembled from `exists_boundedLipschitzIntegration_realizer` by oracle
+substitution: `OracleCode.subst` inlines a **fixed** stream transformation, so the
+consumed stream cannot depend on the output coordinate, and hence no per-output-index
+choice of integrand slice is expressible that way.  It *is* expressible through the
+three-stage prefix chain, whose bounds and postprocessor are primitive-recursive
+functions of the output coordinate together with a finite prefix of the oracle: the
+family index simply rides in the coordinate.  The analytic estimates are the ones
+already proved (`abs_integralApprox_sub_integral_le_pow`), reused unchanged; only the
+indexing of the name-reads differs.  No completeness hypothesis; the realizer code is
+independent of `X` and `P`. -/
+theorem exists_boundedLipschitzFamilyIntegration_realizer :
+    ∃ c : OracleCode, (∀ (F : Baire) (v : ℕ), (c.eval F v).Dom) ∧
+      ∀ (M Ψ : Baire) (μ : ProbabilityMeasure X) (φ : ℕ → X → ℝ) (L B : ℕ → ℕ),
+        (∀ k : ℕ, levyProkhorovDist μ.toMeasure (atomic P (M k)).toMeasure
+          ≤ (2 : ℝ)⁻¹ ^ k) →
+        (∀ i : ℕ, IntegrandName P (fun j => Ψ (Nat.pair i j)) (L i) (B i) (φ i)) →
+        ∃ q ∈ c.evalStream (Baire.interleave M Ψ),
+          ∀ i : ℕ, realRep.Names (fun n => q (Nat.pair i n))
+            (∫ x, φ i x ∂μ.toMeasure) := by
+  obtain ⟨c, hc⟩ := exists_prefixChainCode (b₀ := famBound₀) (b₁ := famBound₁)
+    (b₂ := famBound₂) (g := famIntegPost) primrec_famBound₀ primrec₂_famBound₁
+    primrec₂_famBound₂ primrec_famIntegPost
+  refine ⟨c, fun F v => by rw [hc F v]; trivial, fun M Ψ μ φ L B hM hname => ?_⟩
+  refine ⟨fun v => famIntegPost (famChain (Baire.interleave M Ψ) v),
+    mem_evalStream.mpr fun v => by rw [hc (Baire.interleave M Ψ) v]; exact Part.mem_some _,
+    fun i => ?_⟩
+  refine (realPresentation.cauchyRep_names_iff).mpr fun n => ?_
+  change dist ((ratOfCode (famIntegPost
+      (famChain (Baire.interleave M Ψ) (Nat.pair i n))) : ℚ) : ℝ)
+    (∫ x, φ i x ∂μ.toMeasure) ≤ (2 : ℝ)⁻¹ ^ n
+  rw [Real.dist_eq, ratOfCode_famPostValue M Ψ (fun j => Ψ (Nat.pair i j))
+    (fun _ => rfl) (hname i).headL (hname i).headB n]
+  exact abs_integralApprox_sub_integral_le_pow P hM (hname i) n
 
 end MainTheorem
 
