@@ -166,6 +166,15 @@ theorem momentNames_unique {F : Baire} {η ν : ProbabilityMeasure (Set.Icc (0 :
   eq_of_forall_moment_eq fun n =>
     congrArg Subtype.val (Representation.names_unique (hη n) (hν n))
 
+/-- Every probability measure on `[0, 1]` has a moment name: choose a `[0, 1]`-name of each
+moment separately and pack the chosen streams along `Nat.pair`. -/
+private theorem exists_momentNames (η : ProbabilityMeasure (Set.Icc (0 : ℝ) 1)) :
+    ∃ F : Baire, MomentNames F η := by
+  choose p hp using fun n ↦ unitIntervalRep.onto ⟨moment η n, moment_mem_unitInterval η n⟩
+  refine ⟨fun v ↦ p v.unpair.1 v.unpair.2, fun n ↦ ?_⟩
+  simp only [Nat.unpair_pair]
+  exact hp n
+
 /-- **The moment-sequence representation**: a name is a packed family of `[0, 1]`-names of all
 moments. Genuinely partial (convention 2) — a stream naming no measure denotes nothing, and
 there is no default measure.
@@ -176,20 +185,8 @@ noncomputable def hausdorffMomentRep :
     Representation (ProbabilityMeasure (Set.Icc (0 : ℝ) 1)) where
   rep F := ⟨∃ η, MomentNames F η, fun h => h.choose⟩
   onto η := by
-    classical
-    have hname : ∀ n : ℕ, ∃ p : Baire,
-        unitIntervalRep.Names p ⟨moment η n, moment_mem_unitInterval η n⟩ :=
-      fun n => unitIntervalRep.onto _
-    set g : ℕ → Baire := fun n => (hname n).choose with hg
-    refine ⟨fun z => g z.unpair.1 z.unpair.2, ?_⟩
-    have hM : MomentNames (fun z => g z.unpair.1 z.unpair.2) η := by
-      intro n
-      have hslice : (fun k => g (Nat.pair n k).unpair.1 (Nat.pair n k).unpair.2) = g n := by
-        funext k
-        rw [Nat.unpair_pair]
-      rw [hslice, hg]
-      exact (hname n).choose_spec
-    exact ⟨⟨η, hM⟩, momentNames_unique (Exists.choose_spec _) hM⟩
+    obtain ⟨F, hF⟩ := exists_momentNames η
+    exact ⟨F, ⟨η, hF⟩, momentNames_unique (Exists.choose_spec _) hF⟩
 
 /-- Names of the moment representation are exactly moment names — the chosen witness stays
 hidden behind determinacy. -/
