@@ -50,3 +50,4 @@ import ComputableAnalysis.Measure.BernoulliProduct
 import ComputableAnalysis.Measure.HausdorffMoments
 import ComputableAnalysis.Measure.UnitInterval
 import ComputableAnalysis.Measure.BinomialApproximant
+import ComputableAnalysis.Measure.MomentWeights
