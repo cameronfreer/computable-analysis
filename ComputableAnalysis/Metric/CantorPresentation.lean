@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.PrimrecArith
 import ComputableAnalysis.Metric.CauchyRepresentation
 import ComputableAnalysis.RepresentedSpace.Equivalence
 import Mathlib.Data.List.GetD
@@ -215,8 +216,7 @@ private theorem pow2_eq (d : ℕ) : pow2 d = 2 ^ d := by
   | succ d ih => rw [pow2, Function.iterate_succ_apply', ← pow2, ih, pow_succ]; ring
 
 private theorem primrec_pow2 : Primrec pow2 :=
-  Primrec.nat_iterate Primrec.id (Primrec.const 1)
-    ((Primrec.nat_mul.comp (Primrec.const 2) Primrec.snd).to₂)
+  (primrec_pow 2).of_eq fun d => (pow2_eq d).symm
 
 /-- The rational code of the distance between two dense points: `0` for equal extended
 words, otherwise `1 / 2 ^ wordFirstDiff` as the unnormalized fraction

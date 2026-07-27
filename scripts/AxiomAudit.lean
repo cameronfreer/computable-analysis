@@ -323,6 +323,8 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_diracDecodeCode,
    -- Unit 41 (Part C1, lower half): the calibration lower bound
    ``ComputableAnalysis.lim_le_disintegrate,
+   -- Shared Primrec arithmetic (issue #6 consolidation): fixed-base exponentiation
+   ``ComputableAnalysis.primrec_pow,
    -- Bernoulli product as an infinite product measure (classical API)
    ``ComputableAnalysis.cylinder_eq_pi,
    ``ComputableAnalysis.measurableSet_cylinderCoord,

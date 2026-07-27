@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.PrimrecArith
 import ComputableAnalysis.Metric.CauchyRepresentation
 import ComputableAnalysis.Metric.RatCodeArith
 import ComputableAnalysis.TypeTwo.REPredClosure
@@ -1404,17 +1405,8 @@ private theorem primrec_ratDivCode : Primrec₂ ratDivCode :=
 
 /-! ### `testBit`, powers of two, and subset bitmasks -/
 
-private theorem primrec_pow2 : Primrec fun k : ℕ => 2 ^ k := by
-  have h : Primrec fun k : ℕ =>
-      Nat.rec (motive := fun _ => ℕ) 1 (fun _ ih => 2 * ih) k :=
-    Primrec.nat_rec' Primrec.id (Primrec.const 1)
-      ((Primrec.nat_mul.comp (Primrec.const 2) (Primrec.snd.comp Primrec.snd)).to₂)
-  refine h.of_eq fun k => ?_
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [show Nat.rec (motive := fun _ => ℕ) 1 (fun _ ih => 2 * ih) (k + 1)
-      = 2 * Nat.rec (motive := fun _ => ℕ) 1 (fun _ ih => 2 * ih) k from rfl, ih,
-      pow_succ, Nat.mul_comm]
+/-- Powers of two, primitively — the shared proof lives in `TypeTwo/PrimrecArith.lean`. -/
+private theorem primrec_pow2 : Primrec fun k : ℕ => 2 ^ k := primrec_pow 2
 
 private theorem primrec_testBit : Primrec₂ Nat.testBit := by
   have h : PrimrecPred fun p : ℕ × ℕ => p.1 / 2 ^ p.2 % 2 = 1 :=

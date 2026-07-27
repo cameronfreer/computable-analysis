@@ -1,3 +1,4 @@
+import ComputableAnalysis.TypeTwo.PrimrecArith
 import ComputableAnalysis.TypeTwo.Baire
 import ComputableAnalysis.TypeTwo.Cantor
 import ComputableAnalysis.TypeTwo.OracleCode

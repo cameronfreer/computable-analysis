@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.PrimrecArith
 import ComputableAnalysis.Measure.Conditioning
 import ComputableAnalysis.Measure.CantorJoint
 import ComputableAnalysis.Measure.CylinderValues
@@ -637,8 +638,7 @@ private theorem pow2_eq (d : ℕ) : pow2 d = 2 ^ d := by
     ring
 
 private theorem primrec_pow2 : Primrec pow2 :=
-  Primrec.nat_iterate Primrec.id (Primrec.const 1)
-    ((Primrec.nat_mul.comp (Primrec.const 2) Primrec.snd).to₂)
+  (primrec_pow 2).of_eq fun d => (pow2_eq d).symm
 
 /-- The rational code of the exact dyadic `2^{-M}`. -/
 private def dyadicCode (M : ℕ) : ℕ := Nat.pair (Nat.pair 1 0) (pow2 M - 1)
