@@ -15,6 +15,7 @@ actually computes with, each with its `ratOfCode` **value spec** and its
 `Primrec`/`Primrec₂` **computability proof**:
 
 * the constant `oneCode`;
+* the coded naturals `natCode` and the coded positive fractions `fracCode`;
 * the ring operations `addCode`, `negCode`, `subCode`, `mulCode`;
 * the variable-length folds `sumCode`, `prodCode`;
 * the order-flavoured `absCode`, `distCode`, `clampCode`, `symmCode`.
@@ -44,6 +45,32 @@ def oneCode : RatCode := Nat.pair (Nat.pair 1 0) 0
 /-- `oneCode` decodes to `1`. -/
 theorem ratOfCode_oneCode : ratOfCode oneCode = 1 := by
   simp [ratOfCode, oneCode]
+
+/-! ### Coded naturals and coded positive fractions -/
+
+/-- The canonical code of a natural number `a`: the unnormalized fraction
+`(a - 0) / (0 + 1)`. -/
+def natCode (a : ℕ) : RatCode := Nat.pair (Nat.pair a 0) 0
+
+/-- `natCode` decodes to the natural number it codes. -/
+theorem ratOfCode_natCode (a : ℕ) : ratOfCode (natCode a) = a := by
+  simp [ratOfCode, natCode]
+
+/-- The canonical code of the fraction `a / b` with natural numerator and **positive**
+natural denominator: the unnormalized fraction `(a - 0) / ((b - 1) + 1)`. The truncated
+subtraction in the denominator slot is exact whenever `b ≠ 0`, which is the hypothesis of
+`ratOfCode_fracCode`; at `b = 0` the code decodes to `a` instead. -/
+def fracCode (a b : ℕ) : RatCode := Nat.pair (Nat.pair a 0) (b - 1)
+
+/-- `fracCode a b` decodes to the rational `a / b`, for `b ≠ 0`. -/
+theorem ratOfCode_fracCode {b : ℕ} (hb : b ≠ 0) (a : ℕ) :
+    ratOfCode (fracCode a b) = (a : ℚ) / b := by
+  have hcast : ((b - 1 : ℕ) : ℚ) + 1 = (b : ℚ) := by
+    have h1 : 1 ≤ b := Nat.one_le_iff_ne_zero.mpr hb
+    push_cast [h1]
+    ring
+  simp only [ratOfCode, fracCode, Nat.unpair_pair, hcast]
+  norm_num
 
 /-! ### Additive arithmetic -/
 
@@ -239,6 +266,15 @@ subtraction and decidable ℕ comparisons, so all of them are primitive recursiv
 section PrimrecFacts
 
 open Primrec
+
+/-- `natCode` is primitive recursive. -/
+theorem primrec_natCode : Primrec natCode :=
+  Primrec₂.natPair.comp (Primrec₂.natPair.comp Primrec.id (const 0)) (const 0)
+
+/-- `fracCode` is primitive recursive in both arguments. -/
+theorem primrec₂_fracCode : Primrec₂ fracCode :=
+  Primrec₂.natPair.comp (Primrec₂.natPair.comp fst (const 0))
+    (nat_sub.comp snd (const 1))
 
 /-- `addCode` is primitive recursive in both arguments. -/
 theorem primrec₂_addCode : Primrec₂ addCode := by
