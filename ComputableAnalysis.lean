@@ -53,3 +53,4 @@ import ComputableAnalysis.Measure.BinomialApproximant
 import ComputableAnalysis.Measure.MomentWeights
 import ComputableAnalysis.Measure.BernsteinIntegrand
 import ComputableAnalysis.Measure.HausdorffMomentRealizer
+import ComputableAnalysis.Measure.ComputableHausdorffMoments
