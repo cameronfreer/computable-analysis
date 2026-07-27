@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.PrimrecContainers
 import ComputableAnalysis.TypeTwo.Evaln
 import ComputableAnalysis.TypeTwo.Cantor
 
@@ -93,31 +94,6 @@ theorem mem_binaryWords {k : ℕ} {w : List Bool} : w ∈ binaryWords k ↔ w.le
     exact ⟨w, ih (by simpa using h), by cases b <;> simp⟩
 
 /-! ### Computability plumbing -/
-
-/-- `List.all` of a primitive-recursive predicate is primitive recursive. -/
-private theorem primrec_list_all {α σ : Type} [Primcodable α] [Primcodable σ]
-    {f : α → List σ} {p : α → σ → Bool} (hf : Primrec f) (hp : Primrec₂ p) :
-    Primrec fun a => (f a).all (p a) := by
-  have step : Primrec₂ (fun (a : α) (x : σ × Bool) => p a x.1 && x.2) :=
-    Primrec.and.comp (hp.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
-      (Primrec.snd.comp Primrec.snd)
-  refine (Primrec.list_foldr hf (Primrec.const true) step).of_eq fun a => ?_
-  induction f a with
-  | nil => rfl
-  | cons b l ih => simp only [List.all_cons, List.foldr_cons, ih]
-
-/-- `List.filter` by a primitive-recursive predicate is primitive recursive. -/
-private theorem primrec_list_filter {α σ : Type} [Primcodable α] [Primcodable σ]
-    {f : α → List σ} {p : α → σ → Bool} (hf : Primrec f) (hp : Primrec₂ p) :
-    Primrec fun a => (f a).filter (p a) := by
-  have step : Primrec₂ (fun (a : α) (x : σ × List σ) => cond (p a x.1) (x.1 :: x.2) x.2) :=
-    Primrec.cond (hp.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
-      (Primrec.list_cons.comp (Primrec.fst.comp Primrec.snd) (Primrec.snd.comp Primrec.snd))
-      (Primrec.snd.comp Primrec.snd)
-  refine (Primrec.list_foldr hf (Primrec.const []) step).of_eq fun a => ?_
-  induction f a with
-  | nil => rfl
-  | cons b l ih => simp only [List.foldr_cons, ih, List.filter_cons]; cases p a b <;> simp
 
 /-- `Option.any` of a primitive-recursive predicate is primitive recursive. -/
 private theorem primrec_option_any {α σ : Type} [Primcodable α] [Primcodable σ]

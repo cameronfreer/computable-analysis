@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.PrimrecContainers
 import ComputableAnalysis.Weihrauch.Reduction
 import ComputableAnalysis.Weihrauch.Principles.LPO
 
@@ -113,10 +114,7 @@ theorem lpo_le_lim : LPO ≤W Lim := by
     (Primrec.succ.comp ((Primrec.snd.comp Primrec.unpair).comp Primrec.fst)).to₂
   have hl : Primrec fun v : ℕ => ofNat (List ℕ) v.unpair.2 :=
     (Primrec.ofNat (List ℕ)).comp (Primrec.snd.comp Primrec.unpair)
-  have hsum : Primrec fun v : ℕ => (ofNat (List ℕ) v.unpair.2).sum :=
-    (Primrec.list_foldr hl (Primrec.const 0)
-      ((Primrec.nat_add.comp (Primrec.fst.comp Primrec.snd)
-        (Primrec.snd.comp Primrec.snd)).to₂)).of_eq fun _ => List.sum_eq_foldr.symm
+  have hsum : Primrec fun v : ℕ => (ofNat (List ℕ) v.unpair.2).sum := primrec_list_sum hl
   have hg : Primrec fun v : ℕ => if (ofNat (List ℕ) v.unpair.2).sum = 0 then 0 else 1 :=
     Primrec.ite (Primrec.eq.comp hsum (Primrec.const 0)) (Primrec.const 0) (Primrec.const 1)
   obtain ⟨K, hK⟩ := OracleCode.exists_prefixPostCode hb hg

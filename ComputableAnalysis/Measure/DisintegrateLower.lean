@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
 import ComputableAnalysis.TypeTwo.PrimrecArith
+import ComputableAnalysis.TypeTwo.PrimrecContainers
 import ComputableAnalysis.Measure.Conditioning
 import ComputableAnalysis.Measure.CantorJoint
 import ComputableAnalysis.Measure.DiracDecode
@@ -830,36 +831,6 @@ private theorem primrec_foldSum : Primrec foldSum :=
   Primrec.list_foldr Primrec.id (Primrec.const 0)
     ((Primrec.nat_add.comp (Primrec.fst.comp Primrec.snd) (Primrec.snd.comp Primrec.snd)).to₂)
 
-private def foldAny (f : ℕ → Bool) (l : List ℕ) : Bool := l.foldr (fun a b => f a || b) false
-
-private theorem foldAny_eq (f : ℕ → Bool) : ∀ l : List ℕ, foldAny f l = l.any f
-  | [] => rfl
-  | a :: l => by
-      have ih := foldAny_eq f l
-      unfold foldAny at ih ⊢
-      rw [List.foldr_cons, List.any_cons, ih]
-
-private theorem primrec_foldAny {α : Type*} [Primcodable α] {l : α → List ℕ} {p : α → ℕ → Bool}
-    (hl : Primrec l) (hp : Primrec₂ p) : Primrec fun a => foldAny (p a) (l a) :=
-  Primrec.list_foldr hl (Primrec.const false)
-    ((Primrec.or.comp (hp.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
-      (Primrec.snd.comp Primrec.snd)).to₂)
-
-private def foldAll (f : ℕ → Bool) (l : List ℕ) : Bool := l.foldr (fun a b => f a && b) true
-
-private theorem foldAll_eq (f : ℕ → Bool) : ∀ l : List ℕ, foldAll f l = l.all f
-  | [] => rfl
-  | a :: l => by
-      have ih := foldAll_eq f l
-      unfold foldAll at ih ⊢
-      rw [List.foldr_cons, List.all_cons, ih]
-
-private theorem primrec_foldAll {α : Type*} [Primcodable α] {l : α → List ℕ} {p : α → ℕ → Bool}
-    (hl : Primrec l) (hp : Primrec₂ p) : Primrec fun a => foldAll (p a) (l a) :=
-  Primrec.list_foldr hl (Primrec.const true)
-    ((Primrec.and.comp (hp.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
-      (Primrec.snd.comp Primrec.snd)).to₂)
-
 /-! ### The primitive recursion witnesses
 
 The coded layer is sealed while the witnesses are built: without this the unifier unfolds
@@ -903,9 +874,9 @@ private theorem primrec_encL : Primrec fun v : (List ℕ × ℕ) × ℕ => encL 
         (Primrec.nat_lt.comp hj (Primrec.nat_add.comp hcum hg))
     obtain ⟨_, hp'⟩ := hp
     exact Primrec.of_eq hp' fun _ => by simp
-  refine (primrec_foldAny (Primrec.list_range.comp (Primrec.succ.comp Primrec.snd))
+  refine (primrec_list_any (Primrec.list_range.comp (Primrec.succ.comp Primrec.snd))
     hpred).of_eq fun v => ?_
-  rw [encL, foldAny_eq]
+  rw [encL]
 
 private theorem primrec_atomL : Primrec fun v : (List ℕ × ℕ) × ℕ => atomL v.1.1 v.1.2 v.2 := by
   have hhalf : Primrec fun v : (List ℕ × ℕ) × ℕ => v.2 / 2 :=
@@ -928,9 +899,9 @@ private theorem primrec_memCylL :
   have hgetd : Primrec fun x : ((List ℕ × ℕ) × List Bool) × ℕ =>
       x.1.2.getD x.2 false :=
     (Primrec.list_getD false).comp (Primrec.snd.comp Primrec.fst) Primrec.snd
-  refine (primrec_foldAll (Primrec.list_range.comp (Primrec.list_length.comp Primrec.snd))
+  refine (primrec_list_all (Primrec.list_range.comp (Primrec.list_length.comp Primrec.snd))
     (Primrec.to₂ (Primrec.beq.comp hatom hgetd))).of_eq fun v => ?_
-  rw [memCylL, foldAll_eq]
+  rw [memCylL]
 
 /-- Powers of two, primitively — the shared proof lives in `TypeTwo/PrimrecArith.lean`. -/
 private theorem primrec_pow2 : Primrec fun k : ℕ => 2 ^ k := primrec_pow 2
