@@ -353,7 +353,52 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.OracleCode.exists_prefixSearchCode,
    -- Rider: computable problems return computable answers; conditioning is not computable
    ``ComputableAnalysis.ComputableProblem.exists_computablePoint_accepts,
-   ``ComputableAnalysis.not_computableProblem_condition]
+   ``ComputableAnalysis.not_computableProblem_condition,
+   -- Rational codes: coded naturals and coded positive fractions
+   ``ComputableAnalysis.ratOfCode_natCode,
+   ``ComputableAnalysis.primrec_natCode,
+   ``ComputableAnalysis.ratOfCode_fracCode,
+   ``ComputableAnalysis.primrec₂_fracCode,
+   -- The same-atoms Lévy–Prokhorov perturbation bound
+   ``ComputableAnalysis.levyProkhorovDist_le_sum_abs,
+   -- The binomial approximant of a measure on the unit interval
+   ``ComputableAnalysis.binomialWeight_nonneg,
+   ``ComputableAnalysis.sum_binomialWeight,
+   ``ComputableAnalysis.binomialApproximant,
+   ``ComputableAnalysis.binomialApproximant_toMeasure,
+   ``ComputableAnalysis.sum_bernstein_far_le,
+   ``ComputableAnalysis.sum_bernstein_far_le_dyadic,
+   ``ComputableAnalysis.levyProkhorovDist_binomialApproximant_le,
+   -- From approximate moments to a probability vector of binomial weights
+   ``ComputableAnalysis.binomialWeight_eq_moment_sum,
+   ``ComputableAnalysis.binomialWeight_le_one,
+   ``ComputableAnalysis.sum_choose_mul_two_pow,
+   ``ComputableAnalysis.sum_abs_approxWeight_sub_le,
+   ``ComputableAnalysis.sum_abs_clipWeight_sub_le,
+   ``ComputableAnalysis.totalClipWeight_pos,
+   ``ComputableAnalysis.normWeight_nonneg,
+   ``ComputableAnalysis.sum_normWeight,
+   ``ComputableAnalysis.sum_abs_normWeight_sub_le,
+   -- The Bernstein integrand, uniformly in the word
+   ``ComputableAnalysis.bernsteinBL_apply,
+   ``ComputableAnalysis.integrandName_bernsteinName,
+   ``ComputableAnalysis.primrec_bernsteinStreamFn,
+   ``ComputableAnalysis.computableMap_bernsteinBL,
+   ``ComputableAnalysis.monomialBL_apply,
+   ``ComputableAnalysis.integrandName_monomialName,
+   ``ComputableAnalysis.primrec_monomialStreamFn,
+   ``ComputableAnalysis.monomialStreamFn_slice,
+   -- From a moment name to a weak name
+   ``ComputableAnalysis.dense_fracCode,
+   ``ComputableAnalysis.primrec_momentPost,
+   ``ComputableAnalysis.abs_momentApprox_sub_le,
+   ``ComputableAnalysis.momentError_double_le,
+   ``ComputableAnalysis.toMeasure_atomic_momentAtomList,
+   ``ComputableAnalysis.levyProkhorovDist_atomic_momentAtomList_le,
+   -- The computable Hausdorff moment theorem
+   ``ComputableAnalysis.computableMap_momentsOfMeasure,
+   ``ComputableAnalysis.computableMap_measureOfMoments,
+   ``ComputableAnalysis.hausdorffMomentRep_equiv_weak]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
