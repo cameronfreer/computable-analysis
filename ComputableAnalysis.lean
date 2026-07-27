@@ -37,6 +37,7 @@ import ComputableAnalysis.Measure.CantorRepresentation
 import ComputableAnalysis.Measure.CylinderValues
 import ComputableAnalysis.Measure.Constructors
 import ComputableAnalysis.Measure.Pushforward
+import ComputableAnalysis.Measure.FiniteAtomicPerturbation
 import ComputableAnalysis.Measure.WeakRepresentation
 import ComputableAnalysis.Measure.WeakEquivalence
 import ComputableAnalysis.Measure.Kernel

@@ -250,58 +250,6 @@ private theorem isProbabilityMeasure_sum_smul_dirac {k : ℕ} {a : Fin k → ℝ
   simp only [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
   rw [← ENNReal.ofReal_sum_of_nonneg fun i _ => ha i, hsum, ENNReal.ofReal_one]
 
-/-- Evaluating a finite atomic measure on a measurable set: indicator sums. -/
-private theorem sum_smul_dirac_apply {k : ℕ} (a : Fin k → ℝ) (x : Fin k → Cantor × Cantor)
-    {A : Set (Cantor × Cantor)} (hA : MeasurableSet A) :
-    (∑ i, ENNReal.ofReal (a i) • Measure.dirac (x i)) A
-      = ∑ i, A.indicator (fun _ => ENNReal.ofReal (a i)) (x i) := by
-  rw [Measure.finsetSum_apply]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hA]
-  by_cases hi : x i ∈ A
-  · simp [Set.indicator_of_mem hi]
-  · simp [Set.indicator_of_notMem hi]
-
-/-- Same atoms, close weights: the LP distance is bounded by the total weight
-difference. -/
-private theorem levyProkhorovDist_le_sum_abs {k : ℕ} (x : Fin k → Cantor × Cantor)
-    (a b : Fin k → ℝ) (hb : ∀ i, 0 ≤ b i)
-    (Pμ Qμ : ProbabilityMeasure (Cantor × Cantor))
-    (hP : Pμ.toMeasure = ∑ i, ENNReal.ofReal (a i) • Measure.dirac (x i))
-    (hQ : Qμ.toMeasure = ∑ i, ENNReal.ofReal (b i) • Measure.dirac (x i)) :
-    levyProkhorovDist Pμ.toMeasure Qμ.toMeasure ≤ ∑ i, |a i - b i| := by
-  refine levyProkhorovDist_le_of_forall_le _ _
-    (Finset.sum_nonneg fun i _ => abs_nonneg _) fun ε B hε hB => ?_
-  have hε0 : 0 < ε := lt_of_le_of_lt (Finset.sum_nonneg fun i _ => abs_nonneg _) hε
-  have hPB : Pμ.toMeasure B = ∑ i, B.indicator (fun _ => ENNReal.ofReal (a i)) (x i) := by
-    rw [hP]
-    exact sum_smul_dirac_apply a x hB
-  have hQB : Qμ.toMeasure B = ∑ i, B.indicator (fun _ => ENNReal.ofReal (b i)) (x i) := by
-    rw [hQ]
-    exact sum_smul_dirac_apply b x hB
-  have hpoint : ∀ i, B.indicator (fun _ => ENNReal.ofReal (a i)) (x i)
-      ≤ B.indicator (fun _ => ENNReal.ofReal (b i)) (x i) + ENNReal.ofReal |a i - b i| := by
-    intro i
-    by_cases hi : x i ∈ B
-    · rw [Set.indicator_of_mem hi, Set.indicator_of_mem hi,
-        ← ENNReal.ofReal_add (hb i) (abs_nonneg _)]
-      refine ENNReal.ofReal_le_ofReal ?_
-      have := le_abs_self (a i - b i)
-      linarith
-    · simp [Set.indicator_of_notMem hi]
-  calc Pμ.toMeasure B
-      ≤ ∑ i, (B.indicator (fun _ => ENNReal.ofReal (b i)) (x i)
-          + ENNReal.ofReal |a i - b i|) := by
-        rw [hPB]
-        exact Finset.sum_le_sum fun i _ => hpoint i
-    _ = Qμ.toMeasure B + ENNReal.ofReal (∑ i, |a i - b i|) := by
-        rw [Finset.sum_add_distrib, hQB,
-          ENNReal.ofReal_sum_of_nonneg fun i _ => abs_nonneg _]
-    _ ≤ Qμ.toMeasure (thickening ε B) + ENNReal.ofReal ε :=
-        add_le_add (measure_mono (self_subset_thickening hε0 B))
-          (ENNReal.ofReal_le_ofReal hε.le)
-
-
 /-! ### Word machinery -/
 
 /-- Extracting a coordinate from an encoded stream prefix. -/

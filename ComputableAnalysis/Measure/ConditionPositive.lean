@@ -777,47 +777,7 @@ private theorem levyProkhorovDist_reweight_le (f : BoundedLipschitzFun Y)
           / ∫ y, f.toFun y ∂ν₂.toMeasure) + ENNReal.ofReal ε' :=
         ENNReal.ofReal_add (div_nonneg hr₂0 hZ₂.le) hε'0.le
 
-/-! #### The same-atoms LP bound and the normalized-weight perturbation -/
-
-/-- Same atoms, close weights: the LP distance is bounded by the total weight
-difference (private re-derivation of unit 27's helper). -/
-private theorem levyProkhorovDist_le_sum_abs {k : ℕ} (x : Fin k → Y) (a b : Fin k → ℝ)
-    (hb : ∀ i, 0 ≤ b i) (Pμ Qμ : ProbabilityMeasure Y)
-    (hP : Pμ.toMeasure = ∑ i, ENNReal.ofReal (a i) • Measure.dirac (x i))
-    (hQ : Qμ.toMeasure = ∑ i, ENNReal.ofReal (b i) • Measure.dirac (x i)) :
-    levyProkhorovDist Pμ.toMeasure Qμ.toMeasure ≤ ∑ i, |a i - b i| := by
-  haveI : IsProbabilityMeasure Pμ.toMeasure := Pμ.prop
-  haveI : IsProbabilityMeasure Qμ.toMeasure := Qμ.prop
-  refine levyProkhorovDist_le_of_forall_le _ _
-    (Finset.sum_nonneg fun i _ => abs_nonneg _) fun ε A hε hA => ?_
-  have hε0 : 0 < ε := lt_of_le_of_lt (Finset.sum_nonneg fun i _ => abs_nonneg _) hε
-  have hPA : Pμ.toMeasure A = ∑ i, A.indicator (fun _ => ENNReal.ofReal (a i)) (x i) := by
-    rw [hP]
-    exact sum_smul_dirac_apply a x hA
-  have hQA : Qμ.toMeasure A = ∑ i, A.indicator (fun _ => ENNReal.ofReal (b i)) (x i) := by
-    rw [hQ]
-    exact sum_smul_dirac_apply b x hA
-  have hpoint : ∀ i, A.indicator (fun _ => ENNReal.ofReal (a i)) (x i)
-      ≤ A.indicator (fun _ => ENNReal.ofReal (b i)) (x i) + ENNReal.ofReal |a i - b i| := by
-    intro i
-    by_cases hi : x i ∈ A
-    · rw [Set.indicator_of_mem hi, Set.indicator_of_mem hi,
-        ← ENNReal.ofReal_add (hb i) (abs_nonneg _)]
-      refine ENNReal.ofReal_le_ofReal ?_
-      have := le_abs_self (a i - b i)
-      linarith
-    · simp [Set.indicator_of_notMem hi]
-  calc Pμ.toMeasure A
-      ≤ ∑ i, (A.indicator (fun _ => ENNReal.ofReal (b i)) (x i)
-          + ENNReal.ofReal |a i - b i|) := by
-        rw [hPA]
-        exact Finset.sum_le_sum fun i _ => hpoint i
-    _ = Qμ.toMeasure A + ENNReal.ofReal (∑ i, |a i - b i|) := by
-        rw [Finset.sum_add_distrib, hQA,
-          ENNReal.ofReal_sum_of_nonneg fun i _ => abs_nonneg _]
-    _ ≤ Qμ.toMeasure (thickening ε A) + ENNReal.ofReal ε :=
-        add_le_add (measure_mono (self_subset_thickening hε0 A))
-          (ENNReal.ofReal_le_ofReal hε.le)
+/-! #### The normalized-weight perturbation -/
 
 omit [MetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] in
 /-- **Normalized-weight perturbation**: an `ℓ¹` perturbation of nonnegative weight
