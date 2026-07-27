@@ -325,6 +325,11 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.lim_le_disintegrate,
    -- Shared Primrec arithmetic (issue #6 consolidation): fixed-base exponentiation
    ``ComputableAnalysis.primrec_pow,
+   -- Parameter-uniform Primrec list combinators (issue #17)
+   ``ComputableAnalysis.primrec_list_filter,
+   ``ComputableAnalysis.primrec_list_all,
+   ``ComputableAnalysis.primrec_list_any,
+   ``ComputableAnalysis.primrec_list_sum,
    -- Bernoulli product as an infinite product measure (classical API)
    ``ComputableAnalysis.cylinder_eq_pi,
    ``ComputableAnalysis.measurableSet_cylinderCoord,
