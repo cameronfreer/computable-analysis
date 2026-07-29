@@ -3,7 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
-import ComputableAnalysis.TypeTwo.PrimrecContainers
+import ComputableAnalysis.ForMathlib.PrimrecContainers
 import ComputableAnalysis.Weihrauch.Reduction
 import ComputableAnalysis.Weihrauch.Principles.LPO
 

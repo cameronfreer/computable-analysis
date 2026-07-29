@@ -28,6 +28,15 @@ recursive, so a generic version has to take `Primrec₂ ((· + ·) : σ → σ �
 
 Upstreaming is tracked in issue #17; `primrec_list_filter` is deliberately *not* part of that
 proposal's gap claim, being derivable upstream already.
+
+## Upstream status
+
+**Proposed as leanprover-community/mathlib4#42178** (`list_all`, `list_any`, natural-number
+`list_sum`). `primrec_list_filter` is *not* part of that proposal: the Bool-valued parameterized
+filter is derivable from `PrimrecRel.listFilter`, so it stays a local convenience.
+
+Delete the upstreamed part at the first pin bump past the merge; keep `primrec_list_filter`.
+Tracked in #17 and #21.
 -/
 
 namespace ComputableAnalysis

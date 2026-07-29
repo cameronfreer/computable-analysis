@@ -3,10 +3,10 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
-import ComputableAnalysis.TypeTwo.PrimrecArith
+import ComputableAnalysis.ForMathlib.PrimrecArith
 import ComputableAnalysis.Metric.CauchyRepresentation
 import ComputableAnalysis.Metric.RatCodeArith
-import ComputableAnalysis.TypeTwo.REPredClosure
+import ComputableAnalysis.ForMathlib.REPredClosure
 import ComputableAnalysis.Measure.FiniteAtomicPerturbation
 import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
 import Mathlib.Data.List.GetD
@@ -1405,7 +1405,7 @@ private theorem primrec_ratDivCode : Primrec₂ ratDivCode :=
 
 /-! ### `testBit`, powers of two, and subset bitmasks -/
 
-/-- Powers of two, primitively — the shared proof lives in `TypeTwo/PrimrecArith.lean`. -/
+/-- Powers of two, primitively — the shared proof lives in `ForMathlib/PrimrecArith.lean`. -/
 private theorem primrec_pow2 : Primrec fun k : ℕ => 2 ^ k := primrec_pow 2
 
 private theorem primrec_testBit : Primrec₂ Nat.testBit := by
@@ -1780,7 +1780,7 @@ private theorem strictFinCond_atomic_iff_coded (m₁ m₂ : ℕ) (d : RatCode) :
 omit [MeasurableSpace X] [BorelSpace X] in
 /-- **`REPred` of the strict finite condition between decoded atomics**, uniformly in
 the two atomic indices and the coded threshold: the full Σ₁ assembly through the
-bounded-quantifier closure riders of `TypeTwo/REPredClosure.lean`. -/
+bounded-quantifier closure riders of `ForMathlib/REPredClosure.lean`. -/
 private theorem repred_strictFinCondAtomic :
     REPred fun v : ℕ × ℕ × RatCode =>
       strictFinCond (fun i => atomPt P v.1 i) (fun j => atomPt P v.2.1 j)

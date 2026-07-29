@@ -23,6 +23,11 @@ dependence on the rest of this library):
 * `repred_forall_lt` / `repred_exists_lt`: quantification bounded by a `Primrec`
   function of the input — the uniformly input-dependent finite conjunction and
   disjunction.
+
+## Upstream status
+
+**Not yet proposed.** mathlib's `Computability/RE.lean` has no `REPred` closure lemmas at the
+current pin. Tracked in #14 and #21.
 -/
 
 namespace ComputableAnalysis

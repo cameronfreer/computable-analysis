@@ -1,12 +1,12 @@
-import ComputableAnalysis.TypeTwo.PrimrecArith
-import ComputableAnalysis.TypeTwo.PrimrecContainers
+import ComputableAnalysis.ForMathlib.PrimrecArith
+import ComputableAnalysis.ForMathlib.PrimrecContainers
 import ComputableAnalysis.TypeTwo.Baire
 import ComputableAnalysis.TypeTwo.Cantor
 import ComputableAnalysis.TypeTwo.OracleCode
 import ComputableAnalysis.TypeTwo.Eval
 import ComputableAnalysis.TypeTwo.Evaln
 import ComputableAnalysis.TypeTwo.Universal
-import ComputableAnalysis.TypeTwo.REPredClosure
+import ComputableAnalysis.ForMathlib.REPredClosure
 import ComputableAnalysis.TypeTwo.Continuity
 import ComputableAnalysis.TypeTwo.StreamExamples
 import ComputableAnalysis.TypeTwo.PrefixTable

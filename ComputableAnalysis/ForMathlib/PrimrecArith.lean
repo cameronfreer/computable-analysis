@@ -21,6 +21,11 @@ which `Primrec.nat_rec'` accepts directly.
 
 The two-argument form `Primrec₂ fun b k => b ^ k` is a natural generalization and is not
 provided here; no consumer needs a varying base, and every use site fixes `b = 2`.
+
+## Upstream status
+
+**Not yet proposed.** Audited: mathlib's `Primrec` API has no exponentiation lemma at the
+current pin, so there is nothing to defer to. Tracked in #6 and #21.
 -/
 
 namespace ComputableAnalysis
