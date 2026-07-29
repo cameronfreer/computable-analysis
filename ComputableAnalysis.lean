@@ -25,6 +25,7 @@ import ComputableAnalysis.RepresentedSpace.FunctionSpace
 import ComputableAnalysis.Weihrauch.Problem
 import ComputableAnalysis.Weihrauch.Reduction
 import ComputableAnalysis.Weihrauch.StrongReduction
+import ComputableAnalysis.Weihrauch.Witness
 import ComputableAnalysis.Weihrauch.Principles.LPO
 import ComputableAnalysis.Weihrauch.Principles.LLPO
 import ComputableAnalysis.Weihrauch.Principles.Limit
