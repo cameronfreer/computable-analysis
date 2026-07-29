@@ -13,18 +13,21 @@ Mathlib's `Computability/RE.lean` supplies `REPred.of_eq`, `Partrec.dom_re`,
 `ComputablePred.to_re` and Post's theorem, but no characterization of `REPred` as the limit of
 a decidable test with a fuel parameter — the form every effective consumer actually wants.
 
-* `REPred.exists_primrec_stages`: `p a ↔ ∃ t, f a t = true` for some `Primrec₂ f`. (Named for
-  its intended upstream home; inside this namespace it is
-  `ComputableAnalysis.REPred.exists_primrec_stages`, so dot notation on a `REPred` hypothesis
-  does not fire — apply it by name.)
-* `REPred.exists_primrec_cumulative`: the same with *persistence*, obtained by taking the
+* `repred_exists_primrec_stages`: `p a ↔ ∃ t, f a t = true` for some `Primrec₂ f`.
+* `repred_exists_primrec_cumulative`: the same with *persistence*, obtained by taking the
   bounded disjunction over `s ≤ t`.
-* `exists_common_stage`: persistence turns pointwise confirmation into one stage certifying a
-  whole finite family.
+* `exists_common_stage_of_persistent`: persistence turns pointwise confirmation into one stage
+  certifying a whole finite family.
+
+Names follow the `repred_*` convention of `ForMathlib/REPredClosure.lean`. The intended
+**upstream** name of the first is `REPred.exists_primrec_stages`, in mathlib's root namespace
+where dot notation on a `REPred` hypothesis fires; using that name here would only produce
+pseudo-dot notation, since `REPred` is reducible and resolution lands on `Nat.Partrec`.
 
 ## Upstream status
 
-**`REPred.exists_primrec_stages` only** is the upstream candidate; tracked in #14 and #21. The
+**`repred_exists_primrec_stages` only** is the upstream candidate, to be proposed as
+`REPred.exists_primrec_stages`; tracked in #14 and #21. The
 `Primrec₂` conjunct is the entire content: without it the statement is vacuous, since
 `fun a _ => decide (p a)` satisfies the biconditional classically.
 
@@ -40,7 +43,7 @@ namespace ComputableAnalysis
 /-- **Every r.e. predicate is the existential projection of a primitive recursive test.**
 The fuel parameter `t` ranges over stages of `evaln`; the machine code is deliberately hidden,
 since no consumer needs the numbering. -/
-theorem REPred.exists_primrec_stages {α : Type*} [Primcodable α] {p : α → Prop}
+theorem repred_exists_primrec_stages {α : Type*} [Primcodable α] {p : α → Prop}
     (hp : REPred p) :
     ∃ f : α → ℕ → Bool, Primrec₂ f ∧ ∀ a, p a ↔ ∃ t, f a t = true := by
   obtain ⟨c, hc⟩ := exists_code.mp hp
@@ -62,13 +65,13 @@ theorem REPred.exists_primrec_stages {α : Type*} [Primcodable α] {p : α → P
 persistence, so a certificate must never be read off `f a t` alone: distinct instances may be
 confirmed at different stages with no common exact stage. The bounded disjunction over `s ≤ t`
 restores persistence and stays primitive recursive. -/
-theorem REPred.exists_primrec_cumulative {α : Type*} [Primcodable α] {p : α → Prop}
+theorem repred_exists_primrec_cumulative {α : Type*} [Primcodable α] {p : α → Prop}
     (hp : REPred p) :
     ∃ g : α → ℕ → Bool, Primrec₂ g ∧
       (∀ a t, g a t = true → p a) ∧
       (∀ a t t', t ≤ t' → g a t = true → g a t' = true) ∧
       (∀ a, p a → ∃ t, g a t = true) := by
-  obtain ⟨f, hfprim, hfiff⟩ := REPred.exists_primrec_stages hp
+  obtain ⟨f, hfprim, hfiff⟩ := repred_exists_primrec_stages hp
   refine ⟨fun a t => (List.range (t + 1)).any (fun s => f a s), ?_, ?_, ?_, ?_⟩
   · exact primrec_list_any
       (Primrec.list_range.comp (Primrec.succ.comp Primrec.snd))
@@ -86,7 +89,7 @@ theorem REPred.exists_primrec_cumulative {α : Type*} [Primcodable α] {p : α �
 /-- **One stage certifies a whole finite family.** Persistence is exactly what turns pointwise
 eventual confirmation into a single common stage — the fact a packed search needs, after its
 other coordinates are fixed. -/
-theorem exists_common_stage {α : Type*} {p : α → Prop} {g : α → ℕ → Bool}
+theorem exists_common_stage_of_persistent {α : Type*} {p : α → Prop} {g : α → ℕ → Bool}
     (hpers : ∀ a t t', t ≤ t' → g a t = true → g a t' = true)
     (hev : ∀ a, p a → ∃ t, g a t = true) :
     ∀ l : List α, (∀ a ∈ l, p a) → ∃ t, ∀ a ∈ l, g a t = true := by

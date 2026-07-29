@@ -331,9 +331,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.primrec_list_any,
    ``ComputableAnalysis.primrec_list_sum,
    -- Staged approximation of r.e. predicates (issue #21)
-   ``ComputableAnalysis.REPred.exists_primrec_stages,
-   ``ComputableAnalysis.REPred.exists_primrec_cumulative,
-   ``ComputableAnalysis.exists_common_stage,
+   ``ComputableAnalysis.repred_exists_primrec_stages,
+   ``ComputableAnalysis.repred_exists_primrec_cumulative,
+   ``ComputableAnalysis.exists_common_stage_of_persistent,
    -- Bernoulli product as an infinite product measure (classical API)
    ``ComputableAnalysis.cylinder_eq_pi,
    ``ComputableAnalysis.measurableSet_cylinderCoord,
