@@ -20,13 +20,23 @@ the definitions of `≤W` and `≤sW` untouched.
 
 ## Scope note
 
-`trans` here is obtained from the propositional `WeihrauchReducible.trans` and therefore does
-**not** expose the composed codes: the underlying proof builds `K₂.subst K₁` for the
-preprocessor and a nested `subst`/`pairCode` term for the postprocessor, but that construction
-is currently welded into the proof rather than available as a lemma on `IsReductionPair`.
-Factoring it out — so that witness composition is a genuine code combinator rather than a
-choice-mediated re-derivation — is the natural follow-up, and is what would make the bundled
-form pay for itself in the reduction-assembly proofs.
+The structures and the `Nonempty` bridges are usable as they stand. The **combinators are not
+yet executable compositions**: `WeihrauchReduction.refl`, `WeihrauchReduction.trans`,
+`StrongWeihrauchReduction.refl`, `StrongWeihrauchReduction.trans` and
+`StrongWeihrauchReduction.toWeihrauch` all obtain their codes through `Nonempty.some`, so none
+of them exposes the codes it "builds".
+
+This is a real boundary, not a formality: the underlying proofs do construct the codes —
+`K₂.subst K₁` with a nested `subst`/`pairCode` postprocessor for ordinary transitivity,
+`K₂.subst K₁` with `H₁.subst H₂` for the strong one, and `query`/`query` for strong
+reflexivity — but those constructions are welded into proofs rather than available as lemmas on
+`IsReductionPair` / `IsStrongReductionPair`.
+
+Until they are factored out, a proof that wants the actual codes must still unpack the
+propositions and rebuild them by hand, which is exactly what the bundled form is meant to
+avoid. Factoring them is the immediate follow-up, and should precede the product/cylinder work
+that will consume them.
+
 -/
 
 namespace ComputableAnalysis
@@ -67,12 +77,11 @@ theorem strongWeihrauchReducible_iff_nonempty {f : Problem X Y} {g : Problem X' 
 
 namespace WeihrauchReduction
 
-/-- Identity reduction. -/
+/-- Identity reduction. Choice-mediated: see the scope note. -/
 noncomputable def refl (f : Problem X Y) : WeihrauchReduction f f :=
   (weihrauchReducible_iff_nonempty.mp (WeihrauchReducible.refl f)).some
 
-/-- Composition of reductions. See the scope note: this does not currently expose the composed
-codes. -/
+/-- Composition of reductions. Choice-mediated: see the scope note. -/
 noncomputable def trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y''}
     (r₁ : WeihrauchReduction f g) (r₂ : WeihrauchReduction g h) : WeihrauchReduction f h :=
   (weihrauchReducible_iff_nonempty.mp
@@ -83,11 +92,11 @@ end WeihrauchReduction
 
 namespace StrongWeihrauchReduction
 
-/-- Identity strong reduction. -/
+/-- Identity strong reduction. Choice-mediated: see the scope note. -/
 noncomputable def refl (f : Problem X Y) : StrongWeihrauchReduction f f :=
   (strongWeihrauchReducible_iff_nonempty.mp (StrongWeihrauchReducible.refl f)).some
 
-/-- Composition of strong reductions. -/
+/-- Composition of strong reductions. Choice-mediated: see the scope note. -/
 noncomputable def trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y''}
     (r₁ : StrongWeihrauchReduction f g) (r₂ : StrongWeihrauchReduction g h) :
     StrongWeihrauchReduction f h :=
@@ -95,7 +104,8 @@ noncomputable def trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y
     ((strongWeihrauchReducible_iff_nonempty.mpr ⟨r₁⟩).trans
       (strongWeihrauchReducible_iff_nonempty.mpr ⟨r₂⟩))).some
 
-/-- A strong reduction is in particular an ordinary one. -/
+/-- A strong reduction is in particular an ordinary one. Choice-mediated: see the scope
+note. -/
 noncomputable def toWeihrauch {f : Problem X Y} {g : Problem X' Y'}
     (r : StrongWeihrauchReduction f g) : WeihrauchReduction f g :=
   (weihrauchReducible_iff_nonempty.mp
