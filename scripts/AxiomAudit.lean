@@ -334,6 +334,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.repred_exists_primrec_stages,
    ``ComputableAnalysis.repred_exists_primrec_cumulative,
    ``ComputableAnalysis.exists_common_stage_of_persistent,
+   -- Bundled Weihrauch reduction witnesses
+   ``ComputableAnalysis.weihrauchReducible_iff_nonempty,
+   ``ComputableAnalysis.strongWeihrauchReducible_iff_nonempty,
    -- Bernoulli product as an infinite product measure (classical API)
    ``ComputableAnalysis.cylinder_eq_pi,
    ``ComputableAnalysis.measurableSet_cylinderCoord,

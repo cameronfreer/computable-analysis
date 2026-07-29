@@ -43,6 +43,13 @@ def WeihrauchReducible (f : Problem X Y) (g : Problem X' Y') : Prop :=
 
 @[inherit_doc] infix:50 " ≤W " => WeihrauchReducible
 
+/-- **Ordinary Weihrauch equivalence.** Mutual `≤W`. Distinct from `Problem.Equivalent`, which
+is extensional equality of `accepts`: equivalent problems need not accept the same pairs, only
+reduce to each other. -/
+def WeihrauchEquivalent (f : Problem X Y) (g : Problem X' Y') : Prop := f ≤W g ∧ g ≤W f
+
+@[inherit_doc] infix:50 " ≡W " => WeihrauchEquivalent
+
 /-- Membership in the ordinary transformer, unfolded. Stated on `Part.bind` (definitionally
 the do-block of `WeihrauchReducible`), so use sites convert by `exact`. -/
 private theorem mem_transform_iff {K H : OracleCode} {G : Baire →. Baire} {p q : Baire} :
