@@ -1,5 +1,6 @@
 import ComputableAnalysis.ForMathlib.PrimrecArith
 import ComputableAnalysis.ForMathlib.PrimrecContainers
+import ComputableAnalysis.ForMathlib.REPredStages
 -- Compatibility shims for the pre-ForMathlib module paths (issue #21); remove once
 -- known downstream consumers have migrated.
 import ComputableAnalysis.TypeTwo.REPredClosure
