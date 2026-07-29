@@ -1,3 +1,8 @@
+import ComputableAnalysis.ForMathlib.PrimrecArith
+import ComputableAnalysis.ForMathlib.PrimrecContainers
+-- Compatibility shims for the pre-ForMathlib module paths (issue #21); remove once
+-- known downstream consumers have migrated.
+import ComputableAnalysis.TypeTwo.REPredClosure
 import ComputableAnalysis.TypeTwo.PrimrecArith
 import ComputableAnalysis.TypeTwo.PrimrecContainers
 import ComputableAnalysis.TypeTwo.Baire
@@ -6,7 +11,7 @@ import ComputableAnalysis.TypeTwo.OracleCode
 import ComputableAnalysis.TypeTwo.Eval
 import ComputableAnalysis.TypeTwo.Evaln
 import ComputableAnalysis.TypeTwo.Universal
-import ComputableAnalysis.TypeTwo.REPredClosure
+import ComputableAnalysis.ForMathlib.REPredClosure
 import ComputableAnalysis.TypeTwo.Continuity
 import ComputableAnalysis.TypeTwo.StreamExamples
 import ComputableAnalysis.TypeTwo.PrefixTable

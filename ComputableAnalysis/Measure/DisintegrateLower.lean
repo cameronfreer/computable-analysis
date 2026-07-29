@@ -3,8 +3,8 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
-import ComputableAnalysis.TypeTwo.PrimrecArith
-import ComputableAnalysis.TypeTwo.PrimrecContainers
+import ComputableAnalysis.ForMathlib.PrimrecArith
+import ComputableAnalysis.ForMathlib.PrimrecContainers
 import ComputableAnalysis.Measure.Conditioning
 import ComputableAnalysis.Measure.CantorJoint
 import ComputableAnalysis.Measure.DiracDecode
@@ -903,7 +903,7 @@ private theorem primrec_memCylL :
     (Primrec.to₂ (Primrec.beq.comp hatom hgetd))).of_eq fun v => ?_
   rw [memCylL]
 
-/-- Powers of two, primitively — the shared proof lives in `TypeTwo/PrimrecArith.lean`. -/
+/-- Powers of two, primitively — the shared proof lives in `ForMathlib/PrimrecArith.lean`. -/
 private theorem primrec_pow2 : Primrec fun k : ℕ => 2 ^ k := primrec_pow 2
 
 private theorem primrec_massNum :
