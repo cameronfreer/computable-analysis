@@ -472,7 +472,22 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.Problem.Tightens.prod,
    ``ComputableAnalysis.Problem.Tightens.coprod,
    ``ComputableAnalysis.Problem.Tightens.realizes,
-   ``ComputableAnalysis.Problem.Realizes.«then»]
+   ``ComputableAnalysis.Problem.Realizes.«then»,
+   -- Parallel product witnesses, cylinders, and the upgrade theorem (issue #28)
+   ``ComputableAnalysis.IsStrongReductionPair.prod,
+   ``ComputableAnalysis.IsReductionPair.prod,
+   ``ComputableAnalysis.StrongWeihrauchReduction.prod_pre,
+   ``ComputableAnalysis.StrongWeihrauchReduction.prod_post,
+   ``ComputableAnalysis.StrongWeihrauchReducible.prod,
+   ``ComputableAnalysis.WeihrauchReducible.prod,
+   ``ComputableAnalysis.IsCylinder,
+   ``ComputableAnalysis.IsReductionPair.toProdId,
+   ``ComputableAnalysis.WeihrauchReducible.strong_le_prod_id,
+   ``ComputableAnalysis.IsCylinder.weihrauch_iff_strong,
+   -- Lim is a cylinder (issue #28)
+   ``ComputableAnalysis.OracleCode.eval_limCylIndexCode,
+   ``ComputableAnalysis.OracleCode.evalStream_limCylPreCode,
+   ``ComputableAnalysis.Lim.isCylinder]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
