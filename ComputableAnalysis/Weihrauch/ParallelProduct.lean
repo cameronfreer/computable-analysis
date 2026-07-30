@@ -140,6 +140,16 @@ protected theorem IsReductionPair.prod {f₁ : Problem X₁ Y₁} {g₁ : Proble
   exact ⟨Baire.interleave q₁ q₂, hqmem, (y₁, y₂), prod_names_interleave hq₁y hq₂y,
     Problem.prod_accepts_iff.mpr ⟨hacc₁, hacc₂⟩⟩
 
+/-! ### Bundled combinators and their field equations
+
+Per the witness-calculus contract, each bundled combinator exposes its `pre`/`post` fields
+as `rfl` `@[simp]` lemmas. These serve three purposes at once: downstream proofs (the
+parallelization closure laws in particular) rewrite with the field equation instead of
+unfolding the definition or passing through choice-mediated existentials; the `rfl` proof
+is a regression test that the combinator remains a structure literal over the calculus —
+rerouting it through `Nonempty.some` breaks the lemma; and `simp` normalizes goals
+mentioning the composite's fields to the explicit codes. -/
+
 /-- The parallel product of bundled strong reductions, fields explicit. -/
 noncomputable def StrongWeihrauchReduction.prod {f₁ : Problem X₁ Y₁} {g₁ : Problem X₂ Y₂}
     {f₂ : Problem X₃ Y₃} {g₂ : Problem X₄ Y₄} (r₁ : StrongWeihrauchReduction f₁ g₁)
@@ -149,11 +159,14 @@ noncomputable def StrongWeihrauchReduction.prod {f₁ : Problem X₁ Y₁} {g₁
    .pairCode (r₁.post.subst .evenCode) (r₂.post.subst .oddCode),
    r₁.spec.prod r₂.spec⟩
 
+/-- The strong product's preprocessor: split the product name into its halves, run each
+factor's preprocessor on its half, and re-interleave the query names. -/
 @[simp] theorem StrongWeihrauchReduction.prod_pre {f₁ : Problem X₁ Y₁} {g₁ : Problem X₂ Y₂}
     {f₂ : Problem X₃ Y₃} {g₂ : Problem X₄ Y₄} (r₁ : StrongWeihrauchReduction f₁ g₁)
     (r₂ : StrongWeihrauchReduction f₂ g₂) :
     (r₁.prod r₂).pre = .pairCode (r₁.pre.subst .evenCode) (r₂.pre.subst .oddCode) := rfl
 
+/-- The strong product's postprocessor: the same split-and-re-pair, on the answer alone. -/
 @[simp] theorem StrongWeihrauchReduction.prod_post {f₁ : Problem X₁ Y₁} {g₁ : Problem X₂ Y₂}
     {f₂ : Problem X₃ Y₃} {g₂ : Problem X₄ Y₄} (r₁ : StrongWeihrauchReduction f₁ g₁)
     (r₂ : StrongWeihrauchReduction f₂ g₂) :
@@ -171,11 +184,20 @@ noncomputable def WeihrauchReduction.prod {f₁ : Problem X₁ Y₁} {g₁ : Pro
        (OracleCode.oddCode.subst .oddCode))),
    r₁.spec.prod r₂.spec⟩
 
+/-- The ordinary product's preprocessor: identical to the strong one — split the product
+name, run each factor's preprocessor on its half, re-interleave. -/
 @[simp] theorem WeihrauchReduction.prod_pre {f₁ : Problem X₁ Y₁} {g₁ : Problem X₂ Y₂}
     {f₂ : Problem X₃ Y₃} {g₂ : Problem X₄ Y₄} (r₁ : WeihrauchReduction f₁ g₁)
     (r₂ : WeihrauchReduction f₂ g₂) :
     (r₁.prod r₂).pre = .pairCode (r₁.pre.subst .evenCode) (r₂.pre.subst .oddCode) := rfl
 
+/-- The ordinary product's postprocessor. An ordinary postprocessor sees
+`interleave (input name) (answer name)`, and each factor's expects the interleaving of
+*its own* halves — so from the combined stream the composite extracts four quarters and
+reassembles two: for the first factor, the even half of the input (`evenCode` after
+`evenCode`) interleaved with the even half of the answer (`evenCode` after `oddCode`);
+dually with `oddCode` heads for the second. Each factor's postprocessor runs on its
+reassembled pair, and the outputs are re-interleaved. -/
 @[simp] theorem WeihrauchReduction.prod_post {f₁ : Problem X₁ Y₁} {g₁ : Problem X₂ Y₂}
     {f₂ : Problem X₃ Y₃} {g₂ : Problem X₄ Y₄} (r₁ : WeihrauchReduction f₁ g₁)
     (r₂ : WeihrauchReduction f₂ g₂) :
