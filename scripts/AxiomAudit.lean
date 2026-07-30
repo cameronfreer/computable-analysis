@@ -427,7 +427,31 @@ def headlineDecls : List Name :=
    -- The computable Hausdorff moment theorem
    ``ComputableAnalysis.computableMap_momentsOfMeasure,
    ``ComputableAnalysis.computableMap_measureOfMoments,
-   ``ComputableAnalysis.hausdorffMomentRep_equiv_weak]
+   ``ComputableAnalysis.hausdorffMomentRep_equiv_weak,
+   -- Problem algebra (issue #38)
+   ``ComputableAnalysis.Problem.Tightens.refl,
+   ``ComputableAnalysis.Problem.Tightens.trans,
+   ``ComputableAnalysis.Problem.Tightens.antisymm,
+   ``ComputableAnalysis.Problem.equivalent_iff_mutual_tightens,
+   ``ComputableAnalysis.Problem.restrict_dom_iff,
+   ``ComputableAnalysis.Problem.corestrict_dom_iff,
+   ``ComputableAnalysis.Problem.tightens_restrict,
+   ``ComputableAnalysis.Problem.corestrict_tightens_restrict,
+   ``ComputableAnalysis.Problem.relThen_dom_iff,
+   ``ComputableAnalysis.Problem.then_dom_iff,
+   ``ComputableAnalysis.Problem.then_accepts_iff_of_safe,
+   ``ComputableAnalysis.Problem.relThen_tightens_then,
+   ``ComputableAnalysis.Problem.relThen_assoc,
+   ``ComputableAnalysis.Problem.then_assoc,
+   ``ComputableAnalysis.Problem.prod_dom_iff,
+   ``ComputableAnalysis.Problem.coprod_dom_inl_iff,
+   ``ComputableAnalysis.Problem.coprod_dom_inr_iff,
+   ``ComputableAnalysis.Problem.Equivalent.prod,
+   ``ComputableAnalysis.Problem.Equivalent.coprod,
+   ``ComputableAnalysis.Problem.Tightens.prod,
+   ``ComputableAnalysis.Problem.Tightens.coprod,
+   ``ComputableAnalysis.Problem.Tightens.realizes,
+   ``ComputableAnalysis.Problem.Realizes.«then»]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
