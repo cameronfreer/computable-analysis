@@ -113,6 +113,31 @@ theorem subtype_names_iff {X : Representation α} {P : α → Prop} {p : Baire}
 
 end Representation
 
+/-! ### Products and sums of represented spaces
+
+Bundled forms of the constructions above, for use where the endpoints of problems and
+reductions vary (`RepSpace` enters with units 10–11). -/
+
+/-- The product of two represented spaces: the product carrier under the interleaving
+product representation. -/
+def RepSpace.prod (X : RepSpace.{u}) (Y : RepSpace.{v}) : RepSpace.{max u v} :=
+  ⟨X.carrier × Y.carrier, X.rep.prod Y.rep⟩
+
+/-- The sum of two represented spaces: the sum carrier under the tagged sum
+representation. -/
+def RepSpace.sum (X : RepSpace.{u}) (Y : RepSpace.{v}) : RepSpace.{max u v} :=
+  ⟨X.carrier ⊕ Y.carrier, X.rep.sum Y.rep⟩
+
+/-- The representation of the product space is the product representation. -/
+@[simp]
+theorem RepSpace.prod_rep (X : RepSpace.{u}) (Y : RepSpace.{v}) :
+    (X.prod Y).rep = X.rep.prod Y.rep := rfl
+
+/-- The representation of the sum space is the sum representation. -/
+@[simp]
+theorem RepSpace.sum_rep (X : RepSpace.{u}) (Y : RepSpace.{v}) :
+    (X.sum Y).rep = X.rep.sum Y.rep := rfl
+
 variable {X : Representation α} {Y : Representation β} {Z : Representation γ}
 
 /-- **Pairing.** Two computable maps out of a common source pair into the product,
