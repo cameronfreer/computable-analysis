@@ -23,7 +23,10 @@ single-valuedness of `Part`) and the patched realizer of `Problem.exists_realize
 
 Reflexivity, transitivity, and the calibration `ComputableProblem f ↔ f ≤W idProblem X`
 are all proved through reduction pairs, assembling the fixed codes from `query`,
-the deinterleaving codes, `OracleCode.pairCode`, and oracle substitution.
+the deinterleaving codes, `OracleCode.pairCode`, and oracle substitution. The identity
+and composition constructions are exposed as `isReductionPair_refl` and
+`IsReductionPair.comp` (composite postprocessor `ordinaryCompPost`), with codes explicit,
+so the bundled-witness layer composes them without re-deriving the codes.
 -/
 
 namespace ComputableAnalysis
@@ -106,28 +109,35 @@ theorem reduction_iff_exists_reductionPair {f : Problem X Y} {g : Problem X' Y'}
     obtain ⟨q, hqH, y, hqy, hfacc⟩ := hH a y' hay' hacc
     exact ⟨q, mem_transform_iff.mpr ⟨k, hk, a, haG, hqH⟩, y, hqy, hfacc⟩
 
-namespace WeihrauchReducible
+/-! ### The executable reduction-pair calculus
 
-protected theorem refl (f : Problem X Y) : f ≤W f := by
-  obtain ⟨co, hco⟩ := type2Computable_oddPart
-  refine reduction_iff_exists_reductionPair.mpr
-    ⟨.query, co, fun p x hpx hdom => ⟨p, by simp, x, hpx, hdom, fun a y' hay' hacc => ?_⟩⟩
-  refine ⟨a, ?_, y', hay', hacc⟩
-  have := OracleCode.computes_iff_evalStream.mp hco (Baire.interleave p a)
-  rw [this, Baire.oddPart_interleave]
+Identity, composition, and congruence at the level of `IsReductionPair`, each with its
+codes stated explicitly. These are the constructions previously welded inside
+`WeihrauchReducible.refl`/`trans`; the bundled-witness combinators consume them without
+passing through the existential propositions. -/
+
+/-- The identity reduction pair: query the oracle, and read the answer off the odd track
+of the interleaving. -/
+theorem isReductionPair_refl (f : Problem X Y) : IsReductionPair f f .query .oddCode := by
+  intro p x hpx hdom
+  refine ⟨p, by simp, x, hpx, hdom, fun a y' hay' hacc => ⟨a, ?_, y', hay', hacc⟩⟩
+  rw [OracleCode.evalStream_oddCode_interleave]
   exact Part.mem_some a
 
-protected theorem trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y''}
-    (hfg : f ≤W g) (hgh : g ≤W h) : f ≤W h := by
-  obtain ⟨K₁, H₁, hp₁⟩ := reduction_iff_exists_reductionPair.mp hfg
-  obtain ⟨K₂, H₂, hp₂⟩ := reduction_iff_exists_reductionPair.mp hgh
-  obtain ⟨ce, hce⟩ := type2Computable_evenPart
-  obtain ⟨co, hco⟩ := type2Computable_oddPart
-  refine reduction_iff_exists_reductionPair.mpr
-    ⟨K₂.subst K₁,
-     H₁.subst (OracleCode.pairCode ce ((H₂.subst
-       (OracleCode.pairCode (K₁.subst ce) co)))),
-     fun p x hpx hdom => ?_⟩
+/-- The composite ordinary postprocessor: on the original input interleaved with the outer
+answer, rebuild the middle name (the preprocessor `K₁` run on the even track), pair it with
+the answer on the odd track, run the middle postprocessor `H₂`, re-pair its output with the
+original input, and run `H₁`. -/
+noncomputable def ordinaryCompPost (K₁ H₁ H₂ : OracleCode) : OracleCode :=
+  H₁.subst (.pairCode .evenCode (H₂.subst (.pairCode (K₁.subst .evenCode) .oddCode)))
+
+/-- Composition of reduction pairs, with the composite codes explicit: the preprocessors
+compose by substitution, the postprocessors by `ordinaryCompPost`. -/
+protected theorem IsReductionPair.comp {f : Problem X Y} {g : Problem X' Y'}
+    {h : Problem X'' Y''} {K₁ H₁ K₂ H₂ : OracleCode} (hp₁ : IsReductionPair f g K₁ H₁)
+    (hp₂ : IsReductionPair g h K₂ H₂) :
+    IsReductionPair f h (K₂.subst K₁) (ordinaryCompPost K₁ H₁ H₂) := by
+  intro p x hpx hdom
   obtain ⟨k₁, hk₁, x₁, hkx₁, hdom₁, hH₁⟩ := hp₁ p x hpx hdom
   obtain ⟨k₂, hk₂, x₂, hkx₂, hdom₂, hH₂⟩ := hp₂ k₁ x₁ hkx₁ hdom₁
   refine ⟨k₂, ?_, x₂, hkx₂, hdom₂, fun a y'' hay'' hacc => ?_⟩
@@ -136,26 +146,50 @@ protected theorem trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y
     obtain ⟨a₁, ha₁, y', hay', hacc'⟩ := hH₂ a y'' hay'' hacc
     obtain ⟨q, hq, y, hqy, hfacc⟩ := hH₁ a₁ y' hay' hacc'
     set r := Baire.interleave p a with hr
-    have hpr : p ∈ ce.evalStream r := by
-      rw [OracleCode.computes_iff_evalStream.mp hce r, hr, Baire.evenPart_interleave]
-      exact Part.mem_some p
-    have har : a ∈ co.evalStream r := by
-      rw [OracleCode.computes_iff_evalStream.mp hco r, hr, Baire.oddPart_interleave]
-      exact Part.mem_some a
-    have hk₁r : k₁ ∈ (K₁.subst ce).evalStream r := by
+    have hpr : p ∈ OracleCode.evenCode.evalStream r := by
+      rw [hr, OracleCode.evalStream_evenCode_interleave]; exact Part.mem_some p
+    have har : a ∈ OracleCode.oddCode.evalStream r := by
+      rw [hr, OracleCode.evalStream_oddCode_interleave]; exact Part.mem_some a
+    have hk₁r : k₁ ∈ (K₁.subst .evenCode).evalStream r := by
       rw [OracleCode.evalStream_subst hpr]; exact hk₁
     have hka : Baire.interleave k₁ a ∈
-        (OracleCode.pairCode (K₁.subst ce) co).evalStream r :=
+        (OracleCode.pairCode (K₁.subst .evenCode) .oddCode).evalStream r :=
       OracleCode.pairCode_spec hk₁r har
-    have ha₁r : a₁ ∈ (H₂.subst (OracleCode.pairCode (K₁.subst ce) co)).evalStream r := by
+    have ha₁r : a₁ ∈ (H₂.subst
+        (OracleCode.pairCode (K₁.subst .evenCode) .oddCode)).evalStream r := by
       rw [OracleCode.evalStream_subst hka]; exact ha₁
     have hpa₁ : Baire.interleave p a₁ ∈
-        (OracleCode.pairCode ce (H₂.subst
-          (OracleCode.pairCode (K₁.subst ce) co))).evalStream r :=
+        (OracleCode.pairCode .evenCode (H₂.subst
+          (OracleCode.pairCode (K₁.subst .evenCode) .oddCode))).evalStream r :=
       OracleCode.pairCode_spec hpr ha₁r
     refine ⟨q, ?_, y, hqy, hfacc⟩
+    change q ∈ (H₁.subst _).evalStream r
     rw [OracleCode.evalStream_subst hpa₁]
     exact hq
+
+/-- A reduction pair transports along problem equivalences, with the same codes. -/
+protected theorem IsReductionPair.congr {f f' : Problem X Y} {g g' : Problem X' Y'}
+    {K H : OracleCode} (hf : f.Equivalent f') (hg : g.Equivalent g')
+    (hp : IsReductionPair f g K H) : IsReductionPair f' g' K H := by
+  intro p x hpx hdom
+  obtain ⟨y₀, hy₀⟩ := hdom
+  obtain ⟨k, hk, x', hkx', hdom', hH⟩ := hp p x hpx ⟨y₀, (hf x y₀).mpr hy₀⟩
+  refine ⟨k, hk, x', hkx', ?_, fun a y' hay' hacc => ?_⟩
+  · obtain ⟨y₁, hy₁⟩ := hdom'
+    exact ⟨y₁, (hg x' y₁).mp hy₁⟩
+  · obtain ⟨q, hq, y, hqy, hfacc⟩ := hH a y' hay' ((hg x' y').mpr hacc)
+    exact ⟨q, hq, y, hqy, (hf x y).mp hfacc⟩
+
+namespace WeihrauchReducible
+
+protected theorem refl (f : Problem X Y) : f ≤W f :=
+  reduction_iff_exists_reductionPair.mpr ⟨_, _, isReductionPair_refl f⟩
+
+protected theorem trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y''}
+    (hfg : f ≤W g) (hgh : g ≤W h) : f ≤W h := by
+  obtain ⟨K₁, H₁, hp₁⟩ := reduction_iff_exists_reductionPair.mp hfg
+  obtain ⟨K₂, H₂, hp₂⟩ := reduction_iff_exists_reductionPair.mp hgh
+  exact reduction_iff_exists_reductionPair.mpr ⟨_, _, hp₁.comp hp₂⟩
 
 /-- Reduction is invariant under problem equivalence. -/
 theorem congr {f f' : Problem X Y} {g g' : Problem X' Y'} (hf : f.Equivalent f')
