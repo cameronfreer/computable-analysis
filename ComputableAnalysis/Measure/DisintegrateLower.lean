@@ -66,13 +66,6 @@ private def unaryCum (q : Baire) : ℕ → ℕ
 private theorem unaryCum_succ (q : Baire) (n : ℕ) :
     unaryCum q (n + 1) = unaryCum q n + q n + 1 := rfl
 
-/-- Cumulative block starts in closed form. -/
-private theorem unaryCum_eq_sum (g : Baire) (n : ℕ) :
-    unaryCum g n = n + ∑ m ∈ Finset.range n, g m := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [unaryCum_succ, ih, Finset.sum_range_succ]; omega
-
 private theorem unaryCum_mono (q : Baire) : Monotone (unaryCum q) :=
   monotone_nat_of_le_succ fun n => by rw [unaryCum_succ]; omega
 
@@ -546,6 +539,13 @@ private theorem listSum_range_map {M : Type*} [AddCommMonoid M] (f : ℕ → M) 
   | zero => simp
   | succ k ih => rw [List.range_succ, List.map_append, List.sum_append, ih,
       Finset.sum_range_succ]; simp
+
+/-- Cumulative block starts in closed form. -/
+private theorem unaryCum_eq_sum (g : Baire) (n : ℕ) :
+    unaryCum g n = n + ∑ m ∈ Finset.range n, g m := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [unaryCum_succ, ih, Finset.sum_range_succ]; omega
 
 /-- The stage-`m` guess of atom `i`, read off a prefix of the input. -/
 private def guessL (L : List ℕ) (i m : ℕ) : ℕ := L.getD (Nat.pair m (shellIdx i)) 0
