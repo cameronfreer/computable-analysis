@@ -1074,12 +1074,6 @@ Lipschitz head `L` bounds the slippage `L · 2⁻⁽ᵗ⁺¹⁺ᴸ⁾ ≤ 2⁻�
 
 section SliceRealizer
 
-/-- Extracting a coordinate from an encoded stream prefix (private re-derivation of
-unit 31's helper). -/
-private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
-    (streamTake p m).getD j 0 = p j := by
-  rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
-
 /-- The decoded prefix of a packed chain input. -/
 private def prefListS (w : ℕ) : List ℕ := ofNat (List ℕ) w.unpair.2
 

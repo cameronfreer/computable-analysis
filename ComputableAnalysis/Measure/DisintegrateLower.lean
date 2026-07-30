@@ -547,10 +547,6 @@ private theorem unaryCum_eq_sum (g : Baire) (n : ℕ) :
   | zero => rfl
   | succ n ih => rw [unaryCum_succ, ih, Finset.sum_range_succ]; omega
 
-private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
-    (streamTake p m).getD j 0 = p j := by
-  rw [List.getD_eq_getElem _ _ (by simpa using h), getElem_streamTake]
-
 /-- The stage-`m` guess of atom `i`, read off a prefix of the input. -/
 private def guessL (L : List ℕ) (i m : ℕ) : ℕ := L.getD (Nat.pair m (shellIdx i)) 0
 

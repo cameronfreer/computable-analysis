@@ -74,11 +74,6 @@ private theorem realNames_iff {p : Baire} {x : ℝ} :
     rw [Real.dist_eq]
     exact h n
 
-/-- Extracting a coordinate from a decoded stream prefix. -/
-private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
-    (streamTake p m).getD j 0 = p j := by
-  rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
-
 
 /-- Products of `[0,1]`-families stay in `[0,1]`. -/
 private theorem prod_mem_Icc {k : ℕ} (a : Fin k → ℝ)

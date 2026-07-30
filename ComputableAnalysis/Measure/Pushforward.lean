@@ -246,11 +246,6 @@ private theorem realNames_iff {p : Baire} {x : ℝ} :
     rw [Real.dist_eq]
     exact h n
 
-/-- Extracting a coordinate from a decoded stream prefix. -/
-private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
-    (streamTake p m).getD j 0 = p j := by
-  rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
-
 /-- The precision bump: `k · 2⁻⁽ⁿ⁺ᵏ⁾ ≤ 2⁻ⁿ`, from `k < 2 ^ k`. -/
 private theorem bump (k n : ℕ) : (k : ℝ) * (2 : ℝ)⁻¹ ^ (n + k) ≤ (2 : ℝ)⁻¹ ^ n := by
   have hk : (k : ℝ) ≤ (2 : ℝ) ^ k := by

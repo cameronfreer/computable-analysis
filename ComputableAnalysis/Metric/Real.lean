@@ -123,11 +123,6 @@ private theorem unitIntervalRep_names_iff {p : Baire} {s : Set.Icc (0 : ℝ) 1} 
     unitIntervalRep.Names p s ↔ realRep.Names p s.val :=
   Representation.subtype_names_iff
 
-/-- Extracting a coordinate from a decoded stream prefix. -/
-private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
-    (streamTake p m).getD j 0 = p j := by
-  rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
-
 end NamesBridge
 
 /-! ### Computable points -/
