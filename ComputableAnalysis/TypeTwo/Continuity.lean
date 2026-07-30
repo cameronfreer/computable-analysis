@@ -270,6 +270,43 @@ theorem type2Computable_oddPart : Type2Computable Baire.oddPart :=
     ((Primrec.nat_add.comp (Primrec.nat_mul.comp (Primrec.const 2) Primrec.id)
       (Primrec.const 1)).to_comp)
 
+/-! ### Fixed deinterleaving codes
+
+The two projections above are extracted once into shared constants, the same pattern as
+`OracleCode.pairCode`: specified, not constructed, so only properties following from the
+`evalStream` specifications can be proved about them. They give the reduction-witness
+calculus fixed named codes in place of per-proof `obtain`s from the existentials. -/
+
+/-- The fixed even-track deinterleaving code, extracted once from
+`type2Computable_evenPart`. -/
+noncomputable def OracleCode.evenCode : OracleCode :=
+  Classical.choose type2Computable_evenPart
+
+/-- Specification of `OracleCode.evenCode`: its stream value at `p` is `p.evenPart`. -/
+theorem OracleCode.evalStream_evenCode (p : Baire) :
+    OracleCode.evenCode.evalStream p = Part.some p.evenPart :=
+  OracleCode.computes_iff_evalStream.mp (Classical.choose_spec type2Computable_evenPart) p
+
+/-- The fixed odd-track deinterleaving code, extracted once from
+`type2Computable_oddPart`. -/
+noncomputable def OracleCode.oddCode : OracleCode :=
+  Classical.choose type2Computable_oddPart
+
+/-- Specification of `OracleCode.oddCode`: its stream value at `p` is `p.oddPart`. -/
+theorem OracleCode.evalStream_oddCode (p : Baire) :
+    OracleCode.oddCode.evalStream p = Part.some p.oddPart :=
+  OracleCode.computes_iff_evalStream.mp (Classical.choose_spec type2Computable_oddPart) p
+
+/-- On an interleaved stream, `OracleCode.evenCode` recovers the first component. -/
+theorem OracleCode.evalStream_evenCode_interleave (p q : Baire) :
+    OracleCode.evenCode.evalStream (Baire.interleave p q) = Part.some p := by
+  rw [evalStream_evenCode, Baire.evenPart_interleave]
+
+/-- On an interleaved stream, `OracleCode.oddCode` recovers the second component. -/
+theorem OracleCode.evalStream_oddCode_interleave (p q : Baire) :
+    OracleCode.oddCode.evalStream (Baire.interleave p q) = Part.some q := by
+  rw [evalStream_oddCode, Baire.oddPart_interleave]
+
 /-! ### Continuity
 
 Baire space carries the default product topology (each factor `ℕ` discrete); the scoped

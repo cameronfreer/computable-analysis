@@ -337,6 +337,21 @@ def headlineDecls : List Name :=
    -- Bundled Weihrauch reduction witnesses
    ``ComputableAnalysis.weihrauchReducible_iff_nonempty,
    ``ComputableAnalysis.strongWeihrauchReducible_iff_nonempty,
+   -- The executable reduction-witness calculus (issue #26)
+   ``ComputableAnalysis.OracleCode.evalStream_evenCode,
+   ``ComputableAnalysis.OracleCode.evalStream_oddCode,
+   ``ComputableAnalysis.isReductionPair_refl,
+   ``ComputableAnalysis.IsReductionPair.comp,
+   ``ComputableAnalysis.IsReductionPair.congr,
+   ``ComputableAnalysis.isStrongReductionPair_refl,
+   ``ComputableAnalysis.IsStrongReductionPair.comp,
+   ``ComputableAnalysis.IsStrongReductionPair.toReductionPair,
+   ``ComputableAnalysis.IsStrongReductionPair.congr,
+   ``ComputableAnalysis.WeihrauchReduction.trans_pre,
+   ``ComputableAnalysis.WeihrauchReduction.trans_post,
+   ``ComputableAnalysis.StrongWeihrauchReduction.trans_pre,
+   ``ComputableAnalysis.StrongWeihrauchReduction.trans_post,
+   ``ComputableAnalysis.StrongWeihrauchReduction.toWeihrauch_post,
    -- Bernoulli product as an infinite product measure (classical API)
    ``ComputableAnalysis.cylinder_eq_pi,
    ``ComputableAnalysis.measurableSet_cylinderCoord,

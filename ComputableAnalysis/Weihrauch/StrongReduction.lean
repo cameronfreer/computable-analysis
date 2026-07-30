@@ -13,7 +13,9 @@ postprocessor sees **only the oracle answer**, not the original input (no
 `Baire.interleave`). `IsStrongReductionPair` is the corresponding fixed-witness condition,
 equivalent to `≤sW` by the same adversarial-realizer probes as the ordinary case; strong
 transitivity composes postprocessors by bare substitution (`H₁.subst H₂`), with no
-input-tracking plumbing.
+input-tracking plumbing. As in the ordinary file, identity, composition, conversion to an
+ordinary pair, and congruence are exposed on `IsStrongReductionPair` with explicit codes,
+for the bundled-witness layer to consume.
 
 **Headline separation** (both over `baireSpace`): the identity problem reduces ordinarily
 to the constant-zero problem — the ordinary postprocessor recovers the input as
@@ -92,36 +94,21 @@ theorem strongReduction_iff_exists_reductionPair {f : Problem X Y} {g : Problem 
     obtain ⟨q, hqH, y, hqy, hfacc⟩ := hH a y' hay' hacc
     exact ⟨q, mem_strongTransform_iff.mpr ⟨k, hk, a, haG, hqH⟩, y, hqy, hfacc⟩
 
-/-- Strong reduction implies ordinary reduction: precompose the strong postprocessor with
-the odd-track projection, discarding the interleaved original input. -/
-theorem strongWeihrauch_le_weihrauch {f : Problem X Y} {g : Problem X' Y'}
-    (h : f ≤sW g) : f ≤W g := by
-  obtain ⟨K, H, hpair⟩ := strongReduction_iff_exists_reductionPair.mp h
-  obtain ⟨co, hco⟩ := type2Computable_oddPart
-  refine reduction_iff_exists_reductionPair.mpr ⟨K, H.subst co, fun p x hpx hdom => ?_⟩
-  obtain ⟨k, hk, x', hkx', hdom', hH⟩ := hpair p x hpx hdom
-  refine ⟨k, hk, x', hkx', hdom', fun a y' hay' hacc => ?_⟩
-  obtain ⟨q, hqH, y, hqy, hfacc⟩ := hH a y' hay' hacc
-  have har : a ∈ co.evalStream (Baire.interleave p a) := by
-    rw [OracleCode.computes_iff_evalStream.mp hco, Baire.oddPart_interleave]
-    exact Part.mem_some a
-  refine ⟨q, ?_, y, hqy, hfacc⟩
-  rw [OracleCode.evalStream_subst har]
-  exact hqH
+/-! ### The executable strong reduction-pair calculus -/
 
-namespace StrongWeihrauchReducible
+/-- The identity strong reduction pair: query the oracle, and echo the answer. -/
+theorem isStrongReductionPair_refl (f : Problem X Y) :
+    IsStrongReductionPair f f .query .query :=
+  fun p x hpx hdom =>
+    ⟨p, by simp, x, hpx, hdom, fun a y' hay' hacc => ⟨a, by simp, y', hay', hacc⟩⟩
 
-protected theorem refl (f : Problem X Y) : f ≤sW f :=
-  strongReduction_iff_exists_reductionPair.mpr
-    ⟨.query, .query, fun p x hpx hdom =>
-      ⟨p, by simp, x, hpx, hdom, fun a y' hay' hacc => ⟨a, by simp, y', hay', hacc⟩⟩⟩
-
-protected theorem trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y''}
-    (hfg : f ≤sW g) (hgh : g ≤sW h) : f ≤sW h := by
-  obtain ⟨K₁, H₁, hp₁⟩ := strongReduction_iff_exists_reductionPair.mp hfg
-  obtain ⟨K₂, H₂, hp₂⟩ := strongReduction_iff_exists_reductionPair.mp hgh
-  refine strongReduction_iff_exists_reductionPair.mpr
-    ⟨K₂.subst K₁, H₁.subst H₂, fun p x hpx hdom => ?_⟩
+/-- Composition of strong reduction pairs: the preprocessors compose by substitution, the
+postprocessors by bare substitution the other way around — no input-tracking plumbing. -/
+protected theorem IsStrongReductionPair.comp {f : Problem X Y} {g : Problem X' Y'}
+    {h : Problem X'' Y''} {K₁ H₁ K₂ H₂ : OracleCode}
+    (hp₁ : IsStrongReductionPair f g K₁ H₁) (hp₂ : IsStrongReductionPair g h K₂ H₂) :
+    IsStrongReductionPair f h (K₂.subst K₁) (H₁.subst H₂) := by
+  intro p x hpx hdom
   obtain ⟨k₁, hk₁, x₁, hkx₁, hdom₁, hH₁⟩ := hp₁ p x hpx hdom
   obtain ⟨k₂, hk₂, x₂, hkx₂, hdom₂, hH₂⟩ := hp₂ k₁ x₁ hkx₁ hdom₁
   refine ⟨k₂, ?_, x₂, hkx₂, hdom₂, fun a y'' hay'' hacc => ?_⟩
@@ -131,6 +118,52 @@ protected theorem trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y
     refine ⟨q, ?_, y, hqy, hfacc⟩
     rw [OracleCode.evalStream_subst ha₁]
     exact hq
+
+/-- A strong reduction pair is an ordinary one once the postprocessor projects the answer
+off the odd track of the interleaving. -/
+theorem IsStrongReductionPair.toReductionPair {f : Problem X Y} {g : Problem X' Y'}
+    {K H : OracleCode} (hp : IsStrongReductionPair f g K H) :
+    IsReductionPair f g K (H.subst .oddCode) := by
+  intro p x hpx hdom
+  obtain ⟨k, hk, x', hkx', hdom', hH⟩ := hp p x hpx hdom
+  refine ⟨k, hk, x', hkx', hdom', fun a y' hay' hacc => ?_⟩
+  obtain ⟨q, hqH, y, hqy, hfacc⟩ := hH a y' hay' hacc
+  have har : a ∈ OracleCode.oddCode.evalStream (Baire.interleave p a) := by
+    rw [OracleCode.evalStream_oddCode_interleave]; exact Part.mem_some a
+  refine ⟨q, ?_, y, hqy, hfacc⟩
+  rw [OracleCode.evalStream_subst har]
+  exact hqH
+
+/-- A strong reduction pair transports along problem equivalences, with the same codes. -/
+protected theorem IsStrongReductionPair.congr {f f' : Problem X Y} {g g' : Problem X' Y'}
+    {K H : OracleCode} (hf : f.Equivalent f') (hg : g.Equivalent g')
+    (hp : IsStrongReductionPair f g K H) : IsStrongReductionPair f' g' K H := by
+  intro p x hpx hdom
+  obtain ⟨y₀, hy₀⟩ := hdom
+  obtain ⟨k, hk, x', hkx', hdom', hH⟩ := hp p x hpx ⟨y₀, (hf x y₀).mpr hy₀⟩
+  refine ⟨k, hk, x', hkx', ?_, fun a y' hay' hacc => ?_⟩
+  · obtain ⟨y₁, hy₁⟩ := hdom'
+    exact ⟨y₁, (hg x' y₁).mp hy₁⟩
+  · obtain ⟨q, hq, y, hqy, hfacc⟩ := hH a y' hay' ((hg x' y').mpr hacc)
+    exact ⟨q, hq, y, hqy, (hf x y).mp hfacc⟩
+
+/-- Strong reduction implies ordinary reduction: precompose the strong postprocessor with
+the odd-track projection, discarding the interleaved original input. -/
+theorem strongWeihrauch_le_weihrauch {f : Problem X Y} {g : Problem X' Y'}
+    (h : f ≤sW g) : f ≤W g := by
+  obtain ⟨K, H, hpair⟩ := strongReduction_iff_exists_reductionPair.mp h
+  exact reduction_iff_exists_reductionPair.mpr ⟨_, _, hpair.toReductionPair⟩
+
+namespace StrongWeihrauchReducible
+
+protected theorem refl (f : Problem X Y) : f ≤sW f :=
+  strongReduction_iff_exists_reductionPair.mpr ⟨_, _, isStrongReductionPair_refl f⟩
+
+protected theorem trans {f : Problem X Y} {g : Problem X' Y'} {h : Problem X'' Y''}
+    (hfg : f ≤sW g) (hgh : g ≤sW h) : f ≤sW h := by
+  obtain ⟨K₁, H₁, hp₁⟩ := strongReduction_iff_exists_reductionPair.mp hfg
+  obtain ⟨K₂, H₂, hp₂⟩ := strongReduction_iff_exists_reductionPair.mp hgh
+  exact strongReduction_iff_exists_reductionPair.mpr ⟨_, _, hp₁.comp hp₂⟩
 
 /-- Strong reduction is invariant under problem equivalence. -/
 theorem congr {f f' : Problem X Y} {g g' : Problem X' Y'} (hf : f.Equivalent f')
