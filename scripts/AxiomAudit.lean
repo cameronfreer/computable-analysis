@@ -478,6 +478,8 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.IsReductionPair.prod,
    ``ComputableAnalysis.StrongWeihrauchReduction.prod_pre,
    ``ComputableAnalysis.StrongWeihrauchReduction.prod_post,
+   ``ComputableAnalysis.WeihrauchReduction.prod_pre,
+   ``ComputableAnalysis.WeihrauchReduction.prod_post,
    ``ComputableAnalysis.StrongWeihrauchReducible.prod,
    ``ComputableAnalysis.WeihrauchReducible.prod,
    ``ComputableAnalysis.IsCylinder,

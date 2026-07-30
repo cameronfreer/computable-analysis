@@ -171,6 +171,20 @@ noncomputable def WeihrauchReduction.prod {f₁ : Problem X₁ Y₁} {g₁ : Pro
        (OracleCode.oddCode.subst .oddCode))),
    r₁.spec.prod r₂.spec⟩
 
+@[simp] theorem WeihrauchReduction.prod_pre {f₁ : Problem X₁ Y₁} {g₁ : Problem X₂ Y₂}
+    {f₂ : Problem X₃ Y₃} {g₂ : Problem X₄ Y₄} (r₁ : WeihrauchReduction f₁ g₁)
+    (r₂ : WeihrauchReduction f₂ g₂) :
+    (r₁.prod r₂).pre = .pairCode (r₁.pre.subst .evenCode) (r₂.pre.subst .oddCode) := rfl
+
+@[simp] theorem WeihrauchReduction.prod_post {f₁ : Problem X₁ Y₁} {g₁ : Problem X₂ Y₂}
+    {f₂ : Problem X₃ Y₃} {g₂ : Problem X₄ Y₄} (r₁ : WeihrauchReduction f₁ g₁)
+    (r₂ : WeihrauchReduction f₂ g₂) :
+    (r₁.prod r₂).post = .pairCode
+      (r₁.post.subst (.pairCode (OracleCode.evenCode.subst .evenCode)
+        (OracleCode.evenCode.subst .oddCode)))
+      (r₂.post.subst (.pairCode (OracleCode.oddCode.subst .evenCode)
+        (OracleCode.oddCode.subst .oddCode))) := rfl
+
 /-- Strong reducibility is monotone under the parallel product. -/
 theorem StrongWeihrauchReducible.prod {f₁ : Problem X₁ Y₁} {g₁ : Problem X₂ Y₂}
     {f₂ : Problem X₃ Y₃} {g₂ : Problem X₄ Y₄} (h₁ : f₁ ≤sW g₁) (h₂ : f₂ ≤sW g₂) :
