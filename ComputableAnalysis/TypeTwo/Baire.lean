@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import Mathlib.Data.List.GetD
 import Mathlib.Computability.Primrec.List
 import Mathlib.Topology.MetricSpace.PiNat
 
@@ -59,6 +60,12 @@ theorem length_streamTake (p : ℕ → α) (n : ℕ) : (streamTake p n).length =
 theorem getElem_streamTake (p : ℕ → α) (n i : ℕ) (h : i < (streamTake p n).length) :
     (streamTake p n)[i] = p i := by
   simp [streamTake]
+
+/-- Reading a taken prefix below its length returns the stream's value, for any default.
+The default is implicit: it is determined by the goal. -/
+@[simp] theorem streamTake_getD (p : ℕ → α) {n i : ℕ} {d : α} (h : i < n) :
+    (streamTake p n).getD i d = p i := by
+  rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
 
 @[simp]
 theorem streamExtend_apply_lt (s : List α) (p : ℕ → α) {n : ℕ} (h : n < s.length) :

@@ -534,11 +534,6 @@ end CodedRationalArithmetic
 
 /-! ### Small helpers -/
 
-/-- Extracting a coordinate from an encoded stream prefix. -/
-private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
-    (streamTake p m).getD j 0 = p j := by
-  rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
-
 /-- The largest dense-word index of an atom list (prefix-length bound). -/
 private def maxIdx (l : List (ℕ × ℕ)) : ℕ := l.foldr (fun pr acc => max pr.1 acc) 0
 

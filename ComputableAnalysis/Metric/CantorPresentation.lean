@@ -82,11 +82,6 @@ private theorem half_pow_succ_lt (n : ℕ) : (1 / 2 : ℝ) ^ (n + 1) < (1 / 2 : 
 
 private theorem inv_two_eq_half : ((2 : ℝ)⁻¹) = 1 / 2 := by norm_num
 
-/-- Extracting a coordinate from an encoded stream prefix. -/
-private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
-    (streamTake p m).getD j 0 = p j := by
-  rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
-
 /-! ### The dense sequence: words extended by `false`s -/
 
 /-- Decode an index to a binary word (`Primcodable (List Bool)` numbering; garbage ↦ `[]`). -/

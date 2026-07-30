@@ -252,11 +252,6 @@ private theorem isProbabilityMeasure_sum_smul_dirac {k : ℕ} {a : Fin k → ℝ
 
 /-! ### Word machinery -/
 
-/-- Extracting a coordinate from an encoded stream prefix. -/
-private theorem streamTake_getD (p : Baire) {j m : ℕ} (h : j < m) :
-    (streamTake p m).getD j 0 = p j := by
-  rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
-
 private theorem half_pow_le_half_pow {k n : ℕ} (h : k ≤ n) :
     ((2 : ℝ)⁻¹) ^ n ≤ ((2 : ℝ)⁻¹) ^ k := by
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
