@@ -277,4 +277,23 @@ theorem parallelize_idempotent (f : Problem X Y) :
    strongReduction_iff_exists_reductionPair.mpr
       ⟨_, _, isStrongReductionPair_parallelize_unflatten f⟩⟩
 
+/-! ### Parallelizability -/
+
+/-- `f` is **parallelizable**: its parallelization is ordinarily equivalent to `f`
+itself. Since `f ≤sW f.parallelize` always holds (`parallelize_extensive`), the content
+is the collapse `f.parallelize ≤W f`. Parallelizable cylinders are the good targets of
+the spine: countably many coordinatewise reductions to `f` collapse back to a single
+(strong, via the cylinder upgrade) reduction to `f`. -/
+def IsParallelizable (f : Problem X Y) : Prop := f.parallelize ≡W f
+
+/-- `f` is **strongly parallelizable**: its parallelization is strongly equivalent to
+`f` itself. The collapse direction `f.parallelize ≤sW f` is the content, as in
+`IsParallelizable`. -/
+def IsStronglyParallelizable (f : Problem X Y) : Prop := f.parallelize ≡sW f
+
+/-- Strong parallelizability implies parallelizability. -/
+theorem IsStronglyParallelizable.isParallelizable {f : Problem X Y}
+    (h : IsStronglyParallelizable f) : IsParallelizable f :=
+  ⟨strongWeihrauch_le_weihrauch h.1, strongWeihrauch_le_weihrauch h.2⟩
+
 end ComputableAnalysis

@@ -507,7 +507,10 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.parallelize_extensive,
    ``ComputableAnalysis.isStrongReductionPair_parallelize_flatten,
    ``ComputableAnalysis.isStrongReductionPair_parallelize_unflatten,
-   ``ComputableAnalysis.parallelize_idempotent]
+   ``ComputableAnalysis.parallelize_idempotent,
+   ``ComputableAnalysis.IsParallelizable,
+   ``ComputableAnalysis.IsStronglyParallelizable,
+   ``ComputableAnalysis.IsStronglyParallelizable.isParallelizable]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
