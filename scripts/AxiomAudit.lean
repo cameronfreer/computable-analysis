@@ -524,7 +524,14 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.isStrongReductionPair_parallelize_lim,
    ``ComputableAnalysis.Lim.isStronglyParallelizable,
    ``ComputableAnalysis.parallelize_lpo_le_lim,
-   ``ComputableAnalysis.parallelize_lpo_equiv_lim]
+   ``ComputableAnalysis.parallelize_lpo_equiv_lim,
+   -- Uniform reduction compilers (issue #31)
+   ``ComputableAnalysis.BitConsistent,
+   ``ComputableAnalysis.isStrongReductionPair_parallelize_lpo_of_questions,
+   ``ComputableAnalysis.sigma1Family_le_parallelize_lpo,
+   ``ComputableAnalysis.isStrongReductionPair_lim_of_table,
+   ``ComputableAnalysis.stabilizationTable_le_lim,
+   ``ComputableAnalysis.sigma1Family_le_lim]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
