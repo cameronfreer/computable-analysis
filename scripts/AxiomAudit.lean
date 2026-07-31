@@ -570,6 +570,10 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.streamTake_pathStream,
    ``ComputableAnalysis.cantorRep_names_pathName,
    ``ComputableAnalysis.infAbove_pathWord,
+   ``ComputableAnalysis.treeWordCode_lt_raceBound,
+   ``ComputableAnalysis.mem_raceWords,
+   ``ComputableAnalysis.aliveB_iff,
+   ``ComputableAnalysis.raceEventB_iff,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,

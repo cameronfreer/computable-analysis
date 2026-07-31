@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.PrefixTable
 import ComputableAnalysis.Weihrauch.Compilers
 import ComputableAnalysis.Weihrauch.Principles.WKL
 
@@ -27,6 +28,8 @@ infinite, and equal finite death can only occur off the constructed path.
 -/
 
 namespace ComputableAnalysis
+
+open OracleCode (binaryWords mem_binaryWords length_of_mem_binaryWords)
 
 /-! ### Aliveness and the death race -/
 
@@ -178,5 +181,93 @@ theorem infAbove_pathWord {p : Baire} (hinf : IsInfiniteTree p) {a : Baire}
         (i := a (Nat.pair (treeWordCode (pathWord a n)) 0))
         (by simpa [treeWordDecode_treeWordCode] using hans (treeWordCode (pathWord a n)))
       exact h
+
+/-! ### Deciding the flags from a prefix
+
+`TreeMem` reads the name at `treeWordCode w`, so a long-enough **prefix** of the name
+decides every question the flags ask — the queries are indexed by the very codes being
+looked up, and no scatter/gather is needed. These definitions are the decision procedure;
+`raceFlagB_eq` is its agreement with the semantic `raceFlags`. -/
+
+/-- Membership decided from a prefix of the tree name. -/
+def treeMemB (L : List ℕ) (w : List Bool) : Bool := decide (L.getD (treeWordCode w) 0 ≠ 0)
+
+/-- Aliveness decided from a prefix: some word of the right length extends `u`. -/
+def aliveB (L : List ℕ) (u : List Bool) (l : ℕ) : Bool :=
+  (binaryWords l).any fun v => treeMemB L (u ++ v)
+
+/-- The strict death race decided from a prefix. -/
+def raceEventB (L : List ℕ) (w : List Bool) (b : Bool) (l : ℕ) : Bool :=
+  !aliveB L (w ++ [b]) l && aliveB L (w ++ [!b]) l
+
+/-- The flag at coordinate `k` of node `w`, decided from a prefix. -/
+def raceFlagB (L : List ℕ) (w : List Bool) (k : ℕ) : ℕ :=
+  if raceEventB L w (decide (k % 2 = 1)) (k / 2) &&
+      (List.range (k / 2)).all (fun l => !raceEventB L w (decide (k % 2 = 1)) l) then 1 else 0
+
+/-- The words the flags at node `j`, coordinate `k`, inspect. -/
+def raceWords (j k : ℕ) : List (List Bool) :=
+  (List.range (k / 2 + 1)).flatMap fun l =>
+    (binaryWords l).flatMap fun v =>
+      [treeWordDecode j ++ [false] ++ v, treeWordDecode j ++ [true] ++ v]
+
+/-- A strict bound on the codes of the inspected words. -/
+def raceBound (m : ℕ) : ℕ :=
+  ((raceWords m.unpair.1 m.unpair.2).map treeWordCode).foldr (fun i b => max (i + 1) b) 0
+
+private theorem lt_foldr_max {l : List ℕ} {i : ℕ} (h : i ∈ l) :
+    i < l.foldr (fun i b => max (i + 1) b) 0 := by
+  induction l with
+  | nil => exact absurd h List.not_mem_nil
+  | cons a l ih =>
+      rcases List.mem_cons.mp h with rfl | hl
+      · exact lt_of_lt_of_le (Nat.lt_succ_self i) (le_max_left _ _)
+      · exact lt_of_lt_of_le (ih hl) (le_max_right _ _)
+
+/-- Every inspected word's code lies below the bound. -/
+theorem treeWordCode_lt_raceBound {j k : ℕ} {w : List Bool} (h : w ∈ raceWords j k) :
+    treeWordCode w < raceBound (Nat.pair j k) := by
+  refine lt_foldr_max ?_
+  simp only [Nat.unpair_pair]
+  exact List.mem_map_of_mem h
+
+/-- The words below a child, at a level within range, are inspected. -/
+theorem mem_raceWords {j k l : ℕ} (hl : l ≤ k / 2) (c : Bool) {v : List Bool}
+    (hv : v ∈ binaryWords l) : treeWordDecode j ++ [c] ++ v ∈ raceWords j k := by
+  refine List.mem_flatMap.mpr ⟨l, List.mem_range.mpr (by omega), ?_⟩
+  refine List.mem_flatMap.mpr ⟨v, hv, ?_⟩
+  cases c <;> simp
+
+/-- Aliveness is decided correctly once the prefix covers the inspected words. -/
+theorem aliveB_iff {p : Baire} {N : ℕ} {u : List Bool} {l : ℕ}
+    (h : ∀ v ∈ binaryWords l, treeWordCode (u ++ v) < N) :
+    aliveB (streamTake p N) u l = true ↔ AliveAt p u l := by
+  rw [aliveB, List.any_eq_true]
+  constructor
+  · rintro ⟨v, hv, hb⟩
+    have hval : (streamTake p N).getD (treeWordCode (u ++ v)) 0 = p (treeWordCode (u ++ v)) :=
+      streamTake_getD p (h v hv)
+    rw [treeMemB, decide_eq_true_eq, hval] at hb
+    exact ⟨v, length_of_mem_binaryWords hv, hb⟩
+  · rintro ⟨v, hv, hmem⟩
+    have hvm : v ∈ binaryWords l := mem_binaryWords.mpr hv
+    have hval : (streamTake p N).getD (treeWordCode (u ++ v)) 0 = p (treeWordCode (u ++ v)) :=
+      streamTake_getD p (h v hvm)
+    refine ⟨v, hvm, ?_⟩
+    rw [treeMemB, decide_eq_true_eq, hval]
+    exact hmem
+
+/-- The race event is decided correctly once the prefix covers the inspected words. -/
+theorem raceEventB_iff {p : Baire} {j k l : ℕ} (hl : l ≤ k / 2) (b : Bool) :
+    raceEventB (streamTake p (raceBound (Nat.pair j k))) (treeWordDecode j) b l = true ↔
+      RaceEvent p (treeWordDecode j) b l := by
+  have hcov : ∀ (c : Bool) (v : List Bool), v ∈ binaryWords l →
+      treeWordCode (treeWordDecode j ++ [c] ++ v) < raceBound (Nat.pair j k) := fun c v hv =>
+    treeWordCode_lt_raceBound (mem_raceWords hl c hv)
+  have h0 := aliveB_iff (p := p) (u := treeWordDecode j ++ [b]) (l := l) (hcov b)
+  have h1 := aliveB_iff (p := p) (u := treeWordDecode j ++ [!b]) (l := l) (hcov !b)
+  simp only [raceEventB, RaceEvent, Bool.and_eq_true, Bool.not_eq_true']
+  rw [← h0, ← h1]
+  simp
 
 end ComputableAnalysis
