@@ -32,12 +32,6 @@ one.
 
 namespace ComputableAnalysis
 
-/-- Definitional unfolding of `Lim.accepts` (restated here because the copy in
-`Limit.lean` is private to that file). -/
-private theorem lim_accepts_iff {p q : Baire} :
-    Lim.accepts p q ↔ ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n :=
-  Iff.rfl
-
 namespace OracleCode
 
 /-- The index map of `limCylPreCode`: on `Nat.pair j t`, keep `j` when `j` is even
@@ -106,11 +100,11 @@ theorem Lim.isCylinder : IsCylinder Lim := by
   have hx2 : x.2 = w.oddPart := baireRep_names_iff.mp hx₂
   rw [Problem.prod_dom_iff] at hdom
   obtain ⟨-, ℓ, hℓ⟩ := hdom
-  rw [hx2, lim_accepts_iff] at hℓ
+  rw [hx2, Lim.accepts_iff] at hℓ
   have hzmem : cylTable w ∈ OracleCode.limCylPreCode.evalStream w := by
     rw [OracleCode.evalStream_limCylPreCode]; exact Part.mem_some _
   have hzdom : Lim.Dom (cylTable w) := by
-    refine ⟨Baire.interleave w.evenPart ℓ, lim_accepts_iff.mpr fun j => ?_⟩
+    refine ⟨Baire.interleave w.evenPart ℓ, Lim.accepts_iff.mpr fun j => ?_⟩
     rcases Nat.mod_two_eq_zero_or_one j with h | h
     · refine ⟨0, fun t _ => ?_⟩
       rw [cylTable_even h]
@@ -125,7 +119,7 @@ theorem Lim.isCylinder : IsCylinder Lim := by
   refine ⟨cylTable w, hzmem, cylTable w, baireRep_names_iff.mpr rfl, hzdom,
     fun a y' hay' hacc => ?_⟩
   obtain rfl : y' = a := baireRep_names_iff.mp hay'
-  rw [lim_accepts_iff] at hacc
+  rw [Lim.accepts_iff] at hacc
   have hid : y'.evenPart = x.1 := by
     rw [hx1]
     funext i
@@ -134,7 +128,7 @@ theorem Lim.isCylinder : IsCylinder Lim := by
     rw [cylTable_even (by omega)] at h
     rw [Baire.evenPart_apply, Baire.evenPart_apply, ← h]
   have hlim : Lim.accepts x.2 y'.oddPart := by
-    rw [hx2, lim_accepts_iff]
+    rw [hx2, Lim.accepts_iff]
     intro i
     obtain ⟨s, hs⟩ := hacc (2 * i + 1)
     refine ⟨s, fun t ht => ?_⟩

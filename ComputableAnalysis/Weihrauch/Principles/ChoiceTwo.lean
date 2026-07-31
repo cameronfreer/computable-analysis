@@ -53,13 +53,6 @@ private theorem c2_accepts_iff {p : Baire} {i : ℕ} :
     C₂.accepts p i ↔ i ≤ 1 ∧ ∀ n, p n ≠ i + 1 :=
   Iff.rfl
 
-/-- Definitional unfolding of `LLPO.accepts` (restated here because the copy in
-`LLPO.lean` is private to that file). -/
-private theorem llpo_accepts_iff {p : Baire} {i : ℕ} :
-    LLPO.accepts p i ↔ (∀ a b, p a ≠ 0 → p b ≠ 0 → a = b) ∧
-      ((i = 0 ∧ ∀ n, p (2 * n) = 0) ∨ (i = 1 ∧ ∀ n, p (2 * n + 1) = 0)) :=
-  Iff.rfl
-
 /-! ### `LLPO ≤sW C₂` -/
 
 /-- The removal stream of an `LLPO` input: a nonzero entry at position `k` removes the
@@ -102,7 +95,7 @@ theorem llpo_le_c2 : LLPO ≤sW C₂ := by
     ⟨llpoRemovalCode, .query, fun w x hpx hdom => ?_⟩
   obtain rfl : x = w := baireRep_names_iff.mp hpx
   obtain ⟨i₀, hi₀⟩ := hdom
-  obtain ⟨hone, hdisj⟩ := llpo_accepts_iff.mp hi₀
+  obtain ⟨hone, hdisj⟩ := LLPO.accepts_iff.mp hi₀
   have hmem : llpoRemovalStream x ∈ llpoRemovalCode.evalStream x :=
     mem_evalStream.mpr fun k => by rw [eval_llpoRemovalCode]; exact Part.mem_some _
   have hdom' : C₂.Dom (llpoRemovalStream x) := by
@@ -126,7 +119,7 @@ theorem llpo_le_c2 : LLPO ≤sW C₂ := by
   refine ⟨llpoRemovalStream x, hmem, llpoRemovalStream x, baireRep_names_iff.mpr rfl,
     hdom', fun a y' hay' hacc => ?_⟩
   obtain ⟨hy'le, hnorem⟩ := c2_accepts_iff.mp hacc
-  refine ⟨a, by simp, y', hay', llpo_accepts_iff.mpr ⟨hone, ?_⟩⟩
+  refine ⟨a, by simp, y', hay', LLPO.accepts_iff.mpr ⟨hone, ?_⟩⟩
   obtain rfl | rfl := Nat.le_one_iff_eq_zero_or_eq_one.mp hy'le
   · refine Or.inl ⟨rfl, fun n => ?_⟩
     by_contra h
@@ -306,13 +299,13 @@ theorem c2_le_llpo : C₂ ≤sW LLPO := by
   have hmem := hK x
   have hdom' : LLPO.Dom (c2FlagStream x) := by
     obtain rfl | rfl := Nat.le_one_iff_eq_zero_or_eq_one.mp hi₀le
-    · exact ⟨(0 : ℕ), llpo_accepts_iff.mpr ⟨hone, Or.inl ⟨rfl,
+    · exact ⟨(0 : ℕ), LLPO.accepts_iff.mpr ⟨hone, Or.inl ⟨rfl,
         c2FlagStream_even_zero_iff.mpr hi₀norem⟩⟩⟩
-    · exact ⟨(1 : ℕ), llpo_accepts_iff.mpr ⟨hone, Or.inr ⟨rfl,
+    · exact ⟨(1 : ℕ), LLPO.accepts_iff.mpr ⟨hone, Or.inr ⟨rfl,
         c2FlagStream_odd_zero_iff.mpr hi₀norem⟩⟩⟩
   refine ⟨c2FlagStream x, hmem, c2FlagStream x, baireRep_names_iff.mpr rfl, hdom',
     fun a y' hay' hacc => ?_⟩
-  obtain ⟨-, hdisj⟩ := llpo_accepts_iff.mp hacc
+  obtain ⟨-, hdisj⟩ := LLPO.accepts_iff.mp hacc
   refine ⟨a, by simp, y', hay', c2_accepts_iff.mpr ?_⟩
   rcases hdisj with ⟨h0, hall⟩ | ⟨h1, hall⟩
   · exact ⟨by omega, by simpa [h0] using c2FlagStream_even_zero_iff.mp hall⟩

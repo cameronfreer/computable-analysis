@@ -540,7 +540,21 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.c2FlagStream_odd_zero_iff,
    ``ComputableAnalysis.exists_c2FlagCode,
    ``ComputableAnalysis.c2_le_llpo,
-   ``ComputableAnalysis.c2_equiv_llpo]
+   ``ComputableAnalysis.c2_equiv_llpo,
+   -- API consolidation (issue #49): principle semantics, packed sequence names,
+   -- parallelizability accessors
+   ``ComputableAnalysis.LPO.accepts_iff,
+   ``ComputableAnalysis.LLPO.accepts_iff,
+   ``ComputableAnalysis.Lim.accepts_iff,
+   ``ComputableAnalysis.Baire.track_packTracks,
+   ``ComputableAnalysis.Representation.sequence_names_packTracks_iff,
+   ``ComputableAnalysis.baireSequence_names_iff,
+   ``ComputableAnalysis.natSequence_names_iff,
+   ``ComputableAnalysis.IsParallelizable.collapse,
+   ``ComputableAnalysis.IsStronglyParallelizable.collapse,
+   ``ComputableAnalysis.isParallelizable_iff,
+   ``ComputableAnalysis.isStronglyParallelizable_iff,
+   ``ComputableAnalysis.parallelize_congr_strong]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
