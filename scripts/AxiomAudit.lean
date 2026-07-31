@@ -546,6 +546,14 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.isStrongReductionPair_c2_le_llpo,
    ``ComputableAnalysis.c2_le_llpo,
    ``ComputableAnalysis.c2_equiv_llpo,
+   -- The binary-tree presentation of weak Kőnig's lemma (issue #32)
+   ``ComputableAnalysis.treeWordDecode_treeWordCode,
+   ``ComputableAnalysis.primrec_treeWordCode,
+   ``ComputableAnalysis.primrec_treeWordDecode,
+   ``ComputableAnalysis.WKL,
+   ``ComputableAnalysis.WKL.accepts_iff,
+   ``ComputableAnalysis.exists_path_of_isInfiniteTree,
+   ``ComputableAnalysis.WKL.dom_iff,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,
