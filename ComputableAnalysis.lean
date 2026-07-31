@@ -35,6 +35,7 @@ import ComputableAnalysis.Weihrauch.Principles.LPO
 import ComputableAnalysis.Weihrauch.Principles.LLPO
 import ComputableAnalysis.Weihrauch.Principles.Limit
 import ComputableAnalysis.Weihrauch.Principles.LimCylinder
+import ComputableAnalysis.Weihrauch.Principles.LimParallelizeLPO
 import ComputableAnalysis.Measure.CylinderMass
 import ComputableAnalysis.Measure.Construction
 import ComputableAnalysis.Metric.Presentation
