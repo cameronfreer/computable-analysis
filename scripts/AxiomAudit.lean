@@ -63,6 +63,7 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.OracleCode.smn,
    ``ComputableAnalysis.OracleCode.eval_comp_eq,
    ``ComputableAnalysis.OracleCode.exists_code_iff_recursiveIn,
+   ``ComputableAnalysis.OracleCode.exists_finiteQueryCode,
    ``ComputableAnalysis.OracleCode.exists_universal,
    -- Unit 5: finite use, continuity, stream layer
    ``ComputableAnalysis.OracleCode.eval_eq_of_agree_on_use,

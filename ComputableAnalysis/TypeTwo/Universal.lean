@@ -238,6 +238,56 @@ theorem exists_prefixPostCode {b : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
   rw [eval_comp_some (eval_pair_some (eval_id F n)
     (eval_comp_some hbc ▸ ht F (b n (F 0)))), hG]
 
+/-! ### Finite scattered queries
+
+A code often needs, per output coordinate, the oracle's values at a **computed finite set
+of scattered indices** rather than at a prefix. Because the index list is computable, so
+is a bound on it, and reading a long-enough prefix recovers every wanted value: the
+scatter/gather is an ordinary consumer of `exists_prefixPostCode`, not a new machine
+primitive. `exists_finiteQueryCode` states that contract and hides this implementation, so
+a direct scatter/gather code can replace it later without disturbing consumers. -/
+
+/-- A strict bound on a finite index list. -/
+private def idxBound (l : List ℕ) : ℕ := l.foldr (fun i b => max (i + 1) b) 0
+
+private theorem lt_idxBound {l : List ℕ} {i : ℕ} (h : i ∈ l) : i < idxBound l := by
+  induction l with
+  | nil => exact absurd h (List.not_mem_nil)
+  | cons a l ih =>
+      rcases List.mem_cons.mp h with rfl | hl
+      · exact lt_of_lt_of_le (Nat.lt_succ_self i) (le_max_left _ _)
+      · exact lt_of_lt_of_le (ih hl) (le_max_right _ _)
+
+private theorem primrec_idxBound : Primrec idxBound :=
+  Primrec.list_foldr Primrec.id (Primrec.const 0)
+    ((Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
+      (Primrec.snd.comp Primrec.snd)).to₂)
+
+/-- **Finite scattered queries.** For a computable index list `idx` and a primitive
+recursive combiner `post`, a single oracle code computes, at every coordinate `n`, the
+combiner applied to the oracle's values at the indices `idx n`. -/
+theorem exists_finiteQueryCode {idx : ℕ → List ℕ} {post : ℕ → List ℕ → ℕ}
+    (hidx : Primrec idx) (hpost : Primrec₂ post) :
+    ∃ c : OracleCode, ∀ (p : Baire) (n : ℕ),
+      c.eval p n = Part.some (post n ((idx n).map p)) := by
+  have hu1 : Primrec (fun v : ℕ => v.unpair.1) := Primrec.fst.comp Primrec.unpair
+  have hu2 : Primrec (fun v : ℕ => v.unpair.2) := Primrec.snd.comp Primrec.unpair
+  have hb : Primrec₂ fun (n : ℕ) (_ : ℕ) => idxBound (idx n) :=
+    (primrec_idxBound.comp (hidx.comp Primrec.fst)).to₂
+  have hl : Primrec fun v : ℕ => ofNat (List ℕ) v.unpair.2 :=
+    (Primrec.ofNat (List ℕ)).comp hu2
+  have hgather : Primrec fun v : ℕ =>
+      (idx v.unpair.1).map fun i => (ofNat (List ℕ) v.unpair.2).getD i 0 :=
+    Primrec.list_map (hidx.comp hu1)
+      (((Primrec.list_getD 0).comp (hl.comp Primrec.fst) Primrec.snd).to₂)
+  obtain ⟨c, hc⟩ := exists_prefixPostCode hb (hpost.comp hu1 hgather)
+  refine ⟨c, fun p n => ?_⟩
+  rw [hc p n]
+  congr 1
+  simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
+  refine congrArg (post n) (List.map_congr_left fun i hi => ?_)
+  exact streamTake_getD p (lt_idxBound hi)
+
 theorem exists_universal :
     ∃ u : OracleCode, ∀ (c : OracleCode) (p : Baire) (n : ℕ),
       u.eval p (Nat.pair (encode c) n) = c.eval p n := by
