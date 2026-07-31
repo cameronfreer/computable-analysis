@@ -535,7 +535,9 @@ def headlineDecls : List Name :=
    -- The parallelized-LLPO compiler and its promise layer (issues #31, #32)
    ``ComputableAnalysis.firstOccurrenceFlags_ne_zero,
    ``ComputableAnalysis.firstOccurrenceFlags_atMostOne,
+   ``ComputableAnalysis.not_event_of_track_zero,
    ``ComputableAnalysis.llpo_dom_of_atMostOne,
+   ``ComputableAnalysis.flagFamily_le_parallelize_llpo,
    ``ComputableAnalysis.isStrongReductionPair_parallelize_llpo_of_flags,
    -- Closed choice on two points and C₂ ≡sW LLPO (issue #32)
    ``ComputableAnalysis.C₂,

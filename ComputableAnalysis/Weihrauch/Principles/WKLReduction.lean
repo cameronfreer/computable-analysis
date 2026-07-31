@@ -123,7 +123,7 @@ def pathWord (a : Baire) : ℕ → List Bool
   | n + 1 => pathWord a n ++ [decide (a (Nat.pair (treeWordCode (pathWord a n)) 0) = 1)]
 
 @[simp]
-theorem length_pathWord (a : Baire) (n : ℕ) : (pathWord a n).length = n := by
+private theorem length_pathWord (a : Baire) (n : ℕ) : (pathWord a n).length = n := by
   induction n with
   | zero => rfl
   | succ n ih => simp [pathWord, ih]
@@ -156,13 +156,13 @@ theorem cantorRep_names_pathName (a : Baire) :
     ⟨fun n => by simp only [pathName]; split <;> omega, funext fun n => bool_eq_beq_ite _⟩
 
 /-- An infinite subtree above `[]` is what infinitude of the tree says. -/
-theorem infAbove_nil {p : Baire} (hinf : IsInfiniteTree p) : InfAbove p [] := by
+private theorem infAbove_nil {p : Baire} (hinf : IsInfiniteTree p) : InfAbove p [] := by
   intro n
   obtain ⟨w, hw, hmem⟩ := hinf n
   exact ⟨w, hw, by simpa using hmem⟩
 
 /-- A node with an infinite subtree is itself a node. -/
-theorem treeMem_of_infAbove {p : Baire} {w : List Bool} (h : InfAbove p w) :
+private theorem treeMem_of_infAbove {p : Baire} {w : List Bool} (h : InfAbove p w) :
     TreeMem p w := by
   obtain ⟨v, hv, hmem⟩ := h 0
   rwa [List.length_eq_zero_iff.mp hv, List.append_nil] at hmem

@@ -24,8 +24,15 @@ content.
   **table** in `Lim`'s domain and decode any of its limit streams. The constructor
   handles the Baire-name identities on both sides.
 
-Both come with propositional corollaries (`sigma1Family_le_parallelize_lpo`,
-`stabilizationTable_le_lim`). The composite entry point sending Σ₁ question families
+* `isStrongReductionPair_parallelize_llpo_of_flags`: to reduce to parallelized `LLPO`, it
+  suffices to produce a coded family of `LLPO` instances and to decode every stream of
+  accepted answers. `LLPO`'s at-most-one promise is the obligation such a reduction owes,
+  and `firstOccurrenceFlags` is one general way to discharge it — kept as a separate
+  layer, since flagging first occurrences is not part of every `LLPO` reduction.
+
+Each comes with a propositional corollary (`sigma1Family_le_parallelize_lpo`,
+`stabilizationTable_le_lim`, `flagFamily_le_parallelize_llpo`). The composite entry point
+sending Σ₁ question families
 through the calibration to `Lim` lives with the calibration
 (`sigma1Family_le_lim` in `Principles/LimParallelizeLPO.lean`), which also re-derives
 its explicit reduction pair through the first constructor — the adequacy test that the
@@ -218,5 +225,17 @@ theorem isStrongReductionPair_parallelize_llpo_of_flags {f : Problem X Y} {K H :
   · intro a ys hays hacc
     have hbit : ∀ j, ys j = a (Nat.pair j 0) := natSequence_names_iff.mp hays
     exact hpost a fun j => hbit j ▸ Problem.parallelize_accepts_iff.mp hacc j
+
+/-- **The flag-family compiler**, propositionally: a problem whose instances can uniformly
+pose a coded family of `LLPO` questions and decode any stream of accepted answers reduces
+strongly to parallelized `LLPO`. -/
+theorem flagFamily_le_parallelize_llpo {f : Problem X Y} {K H : OracleCode}
+    (h : ∀ p x, X.rep.Names p x → f.Dom x →
+      ∃ fam : ℕ → Baire, Baire.packTracks fam ∈ K.evalStream p ∧ (∀ j, LLPO.Dom (fam j)) ∧
+        ∀ a : Baire, (∀ j, LLPO.accepts (fam j) (a (Nat.pair j 0))) →
+          ∃ q ∈ H.evalStream a, ∃ y, Y.rep.Names q y ∧ f.accepts x y) :
+    f ≤sW LLPO.parallelize :=
+  strongReduction_iff_exists_reductionPair.mpr
+    ⟨K, H, isStrongReductionPair_parallelize_llpo_of_flags h⟩
 
 end ComputableAnalysis
