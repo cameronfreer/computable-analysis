@@ -531,7 +531,16 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.sigma1Family_le_parallelize_lpo,
    ``ComputableAnalysis.isStrongReductionPair_lim_of_table,
    ``ComputableAnalysis.stabilizationTable_le_lim,
-   ``ComputableAnalysis.sigma1Family_le_lim]
+   ``ComputableAnalysis.sigma1Family_le_lim,
+   -- Closed choice on two points and C₂ ≡sW LLPO (issue #32)
+   ``ComputableAnalysis.C₂,
+   ``ComputableAnalysis.eval_llpoRemovalCode,
+   ``ComputableAnalysis.llpo_le_c2,
+   ``ComputableAnalysis.c2FlagStream_even_zero_iff,
+   ``ComputableAnalysis.c2FlagStream_odd_zero_iff,
+   ``ComputableAnalysis.exists_c2FlagCode,
+   ``ComputableAnalysis.c2_le_llpo,
+   ``ComputableAnalysis.c2_equiv_llpo]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
