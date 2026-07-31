@@ -14,6 +14,7 @@ import ComputableAnalysis.TypeTwo.Evaln
 import ComputableAnalysis.TypeTwo.Universal
 import ComputableAnalysis.ForMathlib.REPredClosure
 import ComputableAnalysis.TypeTwo.Continuity
+import ComputableAnalysis.TypeTwo.OracleCodeArith
 import ComputableAnalysis.TypeTwo.Tracks
 import ComputableAnalysis.TypeTwo.StreamExamples
 import ComputableAnalysis.TypeTwo.PrefixTable
