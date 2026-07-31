@@ -9,10 +9,10 @@ import ComputableAnalysis.Weihrauch.Principles.LimCylinder
 /-!
 # The calibration `parallelize LPO ≡sW Lim`
 
-The spine's first major calibration: parallelized `LPO` is strongly equivalent to `Lim`,
-making `Lim` the standard target for countably many Σ₁ questions.
+Parallelized `LPO` is strongly equivalent to `Lim`, making `Lim` the standard target for
+countably many Σ₁ questions.
 
-**The risky direction** `Lim ≤sW LPO.parallelize` is by stability questions: one `LPO`
+**`Lim ≤sW LPO.parallelize`** is by stability questions: one `LPO`
 instance per triple `⟨n, s, v⟩` (packed `Nat.pair n (Nat.pair s v)`) asking whether
 column `n` of the table ever differs from `v` at or after stage `s` (`stabFamily`,
 produced by the explicit code `limStabCode`). An answer bit `0` certifies that the
@@ -30,8 +30,8 @@ direction flattens a packed family of tables into one table along `Nat.pair` —
 preprocessor is literally `flattenTracksCode` and the postprocessor is `query`, since
 the limit stream of the flattened table *is* the packed family of limit streams.
 
-**The tame direction** `LPO.parallelize ≤sW Lim` is compositional, exactly the spine's
-compiler pattern: `lpo_le_lim`, upgraded to strong through `Lim.isCylinder`, lifted by
+**`LPO.parallelize ≤sW Lim`** is compositional, exactly the pattern the operations were
+built for: `lpo_le_lim`, upgraded to strong through `Lim.isCylinder`, lifted by
 the parallelization functor, and collapsed by strong parallelizability.
 
 This module is deliberately principle-specific; reusable compiler abstractions are
@@ -111,7 +111,7 @@ theorem eval_limStabValueCode (p : Baire) (m : ℕ) :
     Part.some m.unpair.1.unpair.2 by rw [eval_comp_some (eval_left p m), eval_right]),
     eval_right]
 
-/-- **The preprocessor of the risky direction**: produce the stability-question family
+/-- **The preprocessor of `lim_le_parallelize_lpo`**: produce the stability-question family
 from the table. The comparison `[a ≠ v]` is the arithmetic
 `1 ∸ (1 ∸ ((a ∸ v) + (v ∸ a)))`, so the whole code is an explicit first-order term
 over the arithmetic kit. -/
@@ -155,16 +155,17 @@ theorem evalStream_limStabCode (p : Baire) :
     limStabCode.evalStream p = Part.some (stabFamily p) :=
   computes_iff_evalStream.mp (fun q m => eval_limStabCode q m) p
 
-/-- **The postprocessor of the risky direction**: per output coordinate `n`,
+/-- **The postprocessor of `lim_le_parallelize_lpo`**: per output coordinate `n`,
 `rfind`-search the least `u` whose answer bit at index `Nat.pair n u` is `0`, and emit
 `u.unpair.2` — the certified limit value carried by the question index. Partial off
 valid answer names, as a strong postprocessor may be. -/
 def limFromBitsCode : OracleCode :=
   .comp .right (.rfind (.comp .query (.pair .id (.const 0))))
 
-/-! ### The risky direction -/
+/-! ### Reducing `Lim` to parallelized `LPO` -/
 
-/-- **The risky direction, as an explicit pair**: `limStabCode` asks the stability
+/-- **The reduction of `Lim` to parallelized `LPO`, as an explicit pair**:
+`limStabCode` asks the stability
 questions and `limFromBitsCode` reads a limit value off *any* accepted answer. -/
 theorem isStrongReductionPair_lim_le_parallelize_lpo :
     IsStrongReductionPair Lim LPO.parallelize limStabCode limFromBitsCode := by
@@ -245,7 +246,7 @@ theorem isStrongReductionPair_lim_le_parallelize_lpo :
       exact Part.mem_some _
     · exact lim_accepts_iff.mpr fun n => hstab n
 
-/-- **The risky direction**: `Lim` reduces strongly to parallelized `LPO`. -/
+/-- `Lim` reduces strongly to parallelized `LPO`. -/
 theorem lim_le_parallelize_lpo : Lim ≤sW LPO.parallelize :=
   strongReduction_iff_exists_reductionPair.mpr
     ⟨_, _, isStrongReductionPair_lim_le_parallelize_lpo⟩
@@ -301,7 +302,7 @@ theorem Lim.isStronglyParallelizable : IsStronglyParallelizable Lim :=
 
 /-! ### The calibration -/
 
-/-- **The tame direction, compositionally**: `lpo_le_lim`, upgraded to strong through
+/-- **The converse reduction, compositionally**: `lpo_le_lim`, upgraded to strong through
 the cylinder, lifted by parallelization, and collapsed by strong parallelizability. -/
 theorem parallelize_lpo_le_lim : LPO.parallelize ≤sW Lim :=
   ((Lim.isCylinder.weihrauch_iff_strong.mp lpo_le_lim).parallelize).trans
