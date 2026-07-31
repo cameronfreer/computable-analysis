@@ -40,9 +40,9 @@ the accepted answer is the stream of column limits. -/
 def Lim : Problem baireSpace baireSpace :=
   ⟨fun p (q : Baire) => ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n⟩
 
-/-- Definitional unfolding of `Lim.accepts`, so proofs never depend on `rcases`
-unfolding the structure projection. -/
-private theorem lim_accepts_iff {p q : Baire} :
+/-- **Definitional unfolding of `Lim.accepts`.** An explicit rewrite lemma, deliberately
+not a global `simp` rule. -/
+theorem Lim.accepts_iff {p q : Baire} :
     Lim.accepts p q ↔ ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n :=
   Iff.rfl
 
@@ -51,15 +51,9 @@ stabilization stages of column `n` at their maximum and chain the equalities. -/
 theorem Lim.accepts_unique {p q q' : Baire} (h : Lim.accepts p q) (h' : Lim.accepts p q') :
     q = q' := by
   funext n
-  obtain ⟨s, hs⟩ := lim_accepts_iff.mp h n
-  obtain ⟨s', hs'⟩ := lim_accepts_iff.mp h' n
+  obtain ⟨s, hs⟩ := Lim.accepts_iff.mp h n
+  obtain ⟨s', hs'⟩ := Lim.accepts_iff.mp h' n
   exact (hs (max s s') (le_max_left _ _)).symm.trans (hs' (max s s') (le_max_right _ _))
-
-/-- Definitional unfolding of `LPO.accepts` (restated here because the copy in `LPO.lean`
-is private to that file). -/
-private theorem lpo_accepts_iff {p : Baire} {b : ℕ} :
-    LPO.accepts p b ↔ (b = 0 ∧ ∀ n, p n = 0) ∨ (b = 1 ∧ ∃ n, p n ≠ 0) :=
-  Iff.rfl
 
 /-- A list of naturals sums to zero iff every entry vanishes. -/
 private theorem list_sum_eq_zero {l : List ℕ} : l.sum = 0 ↔ ∀ x ∈ l, x = 0 := by
@@ -128,10 +122,10 @@ theorem lpo_le_lim : LPO ≤W Lim := by
   -- The table is in the domain of `Lim`: every column stabilizes.
   have hdomL : Lim.Dom (limInput p) := by
     by_cases hz : ∀ k, p k = 0
-    · exact ⟨(fun _ => 0 : Baire), lim_accepts_iff.mpr fun n =>
+    · exact ⟨(fun _ => 0 : Baire), Lim.accepts_iff.mpr fun n =>
         ⟨0, fun t _ => limInput_eq_zero fun k _ => hz k⟩⟩
     · obtain ⟨k₀, hk₀⟩ := not_forall.mp hz
-      exact ⟨(fun _ => 1 : Baire), lim_accepts_iff.mpr fun n =>
+      exact ⟨(fun _ => 1 : Baire), Lim.accepts_iff.mpr fun n =>
         ⟨k₀, fun t ht => limInput_eq_one (by rw [Nat.unpair_pair]; exact ht) hk₀⟩⟩
   refine ⟨limInput p, hKp, limInput p, baireRep_names_iff.mpr rfl, hdomL,
     fun a y' hay' hacc => ?_⟩
@@ -141,16 +135,16 @@ theorem lpo_le_lim : LPO ≤W Lim := by
   refine ⟨fun _ => Baire.interleave p a 1, const_query_one_mem_evalStream _, a 0,
     natRep_names_iff.mpr h1.symm, ?_⟩
   -- Column `0` of the table stabilizes to `a 0`; case on whether `p` vanishes.
-  obtain ⟨s, hs⟩ := lim_accepts_iff.mp hacc 0
+  obtain ⟨s, hs⟩ := Lim.accepts_iff.mp hacc 0
   by_cases hz : ∀ k, p k = 0
   · have ha0 : a 0 = 0 :=
       (hs s le_rfl).symm.trans (limInput_eq_zero fun k _ => hz k)
-    exact lpo_accepts_iff.mpr (Or.inl ⟨ha0, hz⟩)
+    exact LPO.accepts_iff.mpr (Or.inl ⟨ha0, hz⟩)
   · obtain ⟨k₀, hk₀⟩ := not_forall.mp hz
     have ha1 : a 0 = 1 :=
       (hs (max s k₀) (le_max_left _ _)).symm.trans
         (limInput_eq_one (by rw [Nat.unpair_pair]; exact le_max_right _ _) hk₀)
-    exact lpo_accepts_iff.mpr (Or.inr ⟨ha1, k₀, hk₀⟩)
+    exact LPO.accepts_iff.mpr (Or.inr ⟨ha1, k₀, hk₀⟩)
 
 /-! ### The reduce-to-`Lim` input/jump table
 
@@ -205,13 +199,6 @@ theorem limTable_dom (p : Baire) : Lim.Dom (limTable p) := by
         · exact h0
         · exact absurd h1 (hnone t)
   exact ⟨fun n => (hcol n).choose, fun n => (hcol n).choose_spec⟩
-
-/-- Truncating a longer prefix of a stream gives the shorter prefix. -/
-private theorem take_streamTake {α : Type*} (p : ℕ → α) {t n : ℕ} (h : t ≤ n) :
-    (streamTake p n).take t = streamTake p t := by
-  have hpre := List.prefix_iff_eq_take.mp (streamTake_prefix p h)
-  rw [length_streamTake] at hpre
-  exact hpre.symm
 
 /-- The oracle-free postprocessor behind `exists_limTableCode`: from the coordinate paired
 with an encoded prefix of the input, read the echoed entry off the prefix on even columns,

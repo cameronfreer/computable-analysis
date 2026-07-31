@@ -46,10 +46,6 @@ namespace ComputableAnalysis
 
 open OracleCode
 
-private theorem lim_accepts_iff {p q : Baire} :
-    Lim.accepts p q ↔ ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n :=
-  Iff.rfl
-
 /-! ### The stability-question family and its explicit code -/
 
 /-- The stability-question family of a table: coordinate `Nat.pair j k` with
@@ -176,7 +172,7 @@ theorem isStrongReductionPair_lim_le_parallelize_lpo :
   -- every column forces a zero bit at its true stability pair
   have hex : ∀ n, ∃ u, a (Nat.pair (Nat.pair n u) 0) = 0 := by
     intro n
-    obtain ⟨s, hs⟩ := lim_accepts_iff.mp hℓ n
+    obtain ⟨s, hs⟩ := Lim.accepts_iff.mp hℓ n
     refine ⟨Nat.pair s (ℓ n), ?_⟩
     have hall : ∀ k, Baire.track (Nat.pair n (Nat.pair s (ℓ n))) (stabFamily x) k = 0 :=
       stabFamily_track_allZero_iff.mpr fun t hst => hs t hst
@@ -224,7 +220,7 @@ theorem isStrongReductionPair_lim_le_parallelize_lpo :
   refine ⟨v, mem_evalStream.mpr fun n => ?_, v, baireRep_names_iff.mpr rfl, ?_⟩
   · rw [hv n]
     exact Part.mem_some _
-  · exact lim_accepts_iff.mpr fun n => hstab n
+  · exact Lim.accepts_iff.mpr fun n => hstab n
 
 /-- `Lim` reduces strongly to parallelized `LPO`. -/
 theorem lim_le_parallelize_lpo : Lim ≤sW LPO.parallelize :=
@@ -253,8 +249,8 @@ theorem isStrongReductionPair_parallelize_lim :
     exact Part.mem_some _
   refine ⟨big, hmem, big, baireRep_names_iff.mpr rfl, ?_, ?_⟩
   · -- the flattened table is a Lim input: every column stabilizes
-    refine ⟨fun c => ℓ c.unpair.1 c.unpair.2, lim_accepts_iff.mpr fun c => ?_⟩
-    obtain ⟨s, hs⟩ := lim_accepts_iff.mp (hℓ c.unpair.1) c.unpair.2
+    refine ⟨fun c => ℓ c.unpair.1 c.unpair.2, Lim.accepts_iff.mpr fun c => ?_⟩
+    obtain ⟨s, hs⟩ := Lim.accepts_iff.mp (hℓ c.unpair.1) c.unpair.2
     refine ⟨s, fun t ht => ?_⟩
     rw [hbigval]
     have h := hs t ht
@@ -265,9 +261,9 @@ theorem isStrongReductionPair_parallelize_lim :
     refine ⟨y', by simp, fun n => Baire.track n y',
       Representation.sequence_names_iff.mpr fun n => baireRep_names_iff.mpr rfl, ?_⟩
     intro n
-    rw [hxs n, lim_accepts_iff]
+    rw [hxs n, Lim.accepts_iff]
     intro i
-    obtain ⟨s, hs⟩ := lim_accepts_iff.mp hacc (Nat.pair n i)
+    obtain ⟨s, hs⟩ := Lim.accepts_iff.mp hacc (Nat.pair n i)
     refine ⟨s, fun t ht => ?_⟩
     have h := hs t ht
     rw [hbigval, Nat.unpair_pair] at h
@@ -286,7 +282,7 @@ theorem Lim.isStronglyParallelizable : IsStronglyParallelizable Lim :=
 the cylinder, lifted by parallelization, and collapsed by strong parallelizability. -/
 theorem parallelize_lpo_le_lim : LPO.parallelize ≤sW Lim :=
   ((Lim.isCylinder.weihrauch_iff_strong.mp lpo_le_lim).parallelize).trans
-    Lim.isStronglyParallelizable.1
+    Lim.isStronglyParallelizable.collapse
 
 /-- **The calibration**: parallelized `LPO` is strongly equivalent to `Lim` — the
 standard target for countably many Σ₁ questions. -/

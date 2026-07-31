@@ -37,12 +37,6 @@ def llpoSwap : Problem baireSpace natSpace :=
   ⟨fun p (i : ℕ) => (∀ a b, p a ≠ 0 → p b ≠ 0 → a = b) ∧
     ((i = 0 ∧ ∀ n, p (2 * n + 1) = 0) ∨ (i = 1 ∧ ∀ n, p (2 * n) = 0))⟩
 
-/-- Definitional unfolding of `LPO.accepts` (restated here because the copy in `LPO.lean`
-is private to that file). -/
-private theorem lpo_accepts_iff {p : Baire} {b : ℕ} :
-    LPO.accepts p b ↔ (b = 0 ∧ ∀ n, p n = 0) ∨ (b = 1 ∧ ∃ n, p n ≠ 0) :=
-  Iff.rfl
-
 /-- **Definitional unfolding of `LLPO.accepts`.** An explicit rewrite lemma, deliberately
 not a global `simp` rule: the semantic API the compact-choice branch consumes. -/
 theorem LLPO.accepts_iff {p : Baire} {i : ℕ} :
@@ -91,7 +85,7 @@ theorem llpo_le_lpo : LLPO ≤W LPO := by
   have h1 : Baire.interleave p a 1 = a 0 := by simpa using Baire.interleave_odd p a 0
   refine ⟨fun _ => Baire.interleave p a 1, const_query_one_mem_evalStream _, a 0,
     natRep_names_iff.mpr h1.symm, LLPO.accepts_iff.mpr ⟨hone, ?_⟩⟩
-  rcases lpo_accepts_iff.mp hacc with ⟨h0, hall⟩ | ⟨h1', n₀, hn₀⟩
+  rcases LPO.accepts_iff.mp hacc with ⟨h0, hall⟩ | ⟨h1', n₀, hn₀⟩
   · exact Or.inl ⟨h0, fun n => hall n⟩
   · refine Or.inr ⟨h1', fun n => ?_⟩
     by_contra hodd

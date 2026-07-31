@@ -42,6 +42,17 @@ def Baire.track (t : ℕ) (p : Baire) : Baire := fun k => p (Nat.pair t k)
 theorem Baire.track_apply (t : ℕ) (p : Baire) (k : ℕ) :
     Baire.track t p k = p (Nat.pair t k) := rfl
 
+/-- Pack a family of streams into one stream along the track convention: the `t`-th
+member is laid out on track `t`. Inverse to `Baire.track` (`Baire.track_packTracks`). -/
+def Baire.packTracks (g : ℕ → Baire) : Baire := fun m => g m.unpair.1 m.unpair.2
+
+/-- Packing is a section of tracking: track `t` of a packed family is its `t`-th
+member. -/
+@[simp]
+theorem Baire.track_packTracks (g : ℕ → Baire) (t : ℕ) :
+    Baire.track t (Baire.packTracks g) = g t :=
+  funext fun k => by simp [Baire.packTracks, Nat.unpair_pair]
+
 namespace OracleCode
 
 /-! ### Explicit arithmetic codes

@@ -37,14 +37,6 @@ universe u v
 
 variable {X : RepSpace.{u}} {Y : RepSpace.{v}}
 
-private theorem lpo_accepts_iff {p : Baire} {b : ℕ} :
-    LPO.accepts p b ↔ (b = 0 ∧ ∀ n, p n = 0) ∨ (b = 1 ∧ ∃ n, p n ≠ 0) :=
-  Iff.rfl
-
-private theorem lim_accepts_iff {p q : Baire} :
-    Lim.accepts p q ↔ ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n :=
-  Iff.rfl
-
 /-- An answer stream is **bit-consistent** with a packed question family when its bit at
 `Nat.pair j 0` answers question `j`: `0` if track `j` is everywhere zero, `1` if it is
 somewhere nonzero. This is exactly what an accepted `LPO.parallelize` answer name
@@ -72,18 +64,14 @@ theorem isStrongReductionPair_parallelize_lpo_of_questions {f : Problem X Y}
   · rw [Problem.parallelize_dom_iff]
     intro j
     by_cases hall : ∀ k, Baire.track j G k = 0
-    · exact ⟨(0 : ℕ), lpo_accepts_iff.mpr (Or.inl ⟨rfl, hall⟩)⟩
+    · exact ⟨(0 : ℕ), LPO.accepts_iff.mpr (Or.inl ⟨rfl, hall⟩)⟩
     · obtain ⟨k, hk⟩ := not_forall.mp hall
-      exact ⟨(1 : ℕ), lpo_accepts_iff.mpr (Or.inr ⟨rfl, k, hk⟩)⟩
+      exact ⟨(1 : ℕ), LPO.accepts_iff.mpr (Or.inr ⟨rfl, k, hk⟩)⟩
   · intro a ys hays hacc
     have hacc' := Problem.parallelize_accepts_iff.mp hacc
-    have hbit : ∀ j, ys j = a (Nat.pair j 0) := by
-      intro j
-      have h1 := Representation.sequence_names_iff.mp hays j
-      have h2 : ys j = Baire.track j a 0 := natRep_names_iff.mp h1
-      simpa using h2
+    have hbit : ∀ j, ys j = a (Nat.pair j 0) := natSequence_names_iff.mp hays
     refine hpost a fun j => ?_
-    rcases lpo_accepts_iff.mp (hacc' j) with ⟨hb, hall⟩ | ⟨hb, hne⟩
+    rcases LPO.accepts_iff.mp (hacc' j) with ⟨hb, hall⟩ | ⟨hb, hne⟩
     · exact Or.inl ⟨(hbit j).symm.trans hb, hall⟩
     · exact Or.inr ⟨(hbit j).symm.trans hb, hne⟩
 

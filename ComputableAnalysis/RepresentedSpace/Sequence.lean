@@ -41,12 +41,11 @@ def sequence (X : Representation α) : Representation (ℕ → α) where
   rep F := ⟨∀ n, (X.rep (Baire.track n F)).Dom, fun h n => (X.rep (Baire.track n F)).get (h n)⟩
   onto x := by
     choose p hp using fun n => X.onto (x n)
-    have htrack : ∀ n, Baire.track n (fun m => p m.unpair.1 m.unpair.2) = p n := fun n =>
-      funext fun k => by simp [Nat.unpair_pair]
-    refine ⟨fun m => p m.unpair.1 m.unpair.2, fun n => ?_, funext fun n => ?_⟩
-    · rw [htrack n]
+    refine ⟨Baire.packTracks p, fun n => ?_, funext fun n => ?_⟩
+    · rw [Baire.track_packTracks]
       exact Part.dom_iff_mem.mpr ⟨x n, hp n⟩
-    · exact Part.get_eq_of_mem (htrack n ▸ hp n : x n ∈ X.rep (Baire.track n _)) _
+    · exact Part.get_eq_of_mem
+        (Baire.track_packTracks p n ▸ hp n : x n ∈ X.rep (Baire.track n _)) _
 
 /-- Names of the countable product are exactly trackwise names. -/
 @[simp]
@@ -59,7 +58,34 @@ theorem sequence_names_iff {X : Representation α} {F : Baire} {x : ℕ → α} 
     exact ⟨fun n => Part.dom_iff_mem.mpr ⟨x n, h n⟩,
       funext fun n => Part.get_eq_of_mem (h n) _⟩
 
+/-- Names of a **packed** family: a packed name denotes the family its members denote.
+The normal form for producing sequence names, since a producer naturally has one name per
+coordinate rather than a single packed stream. -/
+theorem sequence_names_packTracks_iff {X : Representation α} {g : ℕ → Baire}
+    {x : ℕ → α} :
+    X.sequence.Names (Baire.packTracks g) x ↔ ∀ n, X.Names (g n) (x n) := by
+  rw [sequence_names_iff]
+  exact forall_congr' fun n => by rw [Baire.track_packTracks]
+
 end Representation
+
+/-! ### Concrete normal forms
+
+The two sequence representations that occur throughout the Weihrauch layer, with their
+names unfolded to a direct statement about the packed stream. -/
+
+/-- A name of a sequence of **streams** is the packing: coordinate `n` is track `n`. -/
+theorem baireSequence_names_iff {p : Baire} {xs : ℕ → Baire} :
+    baireRep.sequence.Names p xs ↔ ∀ n, xs n = Baire.track n p := by
+  rw [Representation.sequence_names_iff]
+  exact forall_congr' fun n => baireRep_names_iff
+
+/-- A name of a sequence of **naturals** carries coordinate `n` at the head of track `n`:
+the bit-decoding normal form for parallelized `natSpace`-valued principles. -/
+theorem natSequence_names_iff {p : Baire} {xs : ℕ → ℕ} :
+    natRep.sequence.Names p xs ↔ ∀ n, xs n = p (Nat.pair n 0) := by
+  rw [Representation.sequence_names_iff]
+  exact forall_congr' fun n => natRep_names_iff
 
 /-- The countable product of a represented space, on the ordinary carrier `ℕ → X`. -/
 def RepSpace.sequence (X : RepSpace.{u}) : RepSpace.{u} :=
