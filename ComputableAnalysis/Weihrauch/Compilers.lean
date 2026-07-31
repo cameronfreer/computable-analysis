@@ -163,6 +163,30 @@ theorem firstOccurrenceFlags_atMostOne {E : Bool → ℕ → Prop}
     · exact absurd (hpar ▸ heb) (hmina _ h)
   omega
 
+/-- A vanishing track of the flags means that side's events never occur: the least
+occurrence would have been flagged. -/
+theorem not_event_of_track_zero {E : Bool → ℕ → Prop} {b : Bool}
+    (hall : ∀ n, firstOccurrenceFlags E (2 * n + if b then 1 else 0) = 0) :
+    ∀ n, ¬ E b n := by
+  classical
+  intro n hev
+  have hex : ∃ n, E b n := ⟨n, hev⟩
+  have hfind := Nat.find_spec hex
+  have hmin : ∀ m < Nat.find hex, ¬ E b m := fun m hm => Nat.find_min hex hm
+  set k := 2 * Nat.find hex + (if b then 1 else 0) with hk
+  have hkdiv : k / 2 = Nat.find hex := by
+    rw [hk]; cases b
+    · simp
+    · simp only [if_true]
+      omega
+  have hkmod : (decide (k % 2 = 1)) = b := by rw [hk]; cases b <;> simp
+  have hone : firstOccurrenceFlags E k = 1 := by
+    rw [firstOccurrenceFlags, if_pos]
+    rw [hkdiv, hkmod]
+    exact ⟨hfind, hmin⟩
+  rw [hall (Nat.find hex)] at hone
+  exact absurd hone (by omega)
+
 /-- An at-most-one instance always has an accepted answer, so it lies in `LLPO`'s
 domain. -/
 theorem llpo_dom_of_atMostOne {g : Baire}

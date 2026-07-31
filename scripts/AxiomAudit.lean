@@ -559,6 +559,15 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.WKL.accepts_iff,
    ``ComputableAnalysis.exists_path_of_isInfiniteTree,
    ``ComputableAnalysis.WKL.dom_iff,
+   -- The strict death race: WKL against parallelized LLPO (issue #32)
+   ``ComputableAnalysis.AliveAt.mono,
+   ``ComputableAnalysis.not_raceEvent_both,
+   ``ComputableAnalysis.raceFlags_atMostOne,
+   ``ComputableAnalysis.raceFlags_llpo_dom,
+   ``ComputableAnalysis.infAbove_select,
+   ``ComputableAnalysis.streamTake_pathStream,
+   ``ComputableAnalysis.cantorRep_names_pathName,
+   ``ComputableAnalysis.infAbove_pathWord,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,
