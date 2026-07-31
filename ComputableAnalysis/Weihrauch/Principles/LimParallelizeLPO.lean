@@ -3,7 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
-import ComputableAnalysis.Weihrauch.Parallelize
+import ComputableAnalysis.Weihrauch.Compilers
 import ComputableAnalysis.Weihrauch.Principles.LimCylinder
 
 /-!
@@ -34,9 +34,12 @@ the limit stream of the flattened table *is* the packed family of limit streams.
 built for: `lpo_le_lim`, upgraded to strong through `Lim.isCylinder`, lifted by
 the parallelization functor, and collapsed by strong parallelizability.
 
-This module is deliberately principle-specific; reusable compiler abstractions are
-issue #31's boundary to identify. The calibration is part of
-`Lim ≡sW LPÔ ≡sW lim_ℕ-hat ≡sW EC` (Brattka–Gherardi–Pauly, Theorem 11.6.7).
+The explicit pair is derived through the `LPO.parallelize` compiler of
+`Weihrauch/Compilers.lean`, whose hypotheses are exactly this module's semantic content
+(question family, bit-consistent decoding); the module also hosts the composite entry
+point `sigma1Family_le_lim` sending Σ₁ question families through the calibration to
+`Lim`. The calibration is part of `Lim ≡sW LPÔ ≡sW lim_ℕ-hat ≡sW EC`
+(Brattka–Gherardi–Pauly, Theorem 11.6.7).
 -/
 
 namespace ComputableAnalysis
@@ -45,10 +48,6 @@ open OracleCode
 
 private theorem lim_accepts_iff {p q : Baire} :
     Lim.accepts p q ↔ ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n :=
-  Iff.rfl
-
-private theorem lpo_accepts_iff {p : Baire} {b : ℕ} :
-    LPO.accepts p b ↔ (b = 0 ∧ ∀ n, p n = 0) ∨ (b = 1 ∧ ∃ n, p n ≠ 0) :=
   Iff.rfl
 
 /-! ### The stability-question family and its explicit code -/
@@ -169,82 +168,63 @@ def limFromBitsCode : OracleCode :=
 questions and `limFromBitsCode` reads a limit value off *any* accepted answer. -/
 theorem isStrongReductionPair_lim_le_parallelize_lpo :
     IsStrongReductionPair Lim LPO.parallelize limStabCode limFromBitsCode := by
-  intro w x hpx hdom
+  refine isStrongReductionPair_parallelize_lpo_of_questions fun w x hpx hdom => ?_
   obtain rfl : x = w := baireRep_names_iff.mp hpx
   obtain ⟨ℓ, hℓ⟩ := hdom
-  have hK : stabFamily x ∈ limStabCode.evalStream x := by
-    rw [evalStream_limStabCode]
+  refine ⟨stabFamily x, by rw [evalStream_limStabCode]; exact Part.mem_some _, ?_⟩
+  intro a hbits
+  -- every column forces a zero bit at its true stability pair
+  have hex : ∀ n, ∃ u, a (Nat.pair (Nat.pair n u) 0) = 0 := by
+    intro n
+    obtain ⟨s, hs⟩ := lim_accepts_iff.mp hℓ n
+    refine ⟨Nat.pair s (ℓ n), ?_⟩
+    have hall : ∀ k, Baire.track (Nat.pair n (Nat.pair s (ℓ n))) (stabFamily x) k = 0 :=
+      stabFamily_track_allZero_iff.mpr fun t hst => hs t hst
+    rcases hbits (Nat.pair n (Nat.pair s (ℓ n))) with ⟨hb, -⟩ | ⟨-, k, hk⟩
+    · exact hb
+    · exact absurd (hall k) hk
+  -- per-coordinate evaluation of the postprocessor
+  have key : ∀ n, ∃ v, limFromBitsCode.eval a n = Part.some v ∧
+      ∃ s, ∀ t, s ≤ t → x (Nat.pair n t) = v := by
+    intro n
+    set pred : ℕ → Bool := fun u => decide (a (Nat.pair (Nat.pair n u) 0) = 0) with hpred
+    have hrfeq : (OracleCode.rfind (.comp .query (.pair OracleCode.id
+        (.const 0)))).eval a n = Nat.rfind (pred : ℕ →. Bool) := by
+      rw [eval_rfind]
+      congr 1
+      funext u
+      rw [eval_comp_some (eval_pair_some (eval_id a (Nat.pair n u))
+        (eval_const a 0 (Nat.pair n u))), eval_query, PFun.coe_val]
+      simp [hpred]
+    obtain ⟨u₁, hu₁⟩ := hex n
+    have hpu : pred u₁ = true := by simp [hpred, hu₁]
+    obtain ⟨u₀, hu₀, -⟩ := Nat.rfind_min' hpu
+    have hspec := Nat.rfind_spec hu₀
+    rw [PFun.coe_val, Part.mem_some_iff] at hspec
+    have hbit0 : a (Nat.pair (Nat.pair n u₀) 0) = 0 := by
+      have h' := hspec.symm
+      simpa [hpred] using h'
+    have hrf : (OracleCode.rfind (.comp .query (.pair OracleCode.id
+        (.const 0)))).eval a n = Part.some u₀ :=
+      Part.eq_some_iff.mpr (by rw [hrfeq]; exact hu₀)
+    refine ⟨u₀.unpair.2, ?_, ?_⟩
+    · simp only [limFromBitsCode]
+      rw [eval_comp_some hrf, eval_right]
+    · -- the zero bit certifies stability at the carried value, for every
+      -- bit-consistent answer
+      rcases hbits (Nat.pair n u₀) with ⟨-, hall⟩ | ⟨hb1, -⟩
+      · have hall' : ∀ k, Baire.track (Nat.pair n (Nat.pair u₀.unpair.1 u₀.unpair.2))
+            (stabFamily x) k = 0 := by
+          rw [Nat.pair_unpair]
+          exact hall
+        exact ⟨u₀.unpair.1, stabFamily_track_allZero_iff.mp hall'⟩
+      · rw [hbit0] at hb1
+        exact absurd hb1 (by omega)
+  choose v hv hstab using key
+  refine ⟨v, mem_evalStream.mpr fun n => ?_, v, baireRep_names_iff.mpr rfl, ?_⟩
+  · rw [hv n]
     exact Part.mem_some _
-  refine ⟨stabFamily x, hK, fun j => Baire.track j (stabFamily x), ?_, ?_, ?_⟩
-  · exact Representation.sequence_names_iff.mpr fun j => baireRep_names_iff.mpr rfl
-  · rw [Problem.parallelize_dom_iff]
-    intro j
-    by_cases hall : ∀ k, Baire.track j (stabFamily x) k = 0
-    · exact ⟨(0 : ℕ), lpo_accepts_iff.mpr (Or.inl ⟨rfl, hall⟩)⟩
-    · obtain ⟨k, hk⟩ := not_forall.mp hall
-      exact ⟨(1 : ℕ), lpo_accepts_iff.mpr (Or.inr ⟨rfl, k, hk⟩)⟩
-  · intro a ys hays hacc
-    have hacc' := Problem.parallelize_accepts_iff.mp hacc
-    -- the answer name's bits are the accepted answer values
-    have hbit : ∀ j, ys j = a (Nat.pair j 0) := by
-      intro j
-      have h := Representation.sequence_names_iff.mp hays j
-      have h2 : ys j = Baire.track j a 0 := natRep_names_iff.mp h
-      simpa using h2
-    -- every column forces a zero bit at its true stability pair
-    have hex : ∀ n, ∃ u, a (Nat.pair (Nat.pair n u) 0) = 0 := by
-      intro n
-      obtain ⟨s, hs⟩ := lim_accepts_iff.mp hℓ n
-      refine ⟨Nat.pair s (ℓ n), ?_⟩
-      have hall : ∀ k, Baire.track (Nat.pair n (Nat.pair s (ℓ n))) (stabFamily x) k = 0 :=
-        stabFamily_track_allZero_iff.mpr fun t hst => hs t hst
-      rcases lpo_accepts_iff.mp (hacc' (Nat.pair n (Nat.pair s (ℓ n)))) with
-        ⟨hb, -⟩ | ⟨-, k, hk⟩
-      · rw [← hbit]; exact hb
-      · exact absurd (hall k) hk
-    -- per-coordinate evaluation of the postprocessor
-    have key : ∀ n, ∃ v, limFromBitsCode.eval a n = Part.some v ∧
-        ∃ s, ∀ t, s ≤ t → x (Nat.pair n t) = v := by
-      intro n
-      set pred : ℕ → Bool := fun u => decide (a (Nat.pair (Nat.pair n u) 0) = 0) with hpred
-      have hrfeq : (OracleCode.rfind (.comp .query (.pair OracleCode.id
-          (.const 0)))).eval a n = Nat.rfind (pred : ℕ →. Bool) := by
-        rw [eval_rfind]
-        congr 1
-        funext u
-        rw [eval_comp_some (eval_pair_some (eval_id a (Nat.pair n u))
-          (eval_const a 0 (Nat.pair n u))), eval_query, PFun.coe_val]
-        simp [hpred]
-      obtain ⟨u₁, hu₁⟩ := hex n
-      have hpu : pred u₁ = true := by simp [hpred, hu₁]
-      obtain ⟨u₀, hu₀, -⟩ := Nat.rfind_min' hpu
-      have hspec := Nat.rfind_spec hu₀
-      rw [PFun.coe_val, Part.mem_some_iff] at hspec
-      have hbit0 : a (Nat.pair (Nat.pair n u₀) 0) = 0 := by
-        have h' := hspec.symm
-        simpa [hpred] using h'
-      have hrf : (OracleCode.rfind (.comp .query (.pair OracleCode.id
-          (.const 0)))).eval a n = Part.some u₀ :=
-        Part.eq_some_iff.mpr (by rw [hrfeq]; exact hu₀)
-      refine ⟨u₀.unpair.2, ?_, ?_⟩
-      · simp only [limFromBitsCode]
-        rw [eval_comp_some hrf, eval_right]
-      · -- the zero bit certifies stability at the carried value, for every
-        -- accepted answer
-        have hys0 : ys (Nat.pair n u₀) = (0 : ℕ) := by rw [hbit]; exact hbit0
-        rcases lpo_accepts_iff.mp (hacc' (Nat.pair n u₀)) with ⟨-, hall⟩ | ⟨hb1, -⟩
-        · have hall' : ∀ k, Baire.track (Nat.pair n (Nat.pair u₀.unpair.1 u₀.unpair.2))
-              (stabFamily x) k = 0 := by
-            rw [Nat.pair_unpair]
-            exact hall
-          exact ⟨u₀.unpair.1, stabFamily_track_allZero_iff.mp hall'⟩
-        · rw [hys0] at hb1
-          exact absurd hb1.symm one_ne_zero
-    choose v hv hstab using key
-    refine ⟨v, mem_evalStream.mpr fun n => ?_, v, baireRep_names_iff.mpr rfl, ?_⟩
-    · rw [hv n]
-      exact Part.mem_some _
-    · exact lim_accepts_iff.mpr fun n => hstab n
+  · exact lim_accepts_iff.mpr fun n => hstab n
 
 /-- `Lim` reduces strongly to parallelized `LPO`. -/
 theorem lim_le_parallelize_lpo : Lim ≤sW LPO.parallelize :=
@@ -312,5 +292,19 @@ theorem parallelize_lpo_le_lim : LPO.parallelize ≤sW Lim :=
 standard target for countably many Σ₁ questions. -/
 theorem parallelize_lpo_equiv_lim : LPO.parallelize ≡sW Lim :=
   ⟨parallelize_lpo_le_lim, lim_le_parallelize_lpo⟩
+
+universe u v
+
+/-- **The composite entry point**: a problem whose instances can uniformly pose
+countably many Σ₁ questions and decode any consistent answer bits reduces strongly to
+`Lim`, through parallelized `LPO` and the calibration. -/
+theorem sigma1Family_le_lim {X : RepSpace.{u}} {Y : RepSpace.{v}} {f : Problem X Y}
+    {K H : OracleCode}
+    (h : ∀ p x, X.rep.Names p x → f.Dom x →
+      ∃ G ∈ K.evalStream p,
+        ∀ a : Baire, BitConsistent G a →
+          ∃ q ∈ H.evalStream a, ∃ y, Y.rep.Names q y ∧ f.accepts x y) :
+    f ≤sW Lim :=
+  (sigma1Family_le_parallelize_lpo h).trans parallelize_lpo_le_lim
 
 end ComputableAnalysis

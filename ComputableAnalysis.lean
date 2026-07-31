@@ -31,6 +31,7 @@ import ComputableAnalysis.Weihrauch.StrongReduction
 import ComputableAnalysis.Weihrauch.Witness
 import ComputableAnalysis.Weihrauch.ParallelProduct
 import ComputableAnalysis.Weihrauch.Parallelize
+import ComputableAnalysis.Weihrauch.Compilers
 import ComputableAnalysis.Weihrauch.Principles.LPO
 import ComputableAnalysis.Weihrauch.Principles.LLPO
 import ComputableAnalysis.Weihrauch.Principles.Limit
