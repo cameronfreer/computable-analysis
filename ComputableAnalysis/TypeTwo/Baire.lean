@@ -67,6 +67,13 @@ The default is implicit: it is determined by the goal. -/
     (streamTake p n).getD i d = p i := by
   rw [List.getD_eq_getElem _ _ (by rw [length_streamTake]; exact h), getElem_streamTake]
 
+/-- Taking a shorter prefix of a prefix: the two lengths commute with `streamTake`. -/
+theorem take_streamTake (p : ℕ → α) {t n : ℕ} (h : t ≤ n) :
+    (streamTake p n).take t = streamTake p t := by
+  refine List.ext_getElem ?_ fun i h1 h2 => ?_
+  · simp [length_streamTake, Nat.min_eq_left h]
+  · rw [List.getElem_take, getElem_streamTake, getElem_streamTake]
+
 @[simp]
 theorem streamExtend_apply_lt (s : List α) (p : ℕ → α) {n : ℕ} (h : n < s.length) :
     streamExtend s p n = s[n] :=

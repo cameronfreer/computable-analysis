@@ -48,8 +48,9 @@ domain is the promise that some point survives. -/
 def C₂ : Problem baireSpace natSpace :=
   ⟨fun p (i : ℕ) => i ≤ 1 ∧ ∀ n, p n ≠ i + 1⟩
 
-/-- Definitional unfolding of `C₂.accepts`. -/
-private theorem c2_accepts_iff {p : Baire} {i : ℕ} :
+/-- **Definitional unfolding of `C₂.accepts`.** An explicit rewrite lemma, deliberately
+not a global `simp` rule: the semantic API the compact-choice branch consumes. -/
+theorem C₂.accepts_iff {p : Baire} {i : ℕ} :
     C₂.accepts p i ↔ i ≤ 1 ∧ ∀ n, p n ≠ i + 1 :=
   Iff.rfl
 
@@ -88,11 +89,11 @@ theorem eval_llpoRemovalCode (p : Baire) (k : ℕ) :
       rw [eval_comp_some (eval_div2mod2Code p k), eval_right, Nat.unpair_pair]), eval_succ]
     simp [llpoRemovalStream, h]
 
-/-- `LLPO` reduces strongly to `C₂`: translate refutation events into removals and pass
-the chosen point through unchanged. -/
-theorem llpo_le_c2 : LLPO ≤sW C₂ := by
-  refine strongReduction_iff_exists_reductionPair.mpr
-    ⟨llpoRemovalCode, .query, fun w x hpx hdom => ?_⟩
+/-- **`LLPO ≤sW C₂`, as an explicit pair**: translate refutation events into removals and
+pass the chosen point through unchanged. -/
+theorem isStrongReductionPair_llpo_le_c2 :
+    IsStrongReductionPair LLPO C₂ llpoRemovalCode .query := by
+  intro w x hpx hdom
   obtain rfl : x = w := baireRep_names_iff.mp hpx
   obtain ⟨i₀, hi₀⟩ := hdom
   obtain ⟨hone, hdisj⟩ := LLPO.accepts_iff.mp hi₀
@@ -100,7 +101,7 @@ theorem llpo_le_c2 : LLPO ≤sW C₂ := by
     mem_evalStream.mpr fun k => by rw [eval_llpoRemovalCode]; exact Part.mem_some _
   have hdom' : C₂.Dom (llpoRemovalStream x) := by
     rcases hdisj with ⟨-, hall⟩ | ⟨-, hall⟩
-    · refine ⟨(0 : ℕ), c2_accepts_iff.mpr ⟨by omega, fun n hn => ?_⟩⟩
+    · refine ⟨(0 : ℕ), C₂.accepts_iff.mpr ⟨by omega, fun n hn => ?_⟩⟩
       rcases eq_or_ne (x n) 0 with h | h
       · simp [llpoRemovalStream, h] at hn
       · have hpar : n % 2 = 0 := by
@@ -108,7 +109,7 @@ theorem llpo_le_c2 : LLPO ≤sW C₂ := by
           omega
         have hev : n = 2 * (n / 2) := by omega
         exact h (hev ▸ hall (n / 2))
-    · refine ⟨(1 : ℕ), c2_accepts_iff.mpr ⟨le_rfl, fun n hn => ?_⟩⟩
+    · refine ⟨(1 : ℕ), C₂.accepts_iff.mpr ⟨le_rfl, fun n hn => ?_⟩⟩
       rcases eq_or_ne (x n) 0 with h | h
       · simp [llpoRemovalStream, h] at hn
       · have hpar : n % 2 = 1 := by
@@ -118,7 +119,7 @@ theorem llpo_le_c2 : LLPO ≤sW C₂ := by
         exact h (hodd ▸ hall (n / 2))
   refine ⟨llpoRemovalStream x, hmem, llpoRemovalStream x, baireRep_names_iff.mpr rfl,
     hdom', fun a y' hay' hacc => ?_⟩
-  obtain ⟨hy'le, hnorem⟩ := c2_accepts_iff.mp hacc
+  obtain ⟨hy'le, hnorem⟩ := C₂.accepts_iff.mp hacc
   refine ⟨a, by simp, y', hay', LLPO.accepts_iff.mpr ⟨hone, ?_⟩⟩
   obtain rfl | rfl := Nat.le_one_iff_eq_zero_or_eq_one.mp hy'le
   · refine Or.inl ⟨rfl, fun n => ?_⟩
@@ -184,13 +185,6 @@ private theorem c2FlagStream_ne_zero {p : Baire} {k : ℕ} (h : c2FlagStream p k
   by_contra hc
   exact h (if_neg hc)
 
-/-- A prefix of a stream prefix. -/
-private theorem streamTake_take {α : Type*} (p : ℕ → α) {m n : ℕ} (h : m ≤ n) :
-    (streamTake p n).take m = streamTake p m := by
-  refine List.ext_getElem ?_ fun i h1 h2 => ?_
-  · simp [length_streamTake, Nat.min_eq_left h]
-  · rw [List.getElem_take, getElem_streamTake, getElem_streamTake]
-
 /-- **The preprocessor of `c2_le_llpo`**, from the head-adaptive prefix bridge: the flag
 at `k` is a computable function of the length-`(k / 2 + 1)` prefix of the input. -/
 theorem exists_c2FlagCode : ∃ K : OracleCode, ∀ p : Baire,
@@ -237,7 +231,7 @@ theorem exists_c2FlagCode : ∃ K : OracleCode, ∀ p : Baire,
   rw [hK p k]
   simp only [Nat.unpair_pair, Denumerable.ofNat_encode, Part.mem_some_iff]
   have hlen : k / 2 < k / 2 + 1 := Nat.lt_succ_self _
-  rw [streamTake_getD p hlen, streamTake_take p (Nat.le_succ _)]
+  rw [streamTake_getD p hlen, take_streamTake p (Nat.le_succ _)]
   -- align the list-scan condition with the pointwise one
   have hcond : ((streamTake p (k / 2)).all fun x =>
       decide (0 < (x - (k % 2 + 1)) + ((k % 2 + 1) - x))) = true ↔
@@ -262,16 +256,28 @@ theorem exists_c2FlagCode : ∃ K : OracleCode, ∀ p : Baire,
     · rw [if_neg fun hc => h hc.1]
     · rw [if_neg fun hc => h (hcond.mp hc.2)]
 
-/-- `C₂` reduces strongly to `LLPO`: flag first removals — unique per parity, and under
-the nonemptiness promise only one parity occurs — and pass the chosen point through
+/-- The first-removal flag code, extracted once from `exists_c2FlagCode` so that consumers
+share a single combinator. Specified, not constructed — the documented atom pattern of
+`OracleCode.pairCode`: the helper codes inside `exists_c2FlagCode` come from
+`OracleCode.exists_prefixPostCode` (Prop-level), so only properties following from
+`mem_evalStream_c2FlagCode` can be proved about it. -/
+noncomputable def c2FlagCode : OracleCode := Classical.choose exists_c2FlagCode
+
+/-- Specification of `c2FlagCode`: on any removal stream it produces the first-removal
+flags. -/
+theorem mem_evalStream_c2FlagCode (p : Baire) :
+    c2FlagStream p ∈ c2FlagCode.evalStream p :=
+  Classical.choose_spec exists_c2FlagCode p
+
+/-- **`C₂ ≤sW LLPO`, as an explicit pair**: flag first removals — unique per parity, and
+under the nonemptiness promise only one parity occurs — and pass the chosen point through
 unchanged. -/
-theorem c2_le_llpo : C₂ ≤sW LLPO := by
-  obtain ⟨K, hK⟩ := exists_c2FlagCode
-  refine strongReduction_iff_exists_reductionPair.mpr
-    ⟨K, .query, fun w x hpx hdom => ?_⟩
+theorem isStrongReductionPair_c2_le_llpo :
+    IsStrongReductionPair C₂ LLPO c2FlagCode .query := by
+  intro w x hpx hdom
   obtain rfl : x = w := baireRep_names_iff.mp hpx
   obtain ⟨i₀, hi₀⟩ := hdom
-  obtain ⟨hi₀le, hi₀norem⟩ := c2_accepts_iff.mp hi₀
+  obtain ⟨hi₀le, hi₀norem⟩ := C₂.accepts_iff.mp hi₀
   -- the at-most-one promise: all nonzero flags share the surviving parity's complement,
   -- and first occurrences are unique
   have hone : ∀ a b, c2FlagStream x a ≠ 0 → c2FlagStream x b ≠ 0 → a = b := by
@@ -296,7 +302,7 @@ theorem c2_le_llpo : C₂ ≤sW LLPO := by
       · exact h
       · exact absurd (hpar ▸ hpb) (hmina _ h)
     omega
-  have hmem := hK x
+  have hmem := mem_evalStream_c2FlagCode x
   have hdom' : LLPO.Dom (c2FlagStream x) := by
     obtain rfl | rfl := Nat.le_one_iff_eq_zero_or_eq_one.mp hi₀le
     · exact ⟨(0 : ℕ), LLPO.accepts_iff.mpr ⟨hone, Or.inl ⟨rfl,
@@ -306,10 +312,18 @@ theorem c2_le_llpo : C₂ ≤sW LLPO := by
   refine ⟨c2FlagStream x, hmem, c2FlagStream x, baireRep_names_iff.mpr rfl, hdom',
     fun a y' hay' hacc => ?_⟩
   obtain ⟨-, hdisj⟩ := LLPO.accepts_iff.mp hacc
-  refine ⟨a, by simp, y', hay', c2_accepts_iff.mpr ?_⟩
+  refine ⟨a, by simp, y', hay', C₂.accepts_iff.mpr ?_⟩
   rcases hdisj with ⟨h0, hall⟩ | ⟨h1, hall⟩
   · exact ⟨by omega, by simpa [h0] using c2FlagStream_even_zero_iff.mp hall⟩
   · exact ⟨by omega, by simpa [h1] using c2FlagStream_odd_zero_iff.mp hall⟩
+
+/-- `LLPO` reduces strongly to `C₂`. -/
+theorem llpo_le_c2 : LLPO ≤sW C₂ :=
+  strongReduction_iff_exists_reductionPair.mpr ⟨_, _, isStrongReductionPair_llpo_le_c2⟩
+
+/-- `C₂` reduces strongly to `LLPO`. -/
+theorem c2_le_llpo : C₂ ≤sW LLPO :=
+  strongReduction_iff_exists_reductionPair.mpr ⟨_, _, isStrongReductionPair_c2_le_llpo⟩
 
 /-- **The calibration**: closed choice on two points is strongly equivalent to `LLPO` —
 the closed-set and omniscience presentations of finite binary choice agree. -/

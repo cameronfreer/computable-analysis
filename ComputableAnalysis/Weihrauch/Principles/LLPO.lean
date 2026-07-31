@@ -38,7 +38,7 @@ def llpoSwap : Problem baireSpace natSpace :=
     ((i = 0 ∧ ∀ n, p (2 * n + 1) = 0) ∨ (i = 1 ∧ ∀ n, p (2 * n) = 0))⟩
 
 /-- **Definitional unfolding of `LLPO.accepts`.** An explicit rewrite lemma, deliberately
-not a global `simp` rule. -/
+not a global `simp` rule: the semantic API the compact-choice branch consumes. -/
 theorem LLPO.accepts_iff {p : Baire} {i : ℕ} :
     LLPO.accepts p i ↔ (∀ a b, p a ≠ 0 → p b ≠ 0 → a = b) ∧
       ((i = 0 ∧ ∀ n, p (2 * n) = 0) ∨ (i = 1 ∧ ∀ n, p (2 * n + 1) = 0)) :=

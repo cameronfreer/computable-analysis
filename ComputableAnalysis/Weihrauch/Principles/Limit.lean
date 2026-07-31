@@ -200,13 +200,6 @@ theorem limTable_dom (p : Baire) : Lim.Dom (limTable p) := by
         · exact absurd h1 (hnone t)
   exact ⟨fun n => (hcol n).choose, fun n => (hcol n).choose_spec⟩
 
-/-- Truncating a longer prefix of a stream gives the shorter prefix. -/
-private theorem take_streamTake {α : Type*} (p : ℕ → α) {t n : ℕ} (h : t ≤ n) :
-    (streamTake p n).take t = streamTake p t := by
-  have hpre := List.prefix_iff_eq_take.mp (streamTake_prefix p h)
-  rw [length_streamTake] at hpre
-  exact hpre.symm
-
 /-- The oracle-free postprocessor behind `exists_limTableCode`: from the coordinate paired
 with an encoded prefix of the input, read the echoed entry off the prefix on even columns,
 and run the bounded simulation against the prefix truncated to the stage on odd ones. -/
