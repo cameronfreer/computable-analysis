@@ -43,9 +43,9 @@ private theorem lpo_accepts_iff {p : Baire} {b : ℕ} :
     LPO.accepts p b ↔ (b = 0 ∧ ∀ n, p n = 0) ∨ (b = 1 ∧ ∃ n, p n ≠ 0) :=
   Iff.rfl
 
-/-- Definitional unfolding of `LLPO.accepts`, so proofs never depend on `rcases`
-unfolding the structure projection. -/
-private theorem llpo_accepts_iff {p : Baire} {i : ℕ} :
+/-- **Definitional unfolding of `LLPO.accepts`.** An explicit rewrite lemma, deliberately
+not a global `simp` rule: the semantic API the compact-choice branch consumes. -/
+theorem LLPO.accepts_iff {p : Baire} {i : ℕ} :
     LLPO.accepts p i ↔ (∀ a b, p a ≠ 0 → p b ≠ 0 → a = b) ∧
       ((i = 0 ∧ ∀ n, p (2 * n) = 0) ∨ (i = 1 ∧ ∀ n, p (2 * n + 1) = 0)) :=
   Iff.rfl
@@ -60,8 +60,8 @@ private theorem llpoSwap_accepts_iff {p : Baire} {i : ℕ} :
 `LLPO`, and the input on which `llpo_swap_le_llpo` exercises every realizer. -/
 theorem llpo_accepts_zero_both :
     LLPO.accepts (fun _ => 0) (0 : ℕ) ∧ LLPO.accepts (fun _ => 0) (1 : ℕ) :=
-  ⟨llpo_accepts_iff.mpr ⟨fun _ _ ha _ => absurd rfl ha, Or.inl ⟨rfl, fun _ => rfl⟩⟩,
-   llpo_accepts_iff.mpr ⟨fun _ _ ha _ => absurd rfl ha, Or.inr ⟨rfl, fun _ => rfl⟩⟩⟩
+  ⟨LLPO.accepts_iff.mpr ⟨fun _ _ ha _ => absurd rfl ha, Or.inl ⟨rfl, fun _ => rfl⟩⟩,
+   LLPO.accepts_iff.mpr ⟨fun _ _ ha _ => absurd rfl ha, Or.inr ⟨rfl, fun _ => rfl⟩⟩⟩
 
 /-- The shared postprocessor `comp query (const 1)`: on any oracle `r` its stream value is
 the constant stream at `r 1` — coordinate `1` of the interleaved input is the oracle
@@ -81,7 +81,7 @@ theorem llpo_le_lpo : LLPO ≤W LPO := by
     ⟨ce, .comp .query (.const 1), fun p x hpx hdom => ?_⟩
   obtain rfl := (baireRep_names_iff.mp hpx).symm
   obtain ⟨i, hi⟩ := hdom
-  obtain ⟨hone, -⟩ := llpo_accepts_iff.mp hi
+  obtain ⟨hone, -⟩ := LLPO.accepts_iff.mp hi
   have hk : Baire.evenPart p ∈ ce.evalStream p := by
     rw [OracleCode.computes_iff_evalStream.mp hce p]
     exact Part.mem_some _
@@ -90,7 +90,7 @@ theorem llpo_le_lpo : LLPO ≤W LPO := by
   obtain rfl := natRep_names_iff.mp hay'
   have h1 : Baire.interleave p a 1 = a 0 := by simpa using Baire.interleave_odd p a 0
   refine ⟨fun _ => Baire.interleave p a 1, const_query_one_mem_evalStream _, a 0,
-    natRep_names_iff.mpr h1.symm, llpo_accepts_iff.mpr ⟨hone, ?_⟩⟩
+    natRep_names_iff.mpr h1.symm, LLPO.accepts_iff.mpr ⟨hone, ?_⟩⟩
   rcases lpo_accepts_iff.mp hacc with ⟨h0, hall⟩ | ⟨h1', n₀, hn₀⟩
   · exact Or.inl ⟨h0, fun n => hall n⟩
   · refine Or.inr ⟨h1', fun n => ?_⟩
@@ -127,9 +127,9 @@ theorem llpo_swap_le_llpo : llpoSwap ≤W LLPO := by
     exact Part.mem_some _
   have hdomS : LLPO.Dom (Baire.interleave p.oddPart p.evenPart) := by
     rcases hdisj with ⟨-, hall⟩ | ⟨-, hall⟩
-    · exact ⟨(0 : ℕ), llpo_accepts_iff.mpr
+    · exact ⟨(0 : ℕ), LLPO.accepts_iff.mpr
         ⟨honeS, Or.inl ⟨rfl, fun n => (hSe n).trans (hall n)⟩⟩⟩
-    · exact ⟨(1 : ℕ), llpo_accepts_iff.mpr
+    · exact ⟨(1 : ℕ), LLPO.accepts_iff.mpr
         ⟨honeS, Or.inr ⟨rfl, fun n => (hSo n).trans (hall n)⟩⟩⟩
   refine ⟨Baire.interleave p.oddPart p.evenPart, hk, Baire.interleave p.oddPart p.evenPart,
     baireRep_names_iff.mpr rfl, hdomS, fun a y' hay' hacc => ?_⟩
@@ -137,7 +137,7 @@ theorem llpo_swap_le_llpo : llpoSwap ≤W LLPO := by
   have h1 : Baire.interleave p a 1 = a 0 := by simpa using Baire.interleave_odd p a 0
   refine ⟨fun _ => Baire.interleave p a 1, const_query_one_mem_evalStream _, a 0,
     natRep_names_iff.mpr h1.symm, llpoSwap_accepts_iff.mpr ⟨hone, ?_⟩⟩
-  obtain ⟨-, hdisjS⟩ := llpo_accepts_iff.mp hacc
+  obtain ⟨-, hdisjS⟩ := LLPO.accepts_iff.mp hacc
   rcases hdisjS with ⟨h0, hallS⟩ | ⟨h1', hallS⟩
   · exact Or.inl ⟨h0, fun n => (hSe n).symm.trans (hallS n)⟩
   · exact Or.inr ⟨h1', fun n => (hSo n).symm.trans (hallS n)⟩
