@@ -549,6 +549,7 @@ def headlineDecls : List Name :=
    -- The binary-tree presentation of weak Kőnig's lemma (issue #32)
    ``ComputableAnalysis.treeWordDecode_treeWordCode,
    ``ComputableAnalysis.primrec_treeWordCode,
+   ``ComputableAnalysis.primrec_treeWordDecode,
    ``ComputableAnalysis.WKL,
    ``ComputableAnalysis.WKL.accepts_iff,
    ``ComputableAnalysis.exists_path_of_isInfiniteTree,

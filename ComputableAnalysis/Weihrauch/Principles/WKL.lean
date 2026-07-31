@@ -53,6 +53,9 @@ theorem treeWordDecode_treeWordCode (w : List Bool) : treeWordDecode (treeWordCo
 theorem primrec_treeWordCode : Primrec treeWordCode :=
   Primrec.encode.comp primrec_boolWordToNat
 
+theorem primrec_treeWordDecode : Primrec treeWordDecode :=
+  primrec_natWordToBool.comp (Primrec.ofNat (List ℕ))
+
 /-! ### Trees presented by a stream -/
 
 /-- `w` is a node of the tree presented by `p`: its code is marked nonzero. -/
