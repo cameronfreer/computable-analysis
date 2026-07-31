@@ -489,7 +489,28 @@ def headlineDecls : List Name :=
    -- Lim is a cylinder (issue #28)
    ``ComputableAnalysis.OracleCode.eval_limCylIndexCode,
    ``ComputableAnalysis.OracleCode.evalStream_limCylPreCode,
-   ``ComputableAnalysis.Lim.isCylinder]
+   ``ComputableAnalysis.Lim.isCylinder,
+   -- Countable parallelization and its closure laws (issue #29)
+   ``ComputableAnalysis.Problem.parallelize_accepts_iff,
+   ``ComputableAnalysis.Problem.parallelize_dom_iff,
+   ``ComputableAnalysis.Problem.Equivalent.parallelize,
+   ``ComputableAnalysis.IsStrongReductionPair.parallelize,
+   ``ComputableAnalysis.IsReductionPair.parallelize,
+   ``ComputableAnalysis.StrongWeihrauchReduction.parallelize_pre,
+   ``ComputableAnalysis.StrongWeihrauchReduction.parallelize_post,
+   ``ComputableAnalysis.WeihrauchReduction.parallelize_pre,
+   ``ComputableAnalysis.WeihrauchReduction.parallelize_post,
+   ``ComputableAnalysis.StrongWeihrauchReducible.parallelize,
+   ``ComputableAnalysis.WeihrauchReducible.parallelize,
+   ``ComputableAnalysis.parallelize_congr,
+   ``ComputableAnalysis.isStrongReductionPair_parallelize_extensive,
+   ``ComputableAnalysis.parallelize_extensive,
+   ``ComputableAnalysis.isStrongReductionPair_parallelize_flatten,
+   ``ComputableAnalysis.isStrongReductionPair_parallelize_unflatten,
+   ``ComputableAnalysis.parallelize_idempotent,
+   ``ComputableAnalysis.IsParallelizable,
+   ``ComputableAnalysis.IsStronglyParallelizable,
+   ``ComputableAnalysis.IsStronglyParallelizable.isParallelizable]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
