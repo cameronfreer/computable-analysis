@@ -49,12 +49,6 @@ open scoped PiNatInstances ENNReal
 
 Re-derived here because the copy in `Limit.lean` is private to that file. -/
 
-/-- `Lim` accepts `q` on input `p` exactly when every column of `p` stabilizes to the
-corresponding entry of `q`. -/
-private theorem lim_accepts_iff {p q : Baire} :
-    Lim.accepts p q ↔ ∀ n, ∃ s, ∀ t, s ≤ t → p (Nat.pair n t) = q n :=
-  Iff.rfl
-
 /-! ### The unary-block embedding `Baire ↪ Cantor` (decode-correctness core) -/
 
 /-- Cumulative block starts: block `n` of `unaryEncode q` occupies positions
@@ -229,7 +223,7 @@ private theorem continuous_encodingMap (p q : Baire) (hLim : Lim.accepts p q) :
     have hxfalse : ∀ i, x i = false := fun i => by
       simpa using hx i
     -- stage past which every column `n ≤ L` has stabilized
-    choose s hs using fun n => lim_accepts_iff.mp hLim n
+    choose s hs using fun n => Lim.accepts_iff.mp hLim n
     set S : ℕ := (Finset.range (L + 1)).sup s with hS_def
     refine ⟨(1 / 2 : ℝ) ^ S, by positivity, fun y hy i hiL => ?_⟩
     have hxi : encodingMap p q x i = unaryEncode q i := by

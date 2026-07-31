@@ -66,11 +66,6 @@ protected theorem Problem.Equivalent.parallelize {f f' : Problem X Y}
     (h : f.Equivalent f') : f.parallelize.Equivalent f'.parallelize :=
   fun xs ys => forall_congr' fun n => h (xs n) (ys n)
 
-/-- Track `t` of a `Nat.pair`-packed family of streams. -/
-private theorem track_pack (g : ℕ → Baire) (t : ℕ) :
-    Baire.track t (fun m => g m.unpair.1 m.unpair.2) = g t :=
-  funext fun k => by simp [Nat.unpair_pair]
-
 /-! ### Lifting reductions trackwise -/
 
 /-- **Strong lifting**: a strong reduction pair lifts to the parallelizations by running
@@ -83,23 +78,23 @@ protected theorem IsStrongReductionPair.parallelize {f : Problem X Y} {g : Probl
   have hFn := Representation.sequence_names_iff.mp hF
   rw [Problem.parallelize_dom_iff] at hdom
   choose k hk x' hx' hdom' hH using fun n => hp (Baire.track n F) (xs n) (hFn n) (hdom n)
-  refine ⟨fun m => k m.unpair.1 m.unpair.2, ?_, fun n => x' n, ?_, ?_, ?_⟩
+  refine ⟨Baire.packTracks k, ?_, x', ?_, ?_, ?_⟩
   · rw [OracleCode.evalStream_mapTracks_iff]
     intro t
-    rw [track_pack]
+    rw [Baire.track_packTracks]
     exact hk t
-  · exact Representation.sequence_names_iff.mpr fun n => by rw [track_pack]; exact hx' n
+  · exact Representation.sequence_names_packTracks_iff.mpr hx'
   · exact Problem.parallelize_dom_iff.mpr hdom'
   · intro a ys' ha hacc
     have han := Representation.sequence_names_iff.mp ha
     choose q hq y hy hfacc using fun n =>
       hH n (Baire.track n a) (ys' n) (han n) (hacc n)
-    refine ⟨fun m => q m.unpair.1 m.unpair.2, ?_, fun n => y n, ?_, fun n => hfacc n⟩
+    refine ⟨Baire.packTracks q, ?_, y, ?_, hfacc⟩
     · rw [OracleCode.evalStream_mapTracks_iff]
       intro t
-      rw [track_pack]
+      rw [Baire.track_packTracks]
       exact hq t
-    · exact Representation.sequence_names_iff.mpr fun n => by rw [track_pack]; exact hy n
+    · exact Representation.sequence_names_packTracks_iff.mpr hy
 
 /-- **Ordinary lifting**: as the strong case for the preprocessor; the postprocessor
 first re-pairs the interleaving of the packed input with the packed answer into the
@@ -112,12 +107,12 @@ protected theorem IsReductionPair.parallelize {f : Problem X Y} {g : Problem X' 
   have hFn := Representation.sequence_names_iff.mp hF
   rw [Problem.parallelize_dom_iff] at hdom
   choose k hk x' hx' hdom' hH using fun n => hp (Baire.track n F) (xs n) (hFn n) (hdom n)
-  refine ⟨fun m => k m.unpair.1 m.unpair.2, ?_, fun n => x' n, ?_, ?_, ?_⟩
+  refine ⟨Baire.packTracks k, ?_, x', ?_, ?_, ?_⟩
   · rw [OracleCode.evalStream_mapTracks_iff]
     intro t
-    rw [track_pack]
+    rw [Baire.track_packTracks]
     exact hk t
-  · exact Representation.sequence_names_iff.mpr fun n => by rw [track_pack]; exact hx' n
+  · exact Representation.sequence_names_packTracks_iff.mpr hx'
   · exact Problem.parallelize_dom_iff.mpr hdom'
   · intro a ys' ha hacc
     have han := Representation.sequence_names_iff.mp ha
@@ -128,13 +123,13 @@ protected theorem IsReductionPair.parallelize {f : Problem X Y} {g : Problem X' 
         OracleCode.zipTracksCode.evalStream (Baire.interleave F a) := by
       rw [OracleCode.evalStream_zipTracksCode]
       exact Part.mem_some _
-    refine ⟨fun m => q m.unpair.1 m.unpair.2, ?_, fun n => y n, ?_, fun n => hfacc n⟩
+    refine ⟨Baire.packTracks q, ?_, y, ?_, hfacc⟩
     · rw [OracleCode.evalStream_subst hzip, OracleCode.evalStream_mapTracks_iff]
       intro t
-      rw [track_pack, OracleCode.track_zipTracks, Baire.evenPart_interleave,
+      rw [Baire.track_packTracks, OracleCode.track_zipTracks, Baire.evenPart_interleave,
         Baire.oddPart_interleave]
       exact hq t
-    · exact Representation.sequence_names_iff.mpr fun n => by rw [track_pack]; exact hy n
+    · exact Representation.sequence_names_packTracks_iff.mpr hy
 
 /-- The bundled strong lifting, fields explicit and fully computable: `mapTracks` on both
 codes. -/
@@ -179,6 +174,11 @@ theorem WeihrauchReducible.parallelize {f : Problem X Y} {g : Problem X' Y'}
 /-- Parallelization respects ordinary Weihrauch equivalence. -/
 theorem parallelize_congr {f : Problem X Y} {g : Problem X' Y'} (h : f ≡W g) :
     f.parallelize ≡W g.parallelize :=
+  ⟨h.1.parallelize, h.2.parallelize⟩
+
+/-- Parallelization respects strong Weihrauch equivalence. -/
+theorem parallelize_congr_strong {f : Problem X Y} {g : Problem X' Y'} (h : f ≡sW g) :
+    f.parallelize ≡sW g.parallelize :=
   ⟨h.1.parallelize, h.2.parallelize⟩
 
 /-! ### Extensivity and idempotence -/
@@ -295,5 +295,25 @@ def IsStronglyParallelizable (f : Problem X Y) : Prop := f.parallelize ≡sW f
 theorem IsStronglyParallelizable.isParallelizable {f : Problem X Y}
     (h : IsStronglyParallelizable f) : IsParallelizable f :=
   ⟨strongWeihrauch_le_weihrauch h.1, strongWeihrauch_le_weihrauch h.2⟩
+
+/-- **The collapse**, the content of parallelizability: many instances reduce to one. -/
+theorem IsParallelizable.collapse {f : Problem X Y} (h : IsParallelizable f) :
+    f.parallelize ≤W f := h.1
+
+/-- **The strong collapse**, the content of strong parallelizability. -/
+theorem IsStronglyParallelizable.collapse {f : Problem X Y}
+    (h : IsStronglyParallelizable f) : f.parallelize ≤sW f := h.1
+
+/-- Parallelizability *is* the collapse: the expansion half is automatic
+(`parallelize_extensive`). -/
+theorem isParallelizable_iff {f : Problem X Y} :
+    IsParallelizable f ↔ f.parallelize ≤W f :=
+  ⟨IsParallelizable.collapse,
+   fun h => ⟨h, strongWeihrauch_le_weihrauch (parallelize_extensive f)⟩⟩
+
+/-- Strong parallelizability *is* the strong collapse. -/
+theorem isStronglyParallelizable_iff {f : Problem X Y} :
+    IsStronglyParallelizable f ↔ f.parallelize ≤sW f :=
+  ⟨IsStronglyParallelizable.collapse, fun h => ⟨h, parallelize_extensive f⟩⟩
 
 end ComputableAnalysis
