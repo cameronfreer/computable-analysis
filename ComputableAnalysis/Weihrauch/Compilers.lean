@@ -5,6 +5,7 @@ Authors: Cameron Freer
 -/
 import ComputableAnalysis.Weihrauch.Parallelize
 import ComputableAnalysis.Weihrauch.Principles.Limit
+import ComputableAnalysis.Weihrauch.Principles.LLPO
 
 /-!
 # Uniform reduction compilers for the standard targets
@@ -114,5 +115,84 @@ theorem stabilizationTable_le_lim {f : Problem X Y} {K H : OracleCode}
           ∃ r ∈ H.evalStream q, ∃ y, Y.rep.Names r y ∧ f.accepts x y) :
     f ≤sW Lim :=
   strongReduction_iff_exists_reductionPair.mpr ⟨K, H, isStrongReductionPair_lim_of_table h⟩
+
+/-! ### Parallelized `LLPO`
+
+`LLPO`'s at-most-one-nonzero promise is the obligation a reduction into it must discharge.
+One general way to discharge it — not the only one, so it is kept as a separate layer —
+is to flag only the **first occurrence** of each of two mutually exclusive families of
+events. `firstOccurrenceFlags` builds such an instance and
+`firstOccurrenceFlags_atMostOne` discharges the promise from incompatibility alone. -/
+
+open Classical in
+/-- The first-occurrence flags of a two-sided event family: coordinate `2n` (resp. `2n+1`)
+is `1` exactly when `n` is the least level at which the `false` (resp. `true`) event
+occurs. -/
+noncomputable def firstOccurrenceFlags (E : Bool → ℕ → Prop) : Baire := fun k =>
+  if E (decide (k % 2 = 1)) (k / 2) ∧ ∀ m < k / 2, ¬ E (decide (k % 2 = 1)) m then 1 else 0
+
+theorem firstOccurrenceFlags_ne_zero {E : Bool → ℕ → Prop} {k : ℕ}
+    (h : firstOccurrenceFlags E k ≠ 0) :
+    E (decide (k % 2 = 1)) (k / 2) ∧ ∀ m < k / 2, ¬ E (decide (k % 2 = 1)) m := by
+  by_contra hc
+  exact h (if_neg hc)
+
+/-- **The promise, from incompatibility alone.** If the two sides of the family never both
+occur — at any pair of levels — then flagging first occurrences yields an at-most-one
+instance. Within a side the flag is unique because first occurrences are; across sides it
+is unique by incompatibility. -/
+theorem firstOccurrenceFlags_atMostOne {E : Bool → ℕ → Prop}
+    (hincompat : ∀ n m, E false n → E true m → False) :
+    ∀ a b : ℕ, firstOccurrenceFlags E a ≠ 0 → firstOccurrenceFlags E b ≠ 0 → a = b := by
+  intro a b ha hb
+  obtain ⟨hea, hmina⟩ := firstOccurrenceFlags_ne_zero ha
+  obtain ⟨heb, hminb⟩ := firstOccurrenceFlags_ne_zero hb
+  have hpar : a % 2 = b % 2 := by
+    by_contra hne
+    rcases Nat.mod_two_eq_zero_or_one a with h | h
+    · have hb1 : b % 2 = 1 := by omega
+      rw [h] at hea; rw [hb1] at heb
+      exact hincompat _ _ (by simpa using hea) (by simpa using heb)
+    · have hb0 : b % 2 = 0 := by omega
+      rw [h] at hea; rw [hb0] at heb
+      exact hincompat _ _ (by simpa using heb) (by simpa using hea)
+  have hdiv : a / 2 = b / 2 := by
+    rcases Nat.lt_trichotomy (a / 2) (b / 2) with h | h | h
+    · exact absurd (hpar ▸ hea) (hminb _ h)
+    · exact h
+    · exact absurd (hpar ▸ heb) (hmina _ h)
+  omega
+
+/-- An at-most-one instance always has an accepted answer, so it lies in `LLPO`'s
+domain. -/
+theorem llpo_dom_of_atMostOne {g : Baire}
+    (hone : ∀ a b : ℕ, g a ≠ 0 → g b ≠ 0 → a = b) : LLPO.Dom g := by
+  classical
+  by_cases hev : ∀ n, g (2 * n) = 0
+  · exact ⟨(0 : ℕ), LLPO.accepts_iff.mpr ⟨hone, Or.inl ⟨rfl, hev⟩⟩⟩
+  · obtain ⟨n₀, hn₀⟩ := not_forall.mp hev
+    refine ⟨(1 : ℕ), LLPO.accepts_iff.mpr ⟨hone, Or.inr ⟨rfl, fun n => ?_⟩⟩⟩
+    by_contra hne
+    have := hone (2 * n₀) (2 * n + 1) hn₀ hne
+    omega
+
+/-- **The `LLPO.parallelize` compiler.** To exhibit `(K, H)` as a strong pair into
+parallelized `LLPO`, it suffices that on every valid input name `K` produces the packing
+of a family of `LLPO` instances and `H` decodes every stream of accepted answers. The
+countable-product names, the `natRep` bit decoding, and the domain bookkeeping are
+discharged here. -/
+theorem isStrongReductionPair_parallelize_llpo_of_flags {f : Problem X Y} {K H : OracleCode}
+    (h : ∀ p x, X.rep.Names p x → f.Dom x →
+      ∃ fam : ℕ → Baire, Baire.packTracks fam ∈ K.evalStream p ∧ (∀ j, LLPO.Dom (fam j)) ∧
+        ∀ a : Baire, (∀ j, LLPO.accepts (fam j) (a (Nat.pair j 0))) →
+          ∃ q ∈ H.evalStream a, ∃ y, Y.rep.Names q y ∧ f.accepts x y) :
+    IsStrongReductionPair f LLPO.parallelize K H := by
+  intro p x hpx hdom
+  obtain ⟨fam, hmem, hfamdom, hpost⟩ := h p x hpx hdom
+  refine ⟨_, hmem, fam, ?_, Problem.parallelize_dom_iff.mpr hfamdom, ?_⟩
+  · exact Representation.sequence_names_packTracks_iff.mpr fun j => baireRep_names_iff.mpr rfl
+  · intro a ys hays hacc
+    have hbit : ∀ j, ys j = a (Nat.pair j 0) := natSequence_names_iff.mp hays
+    exact hpost a fun j => hbit j ▸ Problem.parallelize_accepts_iff.mp hacc j
 
 end ComputableAnalysis

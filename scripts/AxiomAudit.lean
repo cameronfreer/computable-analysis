@@ -532,6 +532,11 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.isStrongReductionPair_lim_of_table,
    ``ComputableAnalysis.stabilizationTable_le_lim,
    ``ComputableAnalysis.sigma1Family_le_lim,
+   -- The parallelized-LLPO compiler and its promise layer (issues #31, #32)
+   ``ComputableAnalysis.firstOccurrenceFlags_ne_zero,
+   ``ComputableAnalysis.firstOccurrenceFlags_atMostOne,
+   ``ComputableAnalysis.llpo_dom_of_atMostOne,
+   ``ComputableAnalysis.isStrongReductionPair_parallelize_llpo_of_flags,
    -- Closed choice on two points and C₂ ≡sW LLPO (issue #32)
    ``ComputableAnalysis.C₂,
    ``ComputableAnalysis.C₂.accepts_iff,
