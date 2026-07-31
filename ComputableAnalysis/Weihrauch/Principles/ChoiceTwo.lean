@@ -185,13 +185,6 @@ private theorem c2FlagStream_ne_zero {p : Baire} {k : ℕ} (h : c2FlagStream p k
   by_contra hc
   exact h (if_neg hc)
 
-/-- A prefix of a stream prefix. -/
-private theorem streamTake_take {α : Type*} (p : ℕ → α) {m n : ℕ} (h : m ≤ n) :
-    (streamTake p n).take m = streamTake p m := by
-  refine List.ext_getElem ?_ fun i h1 h2 => ?_
-  · simp [length_streamTake, Nat.min_eq_left h]
-  · rw [List.getElem_take, getElem_streamTake, getElem_streamTake]
-
 /-- **The preprocessor of `c2_le_llpo`**, from the head-adaptive prefix bridge: the flag
 at `k` is a computable function of the length-`(k / 2 + 1)` prefix of the input. -/
 theorem exists_c2FlagCode : ∃ K : OracleCode, ∀ p : Baire,
@@ -238,7 +231,7 @@ theorem exists_c2FlagCode : ∃ K : OracleCode, ∀ p : Baire,
   rw [hK p k]
   simp only [Nat.unpair_pair, Denumerable.ofNat_encode, Part.mem_some_iff]
   have hlen : k / 2 < k / 2 + 1 := Nat.lt_succ_self _
-  rw [streamTake_getD p hlen, streamTake_take p (Nat.le_succ _)]
+  rw [streamTake_getD p hlen, take_streamTake p (Nat.le_succ _)]
   -- align the list-scan condition with the pointwise one
   have hcond : ((streamTake p (k / 2)).all fun x =>
       decide (0 < (x - (k % 2 + 1)) + ((k % 2 + 1) - x))) = true ↔

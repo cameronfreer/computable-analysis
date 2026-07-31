@@ -551,6 +551,7 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.LPO.accepts_iff,
    ``ComputableAnalysis.LLPO.accepts_iff,
    ``ComputableAnalysis.Lim.accepts_iff,
+   ``ComputableAnalysis.take_streamTake,
    ``ComputableAnalysis.Baire.track_packTracks,
    ``ComputableAnalysis.Representation.sequence_names_packTracks_iff,
    ``ComputableAnalysis.baireSequence_names_iff,
