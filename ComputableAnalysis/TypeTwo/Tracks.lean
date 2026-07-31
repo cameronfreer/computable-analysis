@@ -77,6 +77,34 @@ theorem eval_addCode (p : Baire) (a b : ℕ) :
         eval_comp_some (eval_right_right_pair p a b (a + b)), eval_succ]
       exact congrArg Part.some (by omega)
 
+/-- Predecessor: `k ↦ k - 1`, by primitive recursion. -/
+def predCode : OracleCode := comp (prec zero (comp left right)) (pair zero .id)
+
+theorem eval_predCode (p : Baire) (k : ℕ) : predCode.eval p k = Part.some (k - 1) := by
+  simp only [predCode]
+  rw [eval_comp_some (show (pair zero .id).eval p k = Part.some (Nat.pair 0 k) by
+    simp [Seq.seq, pure, PFun.pure])]
+  induction k with
+  | zero => rw [eval_prec_zero]; rfl
+  | succ k ih =>
+      rw [eval_prec_succ, ih, Part.bind_eq_bind, Part.bind_some,
+        eval_comp_some (eval_right_pair p 0 (Nat.pair k (k - 1))), eval_left_pair]
+      exact congrArg Part.some (by omega)
+
+/-- Truncated subtraction on a paired input: `Nat.pair a b ↦ a - b`, by primitive
+recursion on `b`. -/
+def subCode : OracleCode := prec .id (comp predCode (comp right right))
+
+theorem eval_subCode (p : Baire) (a b : ℕ) :
+    subCode.eval p (Nat.pair a b) = Part.some (a - b) := by
+  induction b with
+  | zero => simp [subCode]
+  | succ b ih =>
+      simp only [subCode] at ih ⊢
+      rw [eval_prec_succ, ih, Part.bind_eq_bind, Part.bind_some,
+        eval_comp_some (eval_right_right_pair p a b (a - b)), eval_predCode]
+      exact congrArg Part.some (by omega)
+
 /-- Doubling: `m ↦ 2 * m`, as addition of `m` with itself. -/
 def doubleCode : OracleCode := comp addCode (pair .id .id)
 

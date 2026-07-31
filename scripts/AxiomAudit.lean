@@ -510,7 +510,21 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.parallelize_idempotent,
    ``ComputableAnalysis.IsParallelizable,
    ``ComputableAnalysis.IsStronglyParallelizable,
-   ``ComputableAnalysis.IsStronglyParallelizable.isParallelizable]
+   ``ComputableAnalysis.IsStronglyParallelizable.isParallelizable,
+   -- Arithmetic kit extension (issue #30)
+   ``ComputableAnalysis.OracleCode.eval_predCode,
+   ``ComputableAnalysis.OracleCode.eval_subCode,
+   -- The calibration parallelize LPO ≡sW Lim (issue #30)
+   ``ComputableAnalysis.stabFamily_track_allZero_iff,
+   ``ComputableAnalysis.eval_limStabCode,
+   ``ComputableAnalysis.evalStream_limStabCode,
+   ``ComputableAnalysis.limFromBitsCode,
+   ``ComputableAnalysis.isStrongReductionPair_lim_le_parallelize_lpo,
+   ``ComputableAnalysis.lim_le_parallelize_lpo,
+   ``ComputableAnalysis.isStrongReductionPair_parallelize_lim,
+   ``ComputableAnalysis.Lim.isStronglyParallelizable,
+   ``ComputableAnalysis.parallelize_lpo_le_lim,
+   ``ComputableAnalysis.parallelize_lpo_equiv_lim]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
