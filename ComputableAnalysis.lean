@@ -36,6 +36,7 @@ import ComputableAnalysis.Weihrauch.Compilers
 import ComputableAnalysis.Weihrauch.Principles.LPO
 import ComputableAnalysis.Weihrauch.Principles.LLPO
 import ComputableAnalysis.Weihrauch.Principles.ChoiceTwo
+import ComputableAnalysis.Weihrauch.Principles.WKL
 import ComputableAnalysis.Weihrauch.Principles.Limit
 import ComputableAnalysis.Weihrauch.Principles.LimCylinder
 import ComputableAnalysis.Weihrauch.Principles.LimParallelizeLPO
