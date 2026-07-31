@@ -3,7 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
-import ComputableAnalysis.TypeTwo.Continuity
+import ComputableAnalysis.TypeTwo.Eval
 
 /-!
 # Explicit arithmetic oracle codes
@@ -18,6 +18,9 @@ constructions need, each with a total evaluation law. They live here rather than
 * `addCode`, `predCode`, `subCode` (truncated), `doubleCode`;
 * `caseszCode`, a case split on a paired flag;
 * `div2mod2Code`, division and remainder by two jointly.
+
+These codes sit **below the stream/continuity layer**: they need only coordinate-level
+evaluation, so this module imports `TypeTwo.Eval` rather than `TypeTwo.Continuity`.
 
 Consumers so far: the track kit of `TypeTwo/Tracks.lean` (index rewirings) and the
 `Lim`/`LPO` calibration (`Weihrauch/Principles/LimParallelizeLPO.lean`, whose stability
