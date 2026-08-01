@@ -7,7 +7,7 @@ import ComputableAnalysis.Weihrauch.Principles.EFILC
 import ComputableAnalysis.Weihrauch.Principles.WKLReduction
 
 /-!
-# `EFILC ≤W WKL`: chunk-coded systems, and why this direction is ordinary
+# `EFILC ≤W WKL`: chunk-coded systems, with a certified ordinary reduction
 
 `efilc_le_wkl : EFILC ≤W WKL`, with the explicit reduction pair
 `isReductionPair_efilc_le_wkl` over the named codes `chunkTreeCode` and
@@ -21,10 +21,12 @@ index encodable and the verifier primitive recursive). The postprocessor decodes
 back into a section: the chunk-`k` bits read back the selected index (`bitsToNat`), and
 the fiber entry at that index is the section value.
 
-**This direction is ordinary, not strong**: the decoder must know the chunk widths — data
+**This is a certified ordinary reduction**: its decoder consults the chunk widths — data
 of the *input* system — so `treeSectionCode` runs on `Baire.interleave` of the input and
 the answer, exactly the access `≤W` grants and `≤sW` withholds. (Compare `WKLEfilc.lean`,
-whose decoder runs on the answer alone.)
+whose decoder runs on the answer alone.) Whether some *other* strong reduction exists in
+this direction is not addressed here: the theorem certifies an ordinary reduction, never
+non-strong-reducibility.
 
 Both codes ride `OracleCode.exists_prefixChainCode`: the tree-membership verifier reads
 the fibers below the word length (a primitively bounded prefix), then the bond values *of

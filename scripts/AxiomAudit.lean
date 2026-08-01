@@ -591,6 +591,11 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.wkl_le_efilc,
    ``ComputableAnalysis.isReductionPair_efilc_le_wkl,
    ``ComputableAnalysis.efilc_le_wkl,
+   -- Hall pilot: the one-sided relation-plus-enumerator Hall problem, its domain anchor,
+   -- and the strong reduction to EFILC
+   ``ComputableAnalysis.Hall.dom_iff,
+   ``ComputableAnalysis.isStrongReductionPair_hall_le_efilc,
+   ``ComputableAnalysis.hall_le_efilc,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,
