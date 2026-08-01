@@ -10,10 +10,13 @@ import ComputableAnalysis.Weihrauch.Principles.WKL
 /-!
 # The strict death race: reducing `WKL` to parallelized `LLPO`
 
-The semantic layer of `WKL ≤sW LLPO.parallelize`. One `LLPO` instance per node `w` of the
-presented tree, built by `firstOccurrenceFlags` from the **strict death race**: at level
-`n` the `false` event says child `w0` is dead while `w1` is still alive, and the `true`
-event says the reverse.
+`wkl_le_parallelize_llpo : WKL ≤sW LLPO.parallelize`, with the explicit reduction pair
+`isStrongReductionPair_wkl_le_parallelize_llpo` over the named codes `raceFlagsCode` and
+`pathCode`.
+
+One `LLPO` instance per node `w` of the presented tree, built by `firstOccurrenceFlags`
+from the **strict death race**: at level `n` the `false` event says child `w0` is dead
+while `w1` is still alive, and the `true` event says the reverse.
 
 Two independent facts make the instance legitimate at *every* node, dead nodes included:
 
@@ -25,6 +28,15 @@ Two independent facts make the instance legitimate at *every* node, dead nodes i
 Equal death times are simply unflagged, which is harmless: by `infAbove_select`, at a node
 whose subtree is infinite the child selected by the answer (`0` selects child `0`) is again
 infinite, and equal finite death can only occur off the constructed path.
+
+Both codes ride `OracleCode.exists_prefixPostCode`, with no scattered-query or adaptive
+machinery. `raceFlagsCode` can, because the flags' queries are indexed by `treeWordCode`
+itself, so a long-enough prefix answers them (`raceFlagB`, `raceFlagB_eq`). `pathCode`
+can, because output coordinate `n` only ever queries nodes of depth at most `n` — finitely
+many, with the computable uniform bound `pathBound` — so the path is reconstructed by a
+first-order recursion over a prefix list (`pathWordOf`, `pathWordOf_eq`). The `Primrec`
+chain behind both is private: the public contract is the two codes and their evaluation
+specifications.
 -/
 
 namespace ComputableAnalysis
