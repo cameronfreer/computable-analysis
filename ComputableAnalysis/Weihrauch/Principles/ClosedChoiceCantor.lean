@@ -17,11 +17,10 @@ allowed, and **every** Baire stream is a valid negative name. Nonemptiness is no
 condition on names; it lives in the derived problem's domain (`C_Cantor.dom_iff`).
 
 `closedCantorSet p` is the set of points avoiding every enumerated cylinder — the
-complement of the generated open set `cantorForbiddenOpen p`, hence closed. Two names
-present the same set exactly when they generate the same open set
-(`closedCantorSet_congr`), which is the right extensionality: it respects redundant
-extensions, so a name enumerating `[false]` and one enumerating both `[false, false]` and
-`[false, true]` are extensionally equal.
+complement of the generated open set `cantorForbiddenOpen p`, hence closed. Names generating the
+same open set present the same closed set (`closedCantorSet_congr`), which is the right
+extensionality: it respects redundant extensions, so a name enumerating `[false]` and one
+enumerating both `[false, false]` and `[false, true]` present the same set.
 
 Only the encoding direction of the word coding is available, and only it is needed
 (`cantorForbiddenWord_of_eq_code`): re-encoding an arbitrary nonzero entry need not
@@ -48,13 +47,13 @@ theorem cantorForbiddenWord_eq_none_iff {p : Baire} {i : ℕ} :
   cases hp : p i <;> simp [cantorForbiddenWord, hp]
 
 /-- The code that forbids a given word. -/
-def forbiddenWordCode (w : List Bool) : ℕ := treeWordCode w + 1
+def cantorForbiddenWordCode (w : List Bool) : ℕ := treeWordCode w + 1
 
-/-- The encoding direction: an entry carrying `forbiddenWordCode w` forbids `w`. The
+/-- The encoding direction: an entry carrying `cantorForbiddenWordCode w` forbids `w`. The
 converse fails — the decoder canonicalizes — and is not needed. -/
 theorem cantorForbiddenWord_of_eq_code {p : Baire} {i : ℕ} {w : List Bool}
-    (h : p i = forbiddenWordCode w) : cantorForbiddenWord p i = some w := by
-  rw [cantorForbiddenWord, h, forbiddenWordCode]
+    (h : p i = cantorForbiddenWordCode w) : cantorForbiddenWord p i = some w := by
+  rw [cantorForbiddenWord, h, cantorForbiddenWordCode]
   change some (treeWordDecode (treeWordCode w)) = some w
   rw [treeWordDecode_treeWordCode]
 
