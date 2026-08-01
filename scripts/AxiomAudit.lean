@@ -583,6 +583,17 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.mem_evalStream_pathCode,
    ``ComputableAnalysis.isStrongReductionPair_wkl_le_parallelize_llpo,
    ``ComputableAnalysis.wkl_le_parallelize_llpo,
+   -- Closed choice on Cantor space, from negative information (issue #32)
+   ``ComputableAnalysis.cantorForbiddenWord_eq_none_iff,
+   ``ComputableAnalysis.cantorForbiddenWord_of_eq_code,
+   ``ComputableAnalysis.isOpen_cantorForbiddenOpen,
+   ``ComputableAnalysis.closedCantorSet_eq_compl,
+   ``ComputableAnalysis.isClosed_closedCantorSet,
+   ``ComputableAnalysis.closedCantorSet_congr,
+   ``ComputableAnalysis.closedCantorSet_zero,
+   ``ComputableAnalysis.C_Cantor,
+   ``ComputableAnalysis.C_Cantor.accepts_iff,
+   ``ComputableAnalysis.C_Cantor.dom_iff,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,
