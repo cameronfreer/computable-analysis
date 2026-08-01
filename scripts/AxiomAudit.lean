@@ -594,6 +594,14 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.C_Cantor,
    ``ComputableAnalysis.C_Cantor.accepts_iff,
    ``ComputableAnalysis.C_Cantor.dom_iff,
+   -- WKL/EFILC uniform-reduction pilot (issue #27 payload): the represented EFILC
+   -- problem, its domain anchor, and the two reductions with explicit pairs
+   ``ComputableAnalysis.EFILC.dom_iff,
+   ``ComputableAnalysis.exists_section_of_promises,
+   ``ComputableAnalysis.isStrongReductionPair_wkl_le_efilc,
+   ``ComputableAnalysis.wkl_le_efilc,
+   ``ComputableAnalysis.isReductionPair_efilc_le_wkl,
+   ``ComputableAnalysis.efilc_le_wkl,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,
