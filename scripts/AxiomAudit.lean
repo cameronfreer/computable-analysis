@@ -577,6 +577,12 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.raceFlagB_eq,
    ``ComputableAnalysis.exists_raceFlagsCode,
    ``ComputableAnalysis.mem_evalStream_raceFlagsCode,
+   ``ComputableAnalysis.pair_treeWordCode_lt_pathBound,
+   ``ComputableAnalysis.pathWordOf_eq,
+   ``ComputableAnalysis.exists_pathCode,
+   ``ComputableAnalysis.mem_evalStream_pathCode,
+   ``ComputableAnalysis.isStrongReductionPair_wkl_le_parallelize_llpo,
+   ``ComputableAnalysis.wkl_le_parallelize_llpo,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,

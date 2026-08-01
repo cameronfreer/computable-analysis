@@ -420,4 +420,131 @@ theorem mem_evalStream_raceFlagsCode (p : Baire) :
     Baire.packTracks (fun j => raceFlags p (treeWordDecode j)) ∈ raceFlagsCode.evalStream p :=
   Classical.choose_spec exists_raceFlagsCode p
 
+/-! ### The path code
+
+Output coordinate `n` queries only nodes along one path of length `n`, hence only nodes of
+depth at most `n` — finitely many, with a computable uniform bound. So the adaptive
+recursion needs no adaptive machinery: a first-order recursion over a prefix list
+reconstructs the path, exactly as the flag code does. -/
+
+/-- Every node the path construction can query by coordinate `n`. -/
+def pathWords (n : ℕ) : List (List Bool) := (List.range (n + 1)).flatMap binaryWords
+
+/-- A strict uniform bound on the indices queried by coordinate `n`. -/
+def pathBound (n : ℕ) : ℕ :=
+  ((pathWords n).map fun w => Nat.pair (treeWordCode w) 0).foldr (fun i b => max (i + 1) b) 0
+
+theorem pair_treeWordCode_lt_pathBound {n : ℕ} {w : List Bool} (h : w.length ≤ n) :
+    Nat.pair (treeWordCode w) 0 < pathBound n := by
+  refine lt_foldr_max (List.mem_map_of_mem ?_)
+  exact List.mem_flatMap.mpr ⟨w.length, List.mem_range.mpr (by omega), mem_binaryWords.mpr rfl⟩
+
+/-- The path prefix reconstructed from a prefix of the answer name. -/
+def pathWordOf (L : List ℕ) (n : ℕ) : List Bool :=
+  n.rec [] fun _ ih => ih ++ [decide (L.getD (Nat.pair (treeWordCode ih) 0) 0 = 1)]
+
+private theorem length_pathWordOf (L : List ℕ) (n : ℕ) : (pathWordOf L n).length = n := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+      change (pathWordOf L n ++ [_]).length = n + 1
+      simp [ih]
+
+/-- Reconstruction agrees with the path, as far as the prefix reaches. -/
+theorem pathWordOf_eq (a : Baire) {k n : ℕ} (h : n ≤ k + 1) :
+    pathWordOf (streamTake a (pathBound k)) n = pathWord a n := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+      have hn : n ≤ k := by omega
+      have ihn := ih (by omega)
+      have hlen : (pathWord a n).length ≤ k := by rw [length_pathWord]; exact hn
+      have hval := streamTake_getD (d := 0) a (pair_treeWordCode_lt_pathBound hlen)
+      calc pathWordOf (streamTake a (pathBound k)) (n + 1)
+          = pathWordOf (streamTake a (pathBound k)) n ++
+            [decide ((streamTake a (pathBound k)).getD
+              (Nat.pair (treeWordCode (pathWordOf (streamTake a (pathBound k)) n)) 0) 0
+                = 1)] := rfl
+        _ = pathWord a n ++
+            [decide (a (Nat.pair (treeWordCode (pathWord a n)) 0) = 1)] := by rw [ihn, hval]
+        _ = pathWord a (n + 1) := rfl
+
+private theorem primrec_pathBound : Primrec pathBound := by
+  have hbw : Primrec₂ fun (_ : ℕ) (l : ℕ) => binaryWords l :=
+    (OracleCode.primrec_binaryWords.comp (Primrec.snd : Primrec fun q : ℕ × ℕ => q.2)).to₂
+  have hwords : Primrec pathWords :=
+    Primrec.list_flatMap (Primrec.list_range.comp Primrec.succ) hbw
+  have hmap : Primrec fun n : ℕ =>
+      (pathWords n).map fun w => Nat.pair (treeWordCode w) 0 :=
+    Primrec.list_map hwords
+      ((Primrec₂.natPair.comp (primrec_treeWordCode.comp
+        (Primrec.snd : Primrec fun q : ℕ × List Bool => q.2)) (Primrec.const 0)).to₂)
+  have hstep : Primrec₂ fun (_ : ℕ) (q : ℕ × ℕ) => max (q.1 + 1) q.2 :=
+    (Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
+      (Primrec.snd.comp Primrec.snd)).to₂
+  exact Primrec.list_foldr hmap (Primrec.const 0) hstep
+
+/-- A single code reads the path off the answer bits. -/
+theorem exists_pathCode : ∃ H : OracleCode, ∀ a : Baire, pathName a ∈ H.evalStream a := by
+  have hu1 : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hu2 : Primrec fun v : ℕ => v.unpair.2 := Primrec.snd.comp Primrec.unpair
+  have hrec : Primrec₂ pathWordOf := by
+    refine Primrec₂.of_eq (Primrec.nat_rec (f := fun _ : List ℕ => ([] : List Bool))
+      (g := fun L q => q.2 ++ [decide (L.getD (Nat.pair (treeWordCode q.2) 0) 0 = 1)])
+      (Primrec.const []) ?_) fun L n => rfl
+    have hih : Primrec fun r : List ℕ × (ℕ × List Bool) => r.2.2 := Primrec.snd.comp Primrec.snd
+    have hbit : Primrec fun r : List ℕ × (ℕ × List Bool) =>
+        decide (r.1.getD (Nat.pair (treeWordCode r.2.2) 0) 0 = 1) :=
+      primrec_decide_eq
+        ((Primrec.list_getD 0).comp Primrec.fst
+          (Primrec₂.natPair.comp (primrec_treeWordCode.comp hih) (Primrec.const 0)))
+        (Primrec.const 1)
+    exact (Primrec.list_append.comp hih
+      (Primrec.list_cons.comp hbit (Primrec.const []))).to₂
+  have hg : Primrec fun v : ℕ =>
+      if (pathWordOf (ofNat (List ℕ) v.unpair.2) (v.unpair.1 + 1)).getD v.unpair.1 false
+        then 1 else 0 := by
+    have hw : Primrec fun v : ℕ => pathWordOf (ofNat (List ℕ) v.unpair.2) (v.unpair.1 + 1) :=
+      hrec.comp ((Primrec.ofNat (List ℕ)).comp hu2) (Primrec.succ.comp hu1)
+    have hbit : Primrec fun v : ℕ =>
+        (pathWordOf (ofNat (List ℕ) v.unpair.2) (v.unpair.1 + 1)).getD v.unpair.1 false :=
+      (Primrec.list_getD false).comp hw hu1
+    refine Primrec.of_eq (Primrec.cond hbit (Primrec.const 1) (Primrec.const 0)) fun v => ?_
+    cases (pathWordOf (ofNat (List ℕ) v.unpair.2) (v.unpair.1 + 1)).getD v.unpair.1 false <;> rfl
+  obtain ⟨H, hH⟩ := OracleCode.exists_prefixPostCode
+    (b := fun (k : ℕ) (_ : ℕ) => pathBound k) (primrec_pathBound.comp Primrec.fst).to₂ hg
+  refine ⟨H, fun a => OracleCode.mem_evalStream.mpr fun k => ?_⟩
+  rw [hH a k, Part.mem_some_iff]
+  simp only [Nat.unpair_pair, Denumerable.ofNat_encode, pathName]
+  rw [pathWordOf_eq a (le_refl (k + 1))]
+
+/-- The path code, extracted once as a documented atom (the `OracleCode.pairCode`
+pattern). -/
+noncomputable def pathCode : OracleCode := Classical.choose exists_pathCode
+
+/-- **Specification of `pathCode`**: on any answer name it produces the path name. -/
+theorem mem_evalStream_pathCode (a : Baire) : pathName a ∈ pathCode.evalStream a :=
+  Classical.choose_spec exists_pathCode a
+
+/-! ### The reduction -/
+
+/-- **`WKL ≤sW LLPO.parallelize`, as an explicit pair**: `raceFlagsCode` poses the strict
+death race at every node and `pathCode` follows the answers down the tree. -/
+theorem isStrongReductionPair_wkl_le_parallelize_llpo :
+    IsStrongReductionPair WKL LLPO.parallelize raceFlagsCode pathCode := by
+  refine isStrongReductionPair_parallelize_llpo_of_flags fun w x hpx hdom => ?_
+  obtain rfl : x = w := baireRep_names_iff.mp hpx
+  obtain ⟨hpc, hinf⟩ := WKL.dom_iff.mp hdom
+  refine ⟨fun j => raceFlags x (treeWordDecode j), mem_evalStream_raceFlagsCode x,
+    fun j => raceFlags_llpo_dom hpc _, fun a hans => ?_⟩
+  refine ⟨pathName a, mem_evalStream_pathCode a, _, cantorRep_names_pathName a, ?_⟩
+  refine WKL.accepts_iff.mpr ⟨hpc, hinf, fun n => ?_⟩
+  rw [streamTake_pathStream]
+  exact treeMem_of_infAbove (infAbove_pathWord hinf hans n)
+
+/-- **Weak Kőnig's lemma reduces strongly to parallelized `LLPO`.** -/
+theorem wkl_le_parallelize_llpo : WKL ≤sW LLPO.parallelize :=
+  strongReduction_iff_exists_reductionPair.mpr
+    ⟨_, _, isStrongReductionPair_wkl_le_parallelize_llpo⟩
+
 end ComputableAnalysis
