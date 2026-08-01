@@ -22,6 +22,11 @@ as `LLPO`'s at-most-one-nonzero constraint is.
 **The promises live in `accepts`** (`IsPrefixClosed`, `IsInfiniteTree`), and answers are
 points of `cantorSpace`, with the path condition `∀ n, TreeMem p (streamTake π n)`.
 
+Because membership reads the name at exactly the code being asked about, a prefix reaching
+past that code already decides it: `treeMemB` is that decision on a finite table, and
+`treeMemB_streamTake_iff` its agreement with `TreeMem`. Every reduction out of `WKL`
+consumes this presentation API rather than reproving it.
+
 The semantic anchor is `WKL.dom_iff`: the domain is exactly the infinite trees, whose
 nontrivial direction *is* weak Kőnig's lemma. It is proved through mathlib's
 `exists_seq_forall_proj_of_forall_finite`, taking the level-`n` nodes as a finite inverse
@@ -61,12 +66,40 @@ theorem primrec_treeWordDecode : Primrec treeWordDecode :=
 /-- `w` is a node of the tree presented by `p`: its code is marked nonzero. -/
 def TreeMem (p : Baire) (w : List Bool) : Prop := p (treeWordCode w) ≠ 0
 
+/-- The presentation is decidable: membership is a single comparison against `0`. -/
+instance (p : Baire) (w : List Bool) : Decidable (TreeMem p w) :=
+  inferInstanceAs (Decidable (p (treeWordCode w) ≠ 0))
+
 /-- The presented set of words is closed under prefixes. -/
 def IsPrefixClosed (p : Baire) : Prop :=
   ∀ w v : List Bool, TreeMem p w → v <+: w → TreeMem p v
 
 /-- The presented set of words has a node at every level. -/
 def IsInfiniteTree (p : Baire) : Prop := ∀ n, ∃ w : List Bool, w.length = n ∧ TreeMem p w
+
+/-! ### Deciding membership from a prefix
+
+Because `TreeMem` reads the name at the very code being asked about, a prefix reaching
+past that code already decides membership. This is the presentation's finite-observation
+layer, shared by every reduction out of `WKL`. -/
+
+/-- Membership decided from a finite table of the name, with `0` (absent) as default. -/
+def treeMemB (L : List ℕ) (w : List Bool) : Bool := decide (L.getD (treeWordCode w) 0 ≠ 0)
+
+/-- A prefix reaching past a word's code decides that word's membership. -/
+theorem treeMemB_streamTake {p : Baire} {N : ℕ} {w : List Bool} (h : treeWordCode w < N) :
+    treeMemB (streamTake p N) w = decide (TreeMem p w) := by
+  rw [treeMemB, streamTake_getD p h]
+  rfl
+
+theorem treeMemB_streamTake_iff {p : Baire} {N : ℕ} {w : List Bool}
+    (h : treeWordCode w < N) : treeMemB (streamTake p N) w = true ↔ TreeMem p w := by
+  rw [treeMemB_streamTake h, decide_eq_true_eq]
+
+theorem primrec_treeMemB {α : Type*} [Primcodable α] {L : α → List ℕ} {w : α → List Bool}
+    (hL : Primrec L) (hw : Primrec w) : Primrec fun a => treeMemB (L a) (w a) :=
+  (PrimrecRel.comp (PrimrecRel.not Primrec.eq)
+    ((Primrec.list_getD 0).comp hL (primrec_treeWordCode.comp hw)) (Primrec.const 0)).decide
 
 /-- **Weak Kőnig's lemma** as a problem: on a prefix-closed set of binary words with a node
 at every level, produce an infinite path. -/
@@ -86,14 +119,6 @@ The nontrivial direction is weak Kőnig's lemma, obtained from mathlib's inverse
 form (`exists_seq_forall_proj_of_forall_finite`) rather than from compactness of Cantor
 space: the level-`n` nodes are the system, prefix restriction is the projection, and each
 level is finite. -/
-
-/-- A list of length `n + 1` splits as its length-`n` prefix and its last entry. -/
-private theorem eq_take_append_getD {l : List Bool} {n : ℕ} (h : l.length = n + 1) :
-    l = l.take n ++ [l.getD n false] := by
-  have hn : n < l.length := by omega
-  calc l = l.take (n + 1) := (List.take_of_length_le (by omega)).symm
-    _ = l.take n ++ [l[n]] := by rw [List.take_add_one, List.getElem?_eq_getElem hn]; rfl
-    _ = l.take n ++ [l.getD n false] := by rw [List.getD_eq_getElem _ _ hn]
 
 /-- Each level of a presented tree is finite: a node of length `n` is determined by its
 `n` entries, so the level embeds in `Fin n → Bool`. -/
@@ -138,10 +163,11 @@ theorem exists_path_of_isInfiniteTree {p : Baire} (hpc : IsPrefixClosed p)
     | zero => exact (List.length_eq_zero_iff.mp (f 0).2.1).symm
     | succ n ih =>
         rw [streamTake_succ, ih]
+        have hn : n < (f (n + 1)).val.length := by rw [(f (n + 1)).2.1]; omega
         have hcoh : (f (n + 1)).val.take n = (f n).val :=
           congrArg Subtype.val (hf (Nat.le_succ n))
-        conv_rhs => rw [eq_take_append_getD (f (n + 1)).2.1]
-        rw [hcoh]
+        rw [← hcoh, List.getD_eq_getElem _ _ hn, List.take_concat_get',
+          List.take_of_length_le (by rw [(f (n + 1)).2.1])]
   rw [key n]
   exact (f n).2.2
 

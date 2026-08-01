@@ -3,8 +3,10 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.PrefixTable
+import ComputableAnalysis.Weihrauch.StrongReduction
 import ComputableAnalysis.Weihrauch.Principles.EFILC
-import ComputableAnalysis.Weihrauch.Principles.WKLReduction
+import ComputableAnalysis.Weihrauch.Principles.WKL
 
 /-!
 # `WKL ≤sW EFILC`: levels as fibers, truncation as bond
@@ -95,24 +97,11 @@ theorem efilc_dom_treeSystemName {p : Baire} (hpc : IsPrefixClosed p)
 /-! ### The system code -/
 
 /-- A prefix length covering every level-`k` node code. -/
-def levelBound (k : ℕ) : ℕ :=
-  ((binaryWords k).map treeWordCode).foldr (fun i m => max (i + 1) m) 0
-
-private theorem lt_foldr_max {l : List ℕ} {i : ℕ} (h : i ∈ l) :
-    i < l.foldr (fun j m => max (j + 1) m) 0 := by
-  induction l with
-  | nil => simp at h
-  | cons j t ih =>
-    rcases List.mem_cons.mp h with rfl | h
-    · simp only [List.foldr_cons]
-      omega
-    · have := ih h
-      simp only [List.foldr_cons]
-      omega
+def levelBound (k : ℕ) : ℕ := prefixBound ((binaryWords k).map treeWordCode)
 
 theorem treeWordCode_lt_levelBound {k : ℕ} {w : List Bool} (h : w ∈ binaryWords k) :
     treeWordCode w < levelBound k :=
-  lt_foldr_max (List.mem_map_of_mem h)
+  lt_prefixBound_of_mem (List.mem_map_of_mem h)
 
 /-- The level fiber decided from a prefix list. -/
 def treeLevelFiberB (L : List ℕ) (k : ℕ) : List ℕ :=
@@ -122,18 +111,7 @@ theorem treeLevelFiberB_eq (p : Baire) {k N : ℕ} (h : levelBound k ≤ N) :
     treeLevelFiberB (streamTake p N) k = treeLevel p k := by
   rw [treeLevelFiberB, treeLevel]
   refine congrArg _ (List.filter_congr fun w hw => ?_)
-  rw [treeMemB, streamTake_getD p (lt_of_lt_of_le (treeWordCode_lt_levelBound hw) h)]
-
-private theorem primrec_decide_ne {α : Type*} [Primcodable α] {f g : α → ℕ}
-    (hf : Primrec f) (hg : Primrec g) : Primrec fun a => decide (f a ≠ g a) := by
-  obtain ⟨_, h⟩ := PrimrecRel.comp (PrimrecRel.not Primrec.eq) hf hg
-  exact Primrec.of_eq h fun a => decide_eq_decide.mpr Iff.rfl
-
-private theorem primrec_treeMemB {α : Type*} [Primcodable α] {L : α → List ℕ}
-    {w : α → List Bool} (hL : Primrec L) (hw : Primrec w) :
-    Primrec fun a => treeMemB (L a) (w a) :=
-  primrec_decide_ne
-    ((Primrec.list_getD 0).comp hL (primrec_treeWordCode.comp hw)) (Primrec.const 0)
+  exact treeMemB_streamTake (lt_of_lt_of_le (treeWordCode_lt_levelBound hw) h)
 
 /-- A single code produces the compiled system name. -/
 theorem exists_treeSystemCode : ∃ K : OracleCode, ∀ p : Baire,
@@ -141,12 +119,9 @@ theorem exists_treeSystemCode : ∃ K : OracleCode, ∀ p : Baire,
   have hu1 : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hu2 : Primrec fun v : ℕ => v.unpair.2 := Primrec.snd.comp Primrec.unpair
   have hbound : Primrec₂ fun (n : ℕ) (_ : ℕ) => levelBound n.unpair.2 :=
-    ((Primrec.list_foldr
-        (Primrec.list_map (OracleCode.primrec_binaryWords.comp hu2)
-          (primrec_treeWordCode.comp Primrec.snd).to₂)
-        (Primrec.const 0)
-        ((Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
-          (Primrec.snd.comp Primrec.snd)).to₂)).comp Primrec.fst).to₂
+    ((primrec_prefixBound.comp
+      (Primrec.list_map (OracleCode.primrec_binaryWords.comp hu2)
+        (primrec_treeWordCode.comp Primrec.snd).to₂)).comp Primrec.fst).to₂
   have hfib : Primrec fun v : ℕ =>
       encode (treeLevelFiberB (ofNat (List ℕ) v.unpair.2) v.unpair.1.unpair.2) :=
     Primrec.encode.comp (Primrec.list_map
@@ -245,14 +220,6 @@ theorem mem_evalStream_sectionPathCode (a : Baire) :
 
 /-! ### Sections decode to paths -/
 
-/-- A list of length `n + 1` splits as its length-`n` prefix and its last entry. -/
-private theorem eq_take_append_getD {l : List Bool} {n : ℕ} (h : l.length = n + 1) :
-    l = l.take n ++ [l.getD n false] := by
-  have hn : n < l.length := by omega
-  calc l = l.take (n + 1) := (List.take_of_length_le (by omega)).symm
-    _ = l.take n ++ [l[n]] := by rw [List.take_add_one, List.getElem?_eq_getElem hn]; rfl
-    _ = l.take n ++ [l.getD n false] := by rw [List.getD_eq_getElem _ _ hn]
-
 /-- The decoded section value at level `k` is a genuine level-`k` node. -/
 private theorem section_node {p a : Baire} (hmem : ∀ k, a k ∈ treeLevel p k) (k : ℕ) :
     (treeWordDecode (a k)).length = k ∧ TreeMem p (treeWordDecode (a k)) := by
@@ -279,10 +246,13 @@ theorem streamTake_sectionPath {p a : Baire}
     rw [efilcBond_treeSystemName, treeBondValue] at hbond
     have htake : (treeWordDecode (a (n + 1))).take n = treeWordDecode (a n) := by
       rw [← hbond, treeWordDecode_treeWordCode]
-    rw [streamTake_succ, ih]
-    conv_rhs => rw [eq_take_append_getD (section_node hmem' (n + 1)).1]
-    rw [htake]
-    rfl
+    have hlen : (treeWordDecode (a (n + 1))).length = n + 1 := (section_node hmem' (n + 1)).1
+    have hn : n < (treeWordDecode (a (n + 1))).length := by rw [hlen]; omega
+    rw [streamTake_succ, ih, ← htake]
+    change (treeWordDecode (a (n + 1))).take n ++
+      [(treeWordDecode (a (n + 1))).getD n false] = treeWordDecode (a (n + 1))
+    rw [List.getD_eq_getElem _ _ hn, List.take_concat_get',
+      List.take_of_length_le (by rw [hlen])]
 
 /-! ### The reduction -/
 

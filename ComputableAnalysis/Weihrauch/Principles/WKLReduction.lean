@@ -200,10 +200,8 @@ theorem infAbove_pathWord {p : Baire} (hinf : IsInfiniteTree p) {a : Baire}
 `TreeMem` reads the name at `treeWordCode w`, so a long-enough **prefix** of the name
 decides every question the flags ask — the queries are indexed by the very codes being
 looked up, and no scatter/gather is needed. These definitions are the decision procedure;
-`raceFlagB_eq` is its agreement with the semantic `raceFlags`. -/
-
-/-- Membership decided from a prefix of the tree name. -/
-def treeMemB (L : List ℕ) (w : List Bool) : Bool := decide (L.getD (treeWordCode w) 0 ≠ 0)
+`raceFlagB_eq` is its agreement with the semantic `raceFlags`. The membership test itself
+is `treeMemB`, from the presentation API. -/
 
 /-- Aliveness decided from a prefix: some word of the right length extends `u`. -/
 def aliveB (L : List ℕ) (u : List Bool) (l : ℕ) : Bool :=
@@ -226,21 +224,12 @@ def raceWords (j k : ℕ) : List (List Bool) :=
 
 /-- A strict bound on the codes of the inspected words. -/
 def raceBound (m : ℕ) : ℕ :=
-  ((raceWords m.unpair.1 m.unpair.2).map treeWordCode).foldr (fun i b => max (i + 1) b) 0
-
-private theorem lt_foldr_max {l : List ℕ} {i : ℕ} (h : i ∈ l) :
-    i < l.foldr (fun i b => max (i + 1) b) 0 := by
-  induction l with
-  | nil => exact absurd h List.not_mem_nil
-  | cons a l ih =>
-      rcases List.mem_cons.mp h with rfl | hl
-      · exact lt_of_lt_of_le (Nat.lt_succ_self i) (le_max_left _ _)
-      · exact lt_of_lt_of_le (ih hl) (le_max_right _ _)
+  prefixBound ((raceWords m.unpair.1 m.unpair.2).map treeWordCode)
 
 /-- Every inspected word's code lies below the bound. -/
 theorem treeWordCode_lt_raceBound {j k : ℕ} {w : List Bool} (h : w ∈ raceWords j k) :
     treeWordCode w < raceBound (Nat.pair j k) := by
-  refine lt_foldr_max ?_
+  refine lt_prefixBound_of_mem ?_
   simp only [Nat.unpair_pair]
   exact List.mem_map_of_mem h
 
@@ -258,17 +247,10 @@ theorem aliveB_iff {p : Baire} {N : ℕ} {u : List Bool} {l : ℕ}
   rw [aliveB, List.any_eq_true]
   constructor
   · rintro ⟨v, hv, hb⟩
-    have hval : (streamTake p N).getD (treeWordCode (u ++ v)) 0 = p (treeWordCode (u ++ v)) :=
-      streamTake_getD p (h v hv)
-    rw [treeMemB, decide_eq_true_eq, hval] at hb
-    exact ⟨v, length_of_mem_binaryWords hv, hb⟩
+    exact ⟨v, length_of_mem_binaryWords hv, (treeMemB_streamTake_iff (h v hv)).mp hb⟩
   · rintro ⟨v, hv, hmem⟩
     have hvm : v ∈ binaryWords l := mem_binaryWords.mpr hv
-    have hval : (streamTake p N).getD (treeWordCode (u ++ v)) 0 = p (treeWordCode (u ++ v)) :=
-      streamTake_getD p (h v hvm)
-    refine ⟨v, hvm, ?_⟩
-    rw [treeMemB, decide_eq_true_eq, hval]
-    exact hmem
+    exact ⟨v, hvm, (treeMemB_streamTake_iff (h v hvm)).mpr hmem⟩
 
 /-- The race event is decided correctly once the prefix covers the inspected words. -/
 theorem raceEventB_iff {p : Baire} {j k l : ℕ} (hl : l ≤ k / 2) (b : Bool) :
@@ -287,22 +269,6 @@ theorem raceEventB_iff {p : Baire} {j k l : ℕ} (hl : l ≤ k / 2) (b : Bool) :
 
 Elaboration machinery, deliberately private: the public contract is the named codes and
 their evaluation specifications, not the plumbing needed to build them. -/
-
-private theorem primrec_decide_ne {α : Type*} [Primcodable α] {f g : α → ℕ}
-    (hf : Primrec f) (hg : Primrec g) : Primrec fun a => decide (f a ≠ g a) := by
-  obtain ⟨_, h⟩ := PrimrecRel.comp (PrimrecRel.not Primrec.eq) hf hg
-  exact Primrec.of_eq h fun a => decide_eq_decide.mpr Iff.rfl
-
-private theorem primrec_decide_eq {α : Type*} [Primcodable α] {f g : α → ℕ}
-    (hf : Primrec f) (hg : Primrec g) : Primrec fun a => decide (f a = g a) := by
-  obtain ⟨_, h⟩ := PrimrecRel.comp Primrec.eq hf hg
-  exact Primrec.of_eq h fun a => decide_eq_decide.mpr Iff.rfl
-
-private theorem primrec_treeMemB {α : Type*} [Primcodable α] {L : α → List ℕ}
-    {w : α → List Bool} (hL : Primrec L) (hw : Primrec w) :
-    Primrec fun a => treeMemB (L a) (w a) :=
-  primrec_decide_ne
-    ((Primrec.list_getD 0).comp hL (primrec_treeWordCode.comp hw)) (Primrec.const 0)
 
 private theorem primrec_aliveB {α : Type*} [Primcodable α] {L : α → List ℕ}
     {u : α → List Bool} {l : α → ℕ} (hL : Primrec L) (hu : Primrec u) (hl : Primrec l) :
@@ -325,7 +291,8 @@ private theorem primrec_raceFlagB {α : Type*} [Primcodable α] {L : α → List
     {w : α → List Bool} {k : α → ℕ} (hL : Primrec L) (hw : Primrec w) (hk : Primrec k) :
     Primrec fun a => raceFlagB (L a) (w a) (k a) := by
   have hpar : Primrec fun a => decide (k a % 2 = 1) :=
-    primrec_decide_eq (Primrec.nat_mod.comp hk (Primrec.const 2)) (Primrec.const 1)
+    (PrimrecRel.comp Primrec.eq (Primrec.nat_mod.comp hk (Primrec.const 2))
+      (Primrec.const 1)).decide
   have hhalf : Primrec fun a => k a / 2 := Primrec.nat_div.comp hk (Primrec.const 2)
   have hnow : Primrec fun a => raceEventB (L a) (w a) (decide (k a % 2 = 1)) (k a / 2) :=
     primrec_raceEventB hL hw hpar hhalf
@@ -404,10 +371,8 @@ theorem exists_raceFlagsCode : ∃ K : OracleCode, ∀ p : Baire,
                   (Primrec.const [true]))
                 Primrec.snd)
               (Primrec.const []))).to₂)).to₂)
-    exact ((Primrec.list_foldr (Primrec.list_map hwords
-      (primrec_treeWordCode.comp Primrec.snd).to₂) (Primrec.const 0)
-      ((Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
-        (Primrec.snd.comp Primrec.snd)).to₂)).comp Primrec.fst).to₂
+    exact ((primrec_prefixBound.comp (Primrec.list_map hwords
+      (primrec_treeWordCode.comp Primrec.snd).to₂)).comp Primrec.fst).to₂
   have hg : Primrec fun v : ℕ => raceFlagB (ofNat (List ℕ) v.unpair.2)
       (treeWordDecode v.unpair.1.unpair.1) v.unpair.1.unpair.2 :=
     primrec_raceFlagB ((Primrec.ofNat (List ℕ)).comp hu2)
@@ -444,11 +409,11 @@ def pathWords (n : ℕ) : List (List Bool) := (List.range (n + 1)).flatMap binar
 
 /-- A strict uniform bound on the indices queried by coordinate `n`. -/
 def pathBound (n : ℕ) : ℕ :=
-  ((pathWords n).map fun w => Nat.pair (treeWordCode w) 0).foldr (fun i b => max (i + 1) b) 0
+  prefixBound ((pathWords n).map fun w => Nat.pair (treeWordCode w) 0)
 
 theorem pair_treeWordCode_lt_pathBound {n : ℕ} {w : List Bool} (h : w.length ≤ n) :
     Nat.pair (treeWordCode w) 0 < pathBound n := by
-  refine lt_foldr_max (List.mem_map_of_mem ?_)
+  refine lt_prefixBound_of_mem (List.mem_map_of_mem ?_)
   exact List.mem_flatMap.mpr ⟨w.length, List.mem_range.mpr (by omega), mem_binaryWords.mpr rfl⟩
 
 /-- The path prefix reconstructed from a prefix of the answer name. -/
@@ -491,10 +456,7 @@ private theorem primrec_pathBound : Primrec pathBound := by
     Primrec.list_map hwords
       ((Primrec₂.natPair.comp (primrec_treeWordCode.comp
         (Primrec.snd : Primrec fun q : ℕ × List Bool => q.2)) (Primrec.const 0)).to₂)
-  have hstep : Primrec₂ fun (_ : ℕ) (q : ℕ × ℕ) => max (q.1 + 1) q.2 :=
-    (Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
-      (Primrec.snd.comp Primrec.snd)).to₂
-  exact Primrec.list_foldr hmap (Primrec.const 0) hstep
+  exact primrec_prefixBound.comp hmap
 
 /-- A single code reads the path off the answer bits. -/
 theorem exists_pathCode : ∃ H : OracleCode, ∀ a : Baire, pathName a ∈ H.evalStream a := by
@@ -507,10 +469,10 @@ theorem exists_pathCode : ∃ H : OracleCode, ∀ a : Baire, pathName a ∈ H.ev
     have hih : Primrec fun r : List ℕ × (ℕ × List Bool) => r.2.2 := Primrec.snd.comp Primrec.snd
     have hbit : Primrec fun r : List ℕ × (ℕ × List Bool) =>
         decide (r.1.getD (Nat.pair (treeWordCode r.2.2) 0) 0 = 1) :=
-      primrec_decide_eq
+      (PrimrecRel.comp Primrec.eq
         ((Primrec.list_getD 0).comp Primrec.fst
           (Primrec₂.natPair.comp (primrec_treeWordCode.comp hih) (Primrec.const 0)))
-        (Primrec.const 1)
+        (Primrec.const 1)).decide
     exact (Primrec.list_append.comp hih
       (Primrec.list_cons.comp hbit (Primrec.const []))).to₂
   have hg : Primrec fun v : ℕ =>

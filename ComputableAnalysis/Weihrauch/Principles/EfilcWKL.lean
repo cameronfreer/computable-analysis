@@ -3,8 +3,10 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.TypeTwo.PrefixTable
+import ComputableAnalysis.Weihrauch.StrongReduction
 import ComputableAnalysis.Weihrauch.Principles.EFILC
-import ComputableAnalysis.Weihrauch.Principles.WKLReduction
+import ComputableAnalysis.Weihrauch.Principles.WKL
 
 /-!
 # `EFILC ≤W WKL`: chunk-coded systems, with a certified ordinary reduction
@@ -41,6 +43,7 @@ namespace ComputableAnalysis
 
 open Encodable Denumerable
 open OracleCode (binaryWords mem_binaryWords)
+open Baire (ofList)
 
 /-! ### Chunk bit coding -/
 
@@ -484,13 +487,10 @@ theorem isEfilcSection_of_path {q : Baire} (hne : FibersNonempty q) {π : Cantor
 
 /-! ### Reading the system off a prefix table
 
-The codes below access the presented system only through `fun n => P.getD n 0` for a
-prefix list `P`, so a congruence lemma converts their outputs to the semantic values once
-the prefix covers the accessed positions: the fiber positions below the word length, and
-the bond positions of the fiber elements just read. -/
-
-/-- The stream a prefix list presents. -/
-def tableQ (P : List ℕ) : Baire := fun n => P.getD n 0
+The codes below access the presented system only through the stream `Baire.ofList P` a
+prefix list `P` presents, so a congruence lemma converts their outputs to the semantic
+values once the prefix covers the accessed positions: the fiber positions below the word
+length, and the bond positions of the fiber elements just read. -/
 
 theorem efilcFiber_congr {q₁ q₂ : Baire} {k : ℕ}
     (h : q₁ (Nat.pair 0 k) = q₂ (Nat.pair 0 k)) : efilcFiber q₁ k = efilcFiber q₂ k := by
@@ -570,29 +570,23 @@ theorem chunkNodeB_congr {q₁ q₂ : Baire} {w : List Bool}
 
 /-! ### Primitive recursiveness of the table-driven node test -/
 
-private theorem primrec_decide_eq {α β : Type*} [Primcodable α] [Primcodable β]
-    [DecidableEq β] {f g : α → β} (hf : Primrec f) (hg : Primrec g) :
-    Primrec fun a => decide (f a = g a) := by
-  obtain ⟨_, h⟩ := PrimrecRel.comp Primrec.eq hf hg
-  exact Primrec.of_eq h fun a => decide_eq_decide.mpr Iff.rfl
-
 private theorem primrec_tableFiber :
-    Primrec₂ fun (P : List ℕ) (k : ℕ) => efilcFiber (tableQ P) k :=
+    Primrec₂ fun (P : List ℕ) (k : ℕ) => efilcFiber (ofList P) k :=
   (Primrec.ofNat (List ℕ)).comp ((Primrec.list_getD 0).comp Primrec.fst
     (Primrec₂.natPair.comp (Primrec.const 0) Primrec.snd))
 
 private theorem primrec_tableWidth :
-    Primrec₂ fun (P : List ℕ) (k : ℕ) => efilcWidth (tableQ P) k :=
+    Primrec₂ fun (P : List ℕ) (k : ℕ) => efilcWidth (ofList P) k :=
   Primrec.list_length.comp primrec_tableFiber
 
 private theorem primrec_tableElem :
-    Primrec fun z : (List ℕ × ℕ) × ℕ => efilcElem (tableQ z.1.1) z.1.2 z.2 :=
+    Primrec fun z : (List ℕ × ℕ) × ℕ => efilcElem (ofList z.1.1) z.1.2 z.2 :=
   (Primrec.list_getD 0).comp
     (primrec_tableFiber.comp (Primrec.fst.comp Primrec.fst) (Primrec.snd.comp Primrec.fst))
     Primrec.snd
 
 private theorem primrec_tableBond :
-    Primrec fun z : (List ℕ × ℕ) × ℕ => efilcBond (tableQ z.1.1) z.1.2 z.2 :=
+    Primrec fun z : (List ℕ × ℕ) × ℕ => efilcBond (ofList z.1.1) z.1.2 z.2 :=
   (Primrec.list_getD 0).comp (Primrec.fst.comp Primrec.fst)
     (Primrec₂.natPair.comp (Primrec.const 1)
       (Primrec₂.natPair.comp (Primrec.snd.comp Primrec.fst) Primrec.snd))
@@ -606,12 +600,12 @@ private theorem efilcTuples_eq_nat_rec (q : Baire) (j : ℕ) :
   | succ j ih => rw [efilcTuples, ih]
 
 private theorem primrec_tableTuples :
-    Primrec₂ fun (P : List ℕ) (j : ℕ) => efilcTuples (tableQ P) j := by
+    Primrec₂ fun (P : List ℕ) (j : ℕ) => efilcTuples (ofList P) j := by
   have hinner : Primrec₂ fun (z : List ℕ × ℕ × List (List ℕ)) (t : List ℕ) =>
-      (List.range (efilcWidth (tableQ z.1) z.2.1)).map fun i => t ++ [i] :=
+      (List.range (efilcWidth (ofList z.1) z.2.1)).map fun i => t ++ [i] :=
     Primrec.list_map
       (f := fun w : (List ℕ × ℕ × List (List ℕ)) × List ℕ =>
-        List.range (efilcWidth (tableQ w.1.1) w.1.2.1))
+        List.range (efilcWidth (ofList w.1.1) w.1.2.1))
       (g := fun (w : (List ℕ × ℕ × List (List ℕ)) × List ℕ) (i : ℕ) => w.2 ++ [i])
       (Primrec.list_range.comp
         (primrec_tableWidth.comp (Primrec.fst.comp Primrec.fst)
@@ -619,24 +613,24 @@ private theorem primrec_tableTuples :
       ((Primrec.list_concat.comp (Primrec.snd.comp Primrec.fst) Primrec.snd).to₂)
   have hg : Primrec₂ fun (P : List ℕ) (z : ℕ × List (List ℕ)) =>
       z.2.flatMap fun t =>
-        (List.range (efilcWidth (tableQ P) z.1)).map fun i => t ++ [i] :=
+        (List.range (efilcWidth (ofList P) z.1)).map fun i => t ++ [i] :=
     Primrec.list_flatMap (f := fun z : List ℕ × ℕ × List (List ℕ) => z.2.2)
       (g := fun (z : List ℕ × ℕ × List (List ℕ)) (t : List ℕ) =>
-        (List.range (efilcWidth (tableQ z.1) z.2.1)).map fun i => t ++ [i])
+        (List.range (efilcWidth (ofList z.1) z.2.1)).map fun i => t ++ [i])
       (Primrec.snd.comp Primrec.snd) hinner
   exact (Primrec.nat_rec (Primrec.const [[]]) hg).of_eq fun P j =>
-    (efilcTuples_eq_nat_rec (tableQ P) j).symm
+    (efilcTuples_eq_nat_rec (ofList P) j).symm
 
 private theorem primrec_tableCoherent :
-    Primrec₂ fun (P : List ℕ) (t : List ℕ) => tupleCoherentB (tableQ P) t :=
+    Primrec₂ fun (P : List ℕ) (t : List ℕ) => tupleCoherentB (ofList P) t :=
   primrec_list_all
     (f := fun z : List ℕ × List ℕ => List.range (z.2.length - 1))
     (p := fun (z : List ℕ × List ℕ) (i : ℕ) =>
-      decide (efilcBond (tableQ z.1) i (efilcElem (tableQ z.1) (i + 1) (z.2.getD (i + 1) 0)) =
-        efilcElem (tableQ z.1) i (z.2.getD i 0)))
+      decide (efilcBond (ofList z.1) i (efilcElem (ofList z.1) (i + 1) (z.2.getD (i + 1) 0)) =
+        efilcElem (ofList z.1) i (z.2.getD i 0)))
     (Primrec.list_range.comp
       (Primrec.nat_sub.comp (Primrec.list_length.comp Primrec.snd) (Primrec.const 1)))
-    ((primrec_decide_eq
+    ((PrimrecRel.comp Primrec.eq
       (primrec_tableBond.comp
         ((Primrec.pair (Primrec.fst.comp Primrec.fst) Primrec.snd).pair
           (primrec_tableElem.comp
@@ -645,7 +639,8 @@ private theorem primrec_tableCoherent :
                 (Primrec.succ.comp Primrec.snd))))))
       (primrec_tableElem.comp
         ((Primrec.pair (Primrec.fst.comp Primrec.fst) Primrec.snd).pair
-          ((Primrec.list_getD 0).comp (Primrec.snd.comp Primrec.fst) Primrec.snd)))).to₂)
+          ((Primrec.list_getD 0).comp (Primrec.snd.comp Primrec.fst)
+            Primrec.snd)))).decide.to₂)
 
 private theorem chunkBits_eq_div_mod (w i : ℕ) :
     chunkBits w i = (List.range w).map fun j => decide (i / 2 ^ j % 2 = 1) := by
@@ -663,20 +658,20 @@ private theorem primrec_chunkBits : Primrec₂ chunkBits := by
     Primrec.list_map (f := fun p : ℕ × ℕ => List.range p.1)
       (g := fun (p : ℕ × ℕ) (j : ℕ) => decide (p.2 / 2 ^ j % 2 = 1))
       (Primrec.list_range.comp Primrec.fst)
-      ((primrec_decide_eq
+      ((PrimrecRel.comp Primrec.eq
         (Primrec.nat_mod.comp
           (Primrec.nat_div.comp (Primrec.snd.comp Primrec.fst)
             (primrec_natPow.comp (Primrec.const 2) Primrec.snd))
           (Primrec.const 2))
-        (Primrec.const 1)).to₂)
+        (Primrec.const 1)).decide.to₂)
   exact h.of_eq fun p => (chunkBits_eq_div_mod p.1 p.2).symm
 
 private theorem primrec_tableEncode :
-    Primrec fun z : (List ℕ × List ℕ) × ℕ => encodeUpTo (tableQ z.1.1) z.1.2 z.2 :=
+    Primrec fun z : (List ℕ × List ℕ) × ℕ => encodeUpTo (ofList z.1.1) z.1.2 z.2 :=
   Primrec.list_flatMap
     (f := fun z : (List ℕ × List ℕ) × ℕ => List.range z.2)
     (g := fun (z : (List ℕ × List ℕ) × ℕ) (i : ℕ) =>
-      chunkBits (efilcWidth (tableQ z.1.1) i) (z.1.2.getD i 0))
+      chunkBits (efilcWidth (ofList z.1.1) i) (z.1.2.getD i 0))
     (Primrec.list_range.comp Primrec.snd)
     ((primrec_chunkBits.comp
       (primrec_tableWidth.comp (Primrec.fst.comp (Primrec.fst.comp Primrec.fst))
@@ -685,68 +680,54 @@ private theorem primrec_tableEncode :
         Primrec.snd)).to₂)
 
 private theorem primrec_tableNode :
-    Primrec₂ fun (P : List ℕ) (w : List Bool) => chunkNodeB (tableQ P) w :=
+    Primrec₂ fun (P : List ℕ) (w : List Bool) => chunkNodeB (ofList P) w :=
   primrec_list_any
     (f := fun z : List ℕ × List Bool => List.range (z.2.length + 1))
     (p := fun (z : List ℕ × List Bool) (j : ℕ) =>
-      (efilcTuples (tableQ z.1) j).any fun t =>
-        tupleCoherentB (tableQ z.1) t &&
-          decide (z.2 = (encodeUpTo (tableQ z.1) t j).take z.2.length))
+      (efilcTuples (ofList z.1) j).any fun t =>
+        tupleCoherentB (ofList z.1) t &&
+          decide (z.2 = (encodeUpTo (ofList z.1) t j).take z.2.length))
     (Primrec.list_range.comp (Primrec.succ.comp (Primrec.list_length.comp Primrec.snd)))
     ((primrec_list_any
-      (f := fun y : (List ℕ × List Bool) × ℕ => efilcTuples (tableQ y.1.1) y.2)
+      (f := fun y : (List ℕ × List Bool) × ℕ => efilcTuples (ofList y.1.1) y.2)
       (p := fun (y : (List ℕ × List Bool) × ℕ) (t : List ℕ) =>
-        tupleCoherentB (tableQ y.1.1) t &&
-          decide (y.1.2 = (encodeUpTo (tableQ y.1.1) t y.2).take y.1.2.length))
+        tupleCoherentB (ofList y.1.1) t &&
+          decide (y.1.2 = (encodeUpTo (ofList y.1.1) t y.2).take y.1.2.length))
       (primrec_tableTuples.comp (Primrec.fst.comp Primrec.fst) Primrec.snd)
       ((Primrec.and.comp
         (primrec_tableCoherent.comp (Primrec.fst.comp (Primrec.fst.comp Primrec.fst))
           Primrec.snd)
-        (primrec_decide_eq
+        (PrimrecRel.comp Primrec.eq
           (Primrec.snd.comp (Primrec.fst.comp Primrec.fst))
           (Primrec.list_take.comp
             (Primrec.list_length.comp (Primrec.snd.comp (Primrec.fst.comp Primrec.fst)))
             (primrec_tableEncode.comp
               ((Primrec.pair (Primrec.fst.comp (Primrec.fst.comp Primrec.fst))
                 Primrec.snd).pair
-                (Primrec.snd.comp Primrec.fst)))))).to₂)).to₂)
+                (Primrec.snd.comp Primrec.fst))))).decide).to₂)).to₂)
 
 /-! ### The tree code -/
 
-private theorem lt_foldr_max {l : List ℕ} {i : ℕ} (h : i ∈ l) :
-    i < l.foldr (fun j b => max (j + 1) b) 0 := by
-  induction l with
-  | nil => simp at h
-  | cons j t ih =>
-    rcases List.mem_cons.mp h with rfl | h
-    · simp only [List.foldr_cons]
-      omega
-    · have := ih h
-      simp only [List.foldr_cons]
-      omega
-
 /-- A prefix length covering the fiber positions below the decoded word's length. -/
 def fiberPosBound (m : ℕ) : ℕ :=
-  (((List.range ((treeWordDecode m).length + 1)).map fun k => Nat.pair 0 k).foldr
-    (fun i b => max (i + 1) b) 0)
+  prefixBound ((List.range ((treeWordDecode m).length + 1)).map fun k => Nat.pair 0 k)
 
 theorem fiberPos_lt_fiberPosBound {m k : ℕ} (h : k ≤ (treeWordDecode m).length) :
     Nat.pair 0 k < fiberPosBound m :=
-  lt_foldr_max (List.mem_map_of_mem (List.mem_range.mpr (by omega)))
+  lt_prefixBound_of_mem (List.mem_map_of_mem (List.mem_range.mpr (by omega)))
 
 /-- A prefix length additionally covering the bond positions of the fiber elements the
 first-stage prefix presents. -/
 def bondPosBound (m : ℕ) (P : List ℕ) : ℕ :=
   max (fiberPosBound m)
-    (((List.range (treeWordDecode m).length).flatMap fun i =>
-      (efilcFiber (tableQ P) (i + 1)).map fun x => Nat.pair 1 (Nat.pair i x)).foldr
-      (fun i b => max (i + 1) b) 0)
+    (prefixBound ((List.range (treeWordDecode m).length).flatMap fun i =>
+      (efilcFiber (ofList P) (i + 1)).map fun x => Nat.pair 1 (Nat.pair i x)))
 
 theorem bondPos_lt_bondPosBound {m : ℕ} {P : List ℕ} {i x : ℕ}
-    (hi : i < (treeWordDecode m).length) (hx : x ∈ efilcFiber (tableQ P) (i + 1)) :
+    (hi : i < (treeWordDecode m).length) (hx : x ∈ efilcFiber (ofList P) (i + 1)) :
     Nat.pair 1 (Nat.pair i x) < bondPosBound m P :=
   lt_of_lt_of_le
-    (lt_foldr_max (List.mem_flatMap.mpr
+    (lt_prefixBound_of_mem (List.mem_flatMap.mpr
       ⟨i, List.mem_range.mpr hi, List.mem_map_of_mem hx⟩))
     (le_max_right _ _)
 
@@ -756,14 +737,8 @@ theorem exists_chunkTreeCode : ∃ K : OracleCode, ∀ q : Baire,
     chunkTreeName q ∈ K.evalStream q := by
   have hu1 : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hu2 : Primrec fun v : ℕ => v.unpair.2 := Primrec.snd.comp Primrec.unpair
-  have hfold : Primrec fun l : List ℕ => l.foldr (fun j b => max (j + 1) b) 0 :=
-    Primrec.list_foldr (f := fun l : List ℕ => l) (g := fun _ : List ℕ => (0 : ℕ))
-      (h := fun (_ : List ℕ) (p : ℕ × ℕ) => max (p.1 + 1) p.2)
-      Primrec.id (Primrec.const 0)
-      ((Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
-        (Primrec.snd.comp Primrec.snd)).to₂)
   have hb₀ : Primrec fiberPosBound :=
-    hfold.comp (Primrec.list_map
+    primrec_prefixBound.comp (Primrec.list_map
       (f := fun m : ℕ => List.range ((treeWordDecode m).length + 1))
       (g := fun (_ : ℕ) (k : ℕ) => Nat.pair 0 k)
       (Primrec.list_range.comp (Primrec.succ.comp
@@ -771,18 +746,18 @@ theorem exists_chunkTreeCode : ∃ K : OracleCode, ∀ q : Baire,
       ((Primrec₂.natPair.comp (Primrec.const 0) Primrec.snd).to₂))
   have hflat : Primrec fun p : ℕ × ℕ =>
       (List.range (treeWordDecode p.1).length).flatMap fun i =>
-        (efilcFiber (tableQ (ofNat (List ℕ) p.2)) (i + 1)).map fun x =>
+        (efilcFiber (ofList (ofNat (List ℕ) p.2)) (i + 1)).map fun x =>
           Nat.pair 1 (Nat.pair i x) :=
     Primrec.list_flatMap
       (f := fun p : ℕ × ℕ => List.range (treeWordDecode p.1).length)
       (g := fun (p : ℕ × ℕ) (i : ℕ) =>
-        (efilcFiber (tableQ (ofNat (List ℕ) p.2)) (i + 1)).map fun x =>
+        (efilcFiber (ofList (ofNat (List ℕ) p.2)) (i + 1)).map fun x =>
           Nat.pair 1 (Nat.pair i x))
       (Primrec.list_range.comp
         (Primrec.list_length.comp (primrec_treeWordDecode.comp Primrec.fst)))
       ((Primrec.list_map
         (f := fun y : (ℕ × ℕ) × ℕ =>
-          efilcFiber (tableQ (ofNat (List ℕ) y.1.2)) (y.2 + 1))
+          efilcFiber (ofList (ofNat (List ℕ) y.1.2)) (y.2 + 1))
         (g := fun (y : (ℕ × ℕ) × ℕ) (x : ℕ) => Nat.pair 1 (Nat.pair y.2 x))
         (primrec_tableFiber.comp
           ((Primrec.ofNat (List ℕ)).comp (Primrec.snd.comp Primrec.fst))
@@ -790,11 +765,11 @@ theorem exists_chunkTreeCode : ∃ K : OracleCode, ∀ q : Baire,
         ((Primrec₂.natPair.comp (Primrec.const 1)
           (Primrec₂.natPair.comp (Primrec.snd.comp Primrec.fst) Primrec.snd)).to₂)).to₂)
   have hb₁ : Primrec₂ fun (m : ℕ) (e : ℕ) => bondPosBound m (ofNat (List ℕ) e) :=
-    (Primrec.nat_max.comp (hb₀.comp Primrec.fst) (hfold.comp hflat)).to₂
+    (Primrec.nat_max.comp (hb₀.comp Primrec.fst) (primrec_prefixBound.comp hflat)).to₂
   have hb₂ : Primrec₂ fun (_ : ℕ) (e : ℕ) => (ofNat (List ℕ) e).length :=
     ((Primrec.list_length.comp ((Primrec.ofNat (List ℕ)).comp Primrec.snd)).to₂)
   have hg : Primrec fun v : ℕ =>
-      if chunkNodeB (tableQ (ofNat (List ℕ) v.unpair.2)) (treeWordDecode v.unpair.1)
+      if chunkNodeB (ofList (ofNat (List ℕ) v.unpair.2)) (treeWordDecode v.unpair.1)
         then 1 else 0 :=
     Primrec.ite
       (Primrec.eq.comp
@@ -809,24 +784,18 @@ theorem exists_chunkTreeCode : ∃ K : OracleCode, ∀ q : Baire,
   rw [hK q m, Part.mem_some_iff]
   simp only [Denumerable.ofNat_encode, Nat.unpair_pair, length_streamTake]
   set N : ℕ := bondPosBound m (streamTake q (fiberPosBound m)) with hN
-  have hcongr : chunkNodeB (tableQ (streamTake q N)) (treeWordDecode m)
+  have hcongr : chunkNodeB (ofList (streamTake q N)) (treeWordDecode m)
       = chunkNodeB q (treeWordDecode m) := by
     have hNfib : fiberPosBound m ≤ N := le_max_left _ _
     refine chunkNodeB_congr (fun k hk => ?_) (fun i hi x hx => ?_)
-    · refine efilcFiber_congr ?_
-      change (streamTake q N).getD (Nat.pair 0 k) 0 = q (Nat.pair 0 k)
-      exact streamTake_getD q (lt_of_lt_of_le (fiberPos_lt_fiberPosBound hk) hNfib)
-    · have hfib1 : efilcFiber (tableQ (streamTake q (fiberPosBound m))) (i + 1) =
+    · exact efilcFiber_congr
+        (Baire.ofList_streamTake q (lt_of_lt_of_le (fiberPos_lt_fiberPosBound hk) hNfib))
+    · have hfib1 : efilcFiber (ofList (streamTake q (fiberPosBound m))) (i + 1) =
           efilcFiber q (i + 1) := by
-        refine efilcFiber_congr ?_
-        change (streamTake q (fiberPosBound m)).getD (Nat.pair 0 (i + 1)) 0 =
-          q (Nat.pair 0 (i + 1))
-        exact streamTake_getD q (fiberPos_lt_fiberPosBound hi)
+        exact efilcFiber_congr (Baire.ofList_streamTake q (fiberPos_lt_fiberPosBound hi))
       have hpos : Nat.pair 1 (Nat.pair i x) < N :=
         bondPos_lt_bondPosBound (by omega) (hfib1 ▸ hx)
-      change (streamTake q N).getD (Nat.pair 1 (Nat.pair i x)) 0 =
-        q (Nat.pair 1 (Nat.pair i x))
-      exact streamTake_getD q hpos
+      exact Baire.ofList_streamTake q hpos
   rw [chunkTreeName, hcongr]
 
 /-- The tree code, extracted once so consumers share a single combinator. Specified, not
@@ -897,14 +866,13 @@ private theorem primrec_bitsToNat : Primrec bitsToNat := by
 
 /-- A prefix length covering the even-track fiber positions below level `k`. -/
 def evenFiberBound (k : ℕ) : ℕ :=
-  2 * (((List.range (k + 1)).map fun i => Nat.pair 0 i).foldr
-    (fun i b => max (i + 1) b) 0) + 1
+  2 * prefixBound ((List.range (k + 1)).map fun i => Nat.pair 0 i) + 1
 
 theorem evenPos_lt_evenFiberBound {k i : ℕ} (h : i ≤ k) :
     2 * Nat.pair 0 i < evenFiberBound k := by
   have hmem : Nat.pair 0 i ∈ (List.range (k + 1)).map fun j => Nat.pair 0 j :=
     List.mem_map_of_mem (List.mem_range.mpr (Nat.lt_succ_of_le h))
-  have := lt_foldr_max hmem
+  have := lt_prefixBound_of_mem hmem
   rw [evenFiberBound]
   omega
 
@@ -918,15 +886,9 @@ theorem exists_treeSectionCode : ∃ H : OracleCode, ∀ F : Baire,
     sectionFromF F ∈ H.evalStream F := by
   have hu1 : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hu2 : Primrec fun v : ℕ => v.unpair.2 := Primrec.snd.comp Primrec.unpair
-  have hfold : Primrec fun l : List ℕ => l.foldr (fun j b => max (j + 1) b) 0 :=
-    Primrec.list_foldr (f := fun l : List ℕ => l) (g := fun _ : List ℕ => (0 : ℕ))
-      (h := fun (_ : List ℕ) (p : ℕ × ℕ) => max (p.1 + 1) p.2)
-      Primrec.id (Primrec.const 0)
-      ((Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
-        (Primrec.snd.comp Primrec.snd)).to₂)
   have hb₀ : Primrec evenFiberBound :=
     Primrec.succ.comp (Primrec.nat_mul.comp (Primrec.const 2)
-      (hfold.comp (Primrec.list_map
+      (primrec_prefixBound.comp (Primrec.list_map
         (f := fun k : ℕ => List.range (k + 1))
         (g := fun (_ : ℕ) (i : ℕ) => Nat.pair 0 i)
         (Primrec.list_range.comp Primrec.succ)
