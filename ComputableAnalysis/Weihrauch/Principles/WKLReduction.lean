@@ -270,4 +270,65 @@ theorem raceEventB_iff {p : Baire} {j k l : ℕ} (hl : l ≤ k / 2) (b : Bool) :
   rw [← h0, ← h1]
   simp
 
+/-! ### Primitive recursiveness of the decision procedure
+
+Elaboration machinery, deliberately private: the public contract is the named codes and
+their evaluation specifications, not the plumbing needed to build them. -/
+
+private theorem primrec_decide_ne {α : Type*} [Primcodable α] {f g : α → ℕ}
+    (hf : Primrec f) (hg : Primrec g) : Primrec fun a => decide (f a ≠ g a) := by
+  obtain ⟨_, h⟩ := PrimrecRel.comp (PrimrecRel.not Primrec.eq) hf hg
+  exact Primrec.of_eq h fun a => decide_eq_decide.mpr Iff.rfl
+
+private theorem primrec_decide_eq {α : Type*} [Primcodable α] {f g : α → ℕ}
+    (hf : Primrec f) (hg : Primrec g) : Primrec fun a => decide (f a = g a) := by
+  obtain ⟨_, h⟩ := PrimrecRel.comp Primrec.eq hf hg
+  exact Primrec.of_eq h fun a => decide_eq_decide.mpr Iff.rfl
+
+private theorem primrec_treeMemB {α : Type*} [Primcodable α] {L : α → List ℕ}
+    {w : α → List Bool} (hL : Primrec L) (hw : Primrec w) :
+    Primrec fun a => treeMemB (L a) (w a) :=
+  primrec_decide_ne
+    ((Primrec.list_getD 0).comp hL (primrec_treeWordCode.comp hw)) (Primrec.const 0)
+
+private theorem primrec_aliveB {α : Type*} [Primcodable α] {L : α → List ℕ}
+    {u : α → List Bool} {l : α → ℕ} (hL : Primrec L) (hu : Primrec u) (hl : Primrec l) :
+    Primrec fun a => aliveB (L a) (u a) (l a) :=
+  primrec_list_any (OracleCode.primrec_binaryWords.comp hl)
+    ((primrec_treeMemB (hL.comp Primrec.fst)
+      (Primrec.list_append.comp (hu.comp Primrec.fst) Primrec.snd)).to₂)
+
+private theorem primrec_raceEventB {α : Type*} [Primcodable α] {L : α → List ℕ}
+    {w : α → List Bool} {b : α → Bool} {l : α → ℕ}
+    (hL : Primrec L) (hw : Primrec w) (hb : Primrec b) (hl : Primrec l) :
+    Primrec fun a => raceEventB (L a) (w a) (b a) (l a) := by
+  have hchild : ∀ (c : α → Bool), Primrec c → Primrec fun a => w a ++ [c a] := fun c hc =>
+    Primrec.list_append.comp hw (Primrec.list_cons.comp hc (Primrec.const []))
+  exact Primrec.and.comp
+    (Primrec.not.comp (primrec_aliveB hL (hchild b hb) hl))
+    (primrec_aliveB hL (hchild _ (Primrec.not.comp hb)) hl)
+
+private theorem primrec_raceFlagB {α : Type*} [Primcodable α] {L : α → List ℕ}
+    {w : α → List Bool} {k : α → ℕ} (hL : Primrec L) (hw : Primrec w) (hk : Primrec k) :
+    Primrec fun a => raceFlagB (L a) (w a) (k a) := by
+  have hpar : Primrec fun a => decide (k a % 2 = 1) :=
+    primrec_decide_eq (Primrec.nat_mod.comp hk (Primrec.const 2)) (Primrec.const 1)
+  have hhalf : Primrec fun a => k a / 2 := Primrec.nat_div.comp hk (Primrec.const 2)
+  have hnow : Primrec fun a => raceEventB (L a) (w a) (decide (k a % 2 = 1)) (k a / 2) :=
+    primrec_raceEventB hL hw hpar hhalf
+  have hpast : Primrec fun a =>
+      (List.range (k a / 2)).all fun l => !raceEventB (L a) (w a) (decide (k a % 2 = 1)) l :=
+    primrec_list_all (Primrec.list_range.comp hhalf)
+      ((Primrec.not.comp (primrec_raceEventB (hL.comp Primrec.fst) (hw.comp Primrec.fst)
+        (hpar.comp Primrec.fst) Primrec.snd)).to₂)
+  have hcond : Primrec fun a =>
+      raceEventB (L a) (w a) (decide (k a % 2 = 1)) (k a / 2) &&
+        (List.range (k a / 2)).all fun l =>
+          !raceEventB (L a) (w a) (decide (k a % 2 = 1)) l := Primrec.and.comp hnow hpast
+  refine Primrec.of_eq (Primrec.cond hcond (Primrec.const 1) (Primrec.const 0)) fun a => ?_
+  simp only [raceFlagB]
+  cases raceEventB (L a) (w a) (decide (k a % 2 = 1)) (k a / 2) &&
+    (List.range (k a / 2)).all fun l =>
+      !raceEventB (L a) (w a) (decide (k a % 2 = 1)) l <;> rfl
+
 end ComputableAnalysis
