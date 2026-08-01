@@ -29,6 +29,7 @@ infinite, and equal finite death can only occur off the constructed path.
 
 namespace ComputableAnalysis
 
+open Encodable Denumerable
 open OracleCode (binaryWords mem_binaryWords length_of_mem_binaryWords)
 
 /-! ### Aliveness and the death race -/
@@ -330,5 +331,93 @@ private theorem primrec_raceFlagB {α : Type*} [Primcodable α] {L : α → List
   cases raceEventB (L a) (w a) (decide (k a % 2 = 1)) (k a / 2) &&
     (List.range (k a / 2)).all fun l =>
       !raceEventB (L a) (w a) (decide (k a % 2 = 1)) l <;> rfl
+
+/-! ### The flag code -/
+
+/-- The prefix decision agrees with the semantic flags. -/
+theorem raceFlagB_eq (p : Baire) (j k : ℕ) :
+    raceFlagB (streamTake p (raceBound (Nat.pair j k))) (treeWordDecode j) k
+      = raceFlags p (treeWordDecode j) k := by
+  set L := streamTake p (raceBound (Nat.pair j k)) with hL
+  set w := treeWordDecode j with hw
+  set b := decide (k % 2 = 1) with hb
+  have hnow := raceEventB_iff (p := p) (j := j) (k := k) (l := k / 2) le_rfl b
+  have hpast : ∀ l < k / 2,
+      (raceEventB L w b l = true ↔ RaceEvent p w b l) := fun l hl =>
+    raceEventB_iff (le_of_lt hl) b
+  have hiff : (raceEventB L w b (k / 2) &&
+        (List.range (k / 2)).all fun l => !raceEventB L w b l) = true ↔
+      (RaceEvent p w b (k / 2) ∧ ∀ m < k / 2, ¬ RaceEvent p w b m) := by
+    rw [Bool.and_eq_true, List.all_eq_true]
+    constructor
+    · rintro ⟨h1, h2⟩
+      refine ⟨hnow.mp h1, fun m hm hev => ?_⟩
+      have hm' := h2 m (List.mem_range.mpr hm)
+      rw [Bool.not_eq_true', (hpast m hm).mpr hev] at hm'
+      exact absurd hm' (by simp)
+    · rintro ⟨h1, h2⟩
+      refine ⟨hnow.mpr h1, fun l hl => ?_⟩
+      rw [Bool.not_eq_true']
+      by_contra hne
+      have : raceEventB L w b l = true := by
+        cases hv : raceEventB L w b l
+        · exact absurd hv hne
+        · rfl
+      exact h2 l (List.mem_range.mp hl) ((hpast l (List.mem_range.mp hl)).mp this)
+  by_cases hc : RaceEvent p w b (k / 2) ∧ ∀ m < k / 2, ¬ RaceEvent p w b m
+  · rw [raceFlagB, if_pos (hiff.mpr hc), raceFlags, firstOccurrenceFlags, if_pos hc]
+  · rw [raceFlagB, if_neg (fun hh => hc (hiff.mp hh)), raceFlags, firstOccurrenceFlags,
+      if_neg hc]
+
+/-- A single code produces the packed family of race flags. -/
+theorem exists_raceFlagsCode : ∃ K : OracleCode, ∀ p : Baire,
+    Baire.packTracks (fun j => raceFlags p (treeWordDecode j)) ∈ K.evalStream p := by
+  have hu1 : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hu2 : Primrec fun v : ℕ => v.unpair.2 := Primrec.snd.comp Primrec.unpair
+  have hbound : Primrec₂ fun (m : ℕ) (_ : ℕ) => raceBound m := by
+    have hwords : Primrec fun m : ℕ => raceWords m.unpair.1 m.unpair.2 :=
+      Primrec.list_flatMap (Primrec.list_range.comp
+          (Primrec.succ.comp (Primrec.nat_div.comp hu2 (Primrec.const 2))))
+        ((Primrec.list_flatMap (OracleCode.primrec_binaryWords.comp Primrec.snd)
+          ((Primrec.list_cons.comp
+            (Primrec.list_append.comp
+              (Primrec.list_append.comp
+                (primrec_treeWordDecode.comp (hu1.comp (Primrec.fst.comp Primrec.fst)))
+                (Primrec.const [false]))
+              Primrec.snd)
+            (Primrec.list_cons.comp
+              (Primrec.list_append.comp
+                (Primrec.list_append.comp
+                  (primrec_treeWordDecode.comp (hu1.comp (Primrec.fst.comp Primrec.fst)))
+                  (Primrec.const [true]))
+                Primrec.snd)
+              (Primrec.const []))).to₂)).to₂)
+    exact ((Primrec.list_foldr (Primrec.list_map hwords
+      (primrec_treeWordCode.comp Primrec.snd).to₂) (Primrec.const 0)
+      ((Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
+        (Primrec.snd.comp Primrec.snd)).to₂)).comp Primrec.fst).to₂
+  have hg : Primrec fun v : ℕ => raceFlagB (ofNat (List ℕ) v.unpair.2)
+      (treeWordDecode v.unpair.1.unpair.1) v.unpair.1.unpair.2 :=
+    primrec_raceFlagB ((Primrec.ofNat (List ℕ)).comp hu2)
+      (primrec_treeWordDecode.comp (hu1.comp hu1)) (hu2.comp hu1)
+  obtain ⟨K, hK⟩ := OracleCode.exists_prefixPostCode hbound hg
+  refine ⟨K, fun p => OracleCode.mem_evalStream.mpr fun m => ?_⟩
+  obtain ⟨j, k, rfl⟩ : ∃ j k, m = Nat.pair j k :=
+    ⟨m.unpair.1, m.unpair.2, (Nat.pair_unpair m).symm⟩
+  rw [hK p (Nat.pair j k), Part.mem_some_iff]
+  simp only [Nat.unpair_pair, Denumerable.ofNat_encode, Baire.packTracks]
+  exact (raceFlagB_eq p j k).symm
+
+/-- The flag code, extracted once so consumers share a single combinator. Specified, not
+constructed — the documented atom pattern of `OracleCode.pairCode`: the helper codes
+inside `exists_raceFlagsCode` come from `OracleCode.exists_prefixPostCode` (Prop-level),
+so only properties following from `mem_evalStream_raceFlagsCode` can be proved about it. -/
+noncomputable def raceFlagsCode : OracleCode := Classical.choose exists_raceFlagsCode
+
+/-- **Specification of `raceFlagsCode`**: on any tree name it produces the packed family
+of race flags. -/
+theorem mem_evalStream_raceFlagsCode (p : Baire) :
+    Baire.packTracks (fun j => raceFlags p (treeWordDecode j)) ∈ raceFlagsCode.evalStream p :=
+  Classical.choose_spec exists_raceFlagsCode p
 
 end ComputableAnalysis

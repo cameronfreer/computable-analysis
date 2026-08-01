@@ -574,6 +574,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.mem_raceWords,
    ``ComputableAnalysis.aliveB_iff,
    ``ComputableAnalysis.raceEventB_iff,
+   ``ComputableAnalysis.raceFlagB_eq,
+   ``ComputableAnalysis.exists_raceFlagsCode,
+   ``ComputableAnalysis.mem_evalStream_raceFlagsCode,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,
