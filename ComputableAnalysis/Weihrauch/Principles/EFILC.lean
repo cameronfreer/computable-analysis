@@ -55,6 +55,29 @@ def FibersNonempty (q : Baire) : Prop := ∀ k, efilcFiber q k ≠ []
 def BondsIntoFiber (q : Baire) : Prop :=
   ∀ k, ∀ x ∈ efilcFiber q (k + 1), efilcBond q k x ∈ efilcFiber q k
 
+/-! ### Building a name from the semantic data
+
+A reduction *into* `EFILC` has to write the wire format: track `0` the coded fibers,
+track `1` the bonds, everything else inert. `efilcSystemName` is that encoder once, so a
+reduction supplies only the two semantic functions and reads them back through the two
+simp lemmas — no reduction needs to know the track layout. -/
+
+/-- The name presenting the system with the given fibers and bonds. -/
+def efilcSystemName (fiber : ℕ → List ℕ) (bond : ℕ → ℕ → ℕ) : Baire := fun n =>
+  if n.unpair.1 = 0 then encode (fiber n.unpair.2)
+  else if n.unpair.1 = 1 then bond n.unpair.2.unpair.1 n.unpair.2.unpair.2
+  else 0
+
+@[simp]
+theorem efilcFiber_efilcSystemName (fiber : ℕ → List ℕ) (bond : ℕ → ℕ → ℕ) (k : ℕ) :
+    efilcFiber (efilcSystemName fiber bond) k = fiber k := by
+  simp [efilcFiber, efilcSystemName, Nat.unpair_pair]
+
+@[simp]
+theorem efilcBond_efilcSystemName (fiber : ℕ → List ℕ) (bond : ℕ → ℕ → ℕ) (k x : ℕ) :
+    efilcBond (efilcSystemName fiber bond) k x = bond k x := by
+  simp [efilcBond, efilcSystemName, Nat.unpair_pair]
+
 /-- `s` is a section of the system presented by `q`: at every level a fiber element,
 coherent under the bonds. -/
 def IsEfilcSection (q s : Baire) : Prop :=

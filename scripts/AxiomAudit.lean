@@ -604,6 +604,12 @@ def headlineDecls : List Name :=
    -- problem, its domain anchor, and the two reductions with explicit pairs
    ``ComputableAnalysis.EFILC.dom_iff,
    ``ComputableAnalysis.exists_section_of_promises,
+   ``ComputableAnalysis.efilcFiber_efilcSystemName,
+   ``ComputableAnalysis.efilcBond_efilcSystemName,
+   ``ComputableAnalysis.isStrongReductionPair_efilc_of_system,
+   ``ComputableAnalysis.strongReduction_efilc_of_system,
+   ``ComputableAnalysis.fibersNonempty_treeSystemName,
+   ``ComputableAnalysis.bondsIntoFiber_treeSystemName,
    ``ComputableAnalysis.isStrongReductionPair_wkl_le_efilc,
    ``ComputableAnalysis.wkl_le_efilc,
    ``ComputableAnalysis.isReductionPair_efilc_le_wkl,
@@ -611,8 +617,13 @@ def headlineDecls : List Name :=
    -- Hall pilot: the one-sided relation-plus-enumerator Hall problem, its domain anchor,
    -- and the strong reduction to EFILC
    ``ComputableAnalysis.Hall.dom_iff,
+   ``ComputableAnalysis.fibersNonempty_hallSystemName,
+   ``ComputableAnalysis.bondsIntoFiber_hallSystemName,
    ``ComputableAnalysis.isStrongReductionPair_hall_le_efilc,
    ``ComputableAnalysis.hall_le_efilc,
+   -- The composite calibrations the interchange layer names
+   ``ComputableAnalysis.efilc_equiv_wkl,
+   ``ComputableAnalysis.hall_le_wkl,
    -- API consolidation (issue #49): principle semantics, packed sequence names,
    -- parallelizability accessors
    ``ComputableAnalysis.LPO.accepts_iff,
