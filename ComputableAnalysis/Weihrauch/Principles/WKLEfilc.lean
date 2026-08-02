@@ -4,8 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
 import ComputableAnalysis.TypeTwo.PrefixTable
-import ComputableAnalysis.Weihrauch.StrongReduction
-import ComputableAnalysis.Weihrauch.Principles.EFILC
+import ComputableAnalysis.Weihrauch.Principles.EfilcCompiler
 import ComputableAnalysis.Weihrauch.Principles.WKL
 
 /-!
@@ -46,22 +45,18 @@ def treeLevel (p : Baire) (k : ℕ) : List ℕ :=
 /-- The bond of the compiled system: truncate the decoded word. Oracle-free. -/
 def treeBondValue (k x : ℕ) : ℕ := treeWordCode ((treeWordDecode x).take k)
 
-/-- The compiled system name: track `0` the level fibers, track `1` the truncation
-bonds. -/
-def treeSystemName (p : Baire) : Baire := fun n =>
-  if n.unpair.1 = 0 then encode (treeLevel p n.unpair.2)
-  else if n.unpair.1 = 1 then treeBondValue n.unpair.2.unpair.1 n.unpair.2.unpair.2
-  else 0
+/-- The compiled system name: the levels as fibers, truncation as bond. -/
+def treeSystemName (p : Baire) : Baire := efilcSystemName (treeLevel p) treeBondValue
 
 @[simp]
 theorem efilcFiber_treeSystemName (p : Baire) (k : ℕ) :
-    efilcFiber (treeSystemName p) k = treeLevel p k := by
-  simp [efilcFiber, treeSystemName, Nat.unpair_pair]
+    efilcFiber (treeSystemName p) k = treeLevel p k :=
+  efilcFiber_efilcSystemName _ _ k
 
 @[simp]
 theorem efilcBond_treeSystemName (p : Baire) (k x : ℕ) :
-    efilcBond (treeSystemName p) k x = treeBondValue k x := by
-  simp [efilcBond, treeSystemName, Nat.unpair_pair]
+    efilcBond (treeSystemName p) k x = treeBondValue k x :=
+  efilcBond_efilcSystemName _ _ k x
 
 theorem mem_treeLevel {p : Baire} {k x : ℕ} :
     x ∈ treeLevel p k ↔
@@ -74,25 +69,33 @@ theorem mem_treeLevel {p : Baire} {k x : ℕ} :
   · rintro ⟨w, hlen, hmem, rfl⟩
     exact ⟨w, ⟨hlen, hmem⟩, rfl⟩
 
-/-- The compiled system keeps `WKL`'s promises as `EFILC`'s: levels of an infinite tree
-are nonempty, and truncation lands in the level below by prefix closure. -/
+/-- Levels of an infinite tree are nonempty: `EFILC`'s first promise needs only `WKL`'s
+infinity promise. -/
+theorem fibersNonempty_treeSystemName {p : Baire} (hinf : IsInfiniteTree p) :
+    FibersNonempty (treeSystemName p) := by
+  intro k
+  obtain ⟨w, hw, hmem⟩ := hinf k
+  rw [efilcFiber_treeSystemName]
+  exact List.ne_nil_of_mem (mem_treeLevel.mpr ⟨w, hw, hmem, rfl⟩)
+
+/-- Truncation lands in the level below: `EFILC`'s second promise needs only `WKL`'s
+prefix-closure promise. -/
+theorem bondsIntoFiber_treeSystemName {p : Baire} (hpc : IsPrefixClosed p) :
+    BondsIntoFiber (treeSystemName p) := by
+  intro k x hx
+  rw [efilcFiber_treeSystemName] at hx ⊢
+  rw [efilcBond_treeSystemName]
+  obtain ⟨w, hlen, hmem, rfl⟩ := mem_treeLevel.mp hx
+  refine mem_treeLevel.mpr ⟨w.take k, ?_, ?_, ?_⟩
+  · rw [List.length_take, hlen]
+    omega
+  · exact hpc w _ hmem (List.take_prefix k w)
+  · rw [treeBondValue, treeWordDecode_treeWordCode]
+
+/-- The compiled system keeps `WKL`'s promises as `EFILC`'s. -/
 theorem efilc_dom_treeSystemName {p : Baire} (hpc : IsPrefixClosed p)
-    (hinf : IsInfiniteTree p) : EFILC.Dom (treeSystemName p) := by
-  rw [EFILC.dom_iff]
-  constructor
-  · intro k
-    obtain ⟨w, hw, hmem⟩ := hinf k
-    rw [efilcFiber_treeSystemName]
-    exact List.ne_nil_of_mem (mem_treeLevel.mpr ⟨w, hw, hmem, rfl⟩)
-  · intro k x hx
-    rw [efilcFiber_treeSystemName] at hx ⊢
-    rw [efilcBond_treeSystemName]
-    obtain ⟨w, hlen, hmem, rfl⟩ := mem_treeLevel.mp hx
-    refine mem_treeLevel.mpr ⟨w.take k, ?_, ?_, ?_⟩
-    · rw [List.length_take, hlen]
-      omega
-    · exact hpc w _ hmem (List.take_prefix k w)
-    · rw [treeBondValue, treeWordDecode_treeWordCode]
+    (hinf : IsInfiniteTree p) : EFILC.Dom (treeSystemName p) :=
+  EFILC.dom_iff.mpr ⟨fibersNonempty_treeSystemName hinf, bondsIntoFiber_treeSystemName hpc⟩
 
 /-! ### The system code -/
 
@@ -145,7 +148,7 @@ theorem exists_treeSystemCode : ∃ K : OracleCode, ∀ p : Baire,
         (Primrec.const 0))
   obtain ⟨K, hK⟩ := OracleCode.exists_prefixPostCode hbound hg
   refine ⟨K, fun p => OracleCode.mem_evalStream.mpr fun n => ?_⟩
-  rw [hK p n, Part.mem_some_iff, treeSystemName]
+  rw [hK p n, Part.mem_some_iff, treeSystemName, efilcSystemName]
   simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
   by_cases h0 : n.unpair.1 = 0
   · rw [if_pos h0, if_pos h0, treeLevelFiberB_eq p le_rfl]
@@ -260,21 +263,21 @@ theorem streamTake_sectionPath {p a : Baire}
 `sectionPathCode` decodes any accepted section into a path, from the answer alone. -/
 theorem isStrongReductionPair_wkl_le_efilc :
     IsStrongReductionPair WKL EFILC treeSystemCode sectionPathCode := by
-  intro p x hpx hdom
-  obtain rfl : x = p := baireRep_names_iff.mp hpx
-  obtain ⟨hpc, hinf⟩ := WKL.dom_iff.mp hdom
-  refine ⟨treeSystemName x, mem_evalStream_treeSystemCode x, treeSystemName x,
-    baireRep_names_iff.mpr rfl, efilc_dom_treeSystemName hpc hinf, ?_⟩
-  intro a y' hay' hacc
-  obtain rfl : y' = a := baireRep_names_iff.mp hay'
-  obtain ⟨-, -, hsec⟩ := EFILC.accepts_iff.mp hacc
-  refine ⟨sectionPathName y', mem_evalStream_sectionPathCode y', sectionPath y',
-    cantorRep_names_sectionPathName y', ?_⟩
-  refine WKL.accepts_iff.mpr ⟨hpc, hinf, fun n => ?_⟩
-  rw [streamTake_sectionPath hsec n]
-  exact (section_node (fun k => by
-    have hk := hsec.1 k
-    rwa [efilcFiber_treeSystemName] at hk) n).2
+  refine isStrongReductionPair_efilc_of_system mem_evalStream_treeSystemCode
+    (fun p x hpx hdom => ?_) (fun p x hpx hdom => ?_) (fun p x hpx hdom s hsec => ?_)
+  · obtain rfl : x = p := baireRep_names_iff.mp hpx
+    exact fibersNonempty_treeSystemName (WKL.dom_iff.mp hdom).2
+  · obtain rfl : x = p := baireRep_names_iff.mp hpx
+    exact bondsIntoFiber_treeSystemName (WKL.dom_iff.mp hdom).1
+  · obtain rfl : x = p := baireRep_names_iff.mp hpx
+    obtain ⟨hpc, hinf⟩ := WKL.dom_iff.mp hdom
+    refine ⟨sectionPathName s, mem_evalStream_sectionPathCode s, sectionPath s,
+      cantorRep_names_sectionPathName s, ?_⟩
+    refine WKL.accepts_iff.mpr ⟨hpc, hinf, fun n => ?_⟩
+    rw [streamTake_sectionPath hsec n]
+    exact (section_node (fun k => by
+      have hk := hsec.1 k
+      rwa [efilcFiber_treeSystemName] at hk) n).2
 
 /-- **Weak Kőnig's lemma reduces strongly to explicit finite inverse-limit
 compactness.** -/
