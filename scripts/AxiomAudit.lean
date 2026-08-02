@@ -609,6 +609,22 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.mem_evalStream_treeForbiddenCode,
    ``ComputableAnalysis.isStrongReductionPair_wkl_le_c_cantor,
    ``ComputableAnalysis.wkl_le_c_cantor,
+   -- and the converse: the length-staged tree, giving the presentation bridge (issue #32)
+   ``ComputableAnalysis.cantorForbiddenWord_eq_some_iff,
+   ``ComputableAnalysis.cantorForbiddenWord_congr,
+   ``ComputableAnalysis.StagedTreeMem,
+   ``ComputableAnalysis.closedCantorTreeMemB_iff,
+   ``ComputableAnalysis.closedCantorTreeName,
+   ``ComputableAnalysis.treeMem_closedCantorTreeName,
+   ``ComputableAnalysis.isPrefixClosed_closedCantorTreeName,
+   ``ComputableAnalysis.isInfiniteTree_closedCantorTreeName,
+   ``ComputableAnalysis.paths_closedCantorTreeName,
+   ``ComputableAnalysis.wkl_dom_closedCantorTreeName,
+   ``ComputableAnalysis.exists_closedCantorTreeCode,
+   ``ComputableAnalysis.mem_evalStream_closedCantorTreeCode,
+   ``ComputableAnalysis.isStrongReductionPair_c_cantor_le_wkl,
+   ``ComputableAnalysis.c_cantor_le_wkl,
+   ``ComputableAnalysis.wkl_equiv_c_cantor,
    -- WKL/EFILC uniform-reduction pilot (issue #27 payload): the represented EFILC
    -- problem, its domain anchor, and the two reductions with explicit pairs
    ``ComputableAnalysis.EFILC.dom_iff,
