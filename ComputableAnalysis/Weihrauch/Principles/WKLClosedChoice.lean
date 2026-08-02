@@ -8,34 +8,40 @@ import ComputableAnalysis.Weihrauch.StrongReduction
 import ComputableAnalysis.Weihrauch.Principles.ClosedChoiceCantor
 
 /-!
-# `WKL ≤sW C_Cantor`: a tree as negative information
+# `WKL ≡sW C_Cantor`: trees and negative information present the same problem
 
-`wkl_le_c_cantor : WKL ≤sW C_Cantor`, with the explicit reduction pair
-`isStrongReductionPair_wkl_le_c_cantor` over the named codes `treeForbiddenCode` and
-`OracleCode.query`.
+`wkl_equiv_c_cantor : WKL ≡sW C_Cantor`, from the two explicit reduction pairs
+`isStrongReductionPair_wkl_le_c_cantor` and `isStrongReductionPair_c_cantor_le_wkl`.
+Both postprocessors are `OracleCode.query`: the two problems answer in the same
+represented space, and each construction makes the answer already correct, so nothing is
+decoded on either side.
 
-The preprocessor turns a presented tree into a negative name: coordinate `i` forbids the
+**A tree as negative information** (`treeForbiddenName`). Coordinate `i` forbids the
 cylinder of the canonical word `treeWordDecode i` exactly when that word is **absent**
-from the tree, and is the no-op sentinel otherwise. The paths of the tree are then
-literally the points of the presented closed set (`closedCantorSet_treeForbiddenName`),
-so the postprocessor is the identity on the answer stream — `OracleCode.query` — and
-strongness is immediate.
+from the tree, and is the no-op sentinel otherwise. The points of the presented closed
+set are then literally the paths of the tree
+(`closedCantorSet_treeForbiddenName`).
 
-**The canonical lookup is load-bearing.** Coordinate `i` tests the tree at
-`p (treeWordCode (treeWordDecode i))`, never at `p i`. Only the encoding direction of
-the word coding is available: `treeWordDecode` is a partial inverse that canonicalizes,
-so an arbitrary `i` need not be any word's code, and re-encoding a decoded index need
-not return it. Reading `p i` would test the tree at an index unrelated to the word whose
-cylinder coordinate `i` forbids.
+**A closed set as a length-staged tree** (`closedCantorTreeName`). Level `|w|` consults
+exactly the first `|w|` entries of the enumeration, which a bounded prefix decides. The
+paths of that tree are exactly the points of the closed set
+(`paths_closedCantorTreeName`).
 
-Nothing here depends on the tree's promises: the correspondence between forbidden
-cylinders and absent words is an identity of sets, proved for every stream. Prefix
-closure and infinity enter only to place the compiled name in `C_Cantor`'s domain, where
-they supply a path.
+**The canonical lookup is load-bearing in both directions.** Only the encoding direction
+of the word coding is available: `treeWordDecode` is a partial inverse that
+canonicalizes, so an arbitrary index need not be any word's code, and re-encoding a
+decoded index need not return it. The forward preprocessor therefore tests the tree at
+`p (treeWordCode (treeWordDecode i))`, never at `p i` — reading `p i` would test the
+tree at an index unrelated to the word whose cylinder coordinate `i` forbids — and the
+converse generates its tree name through `treeWordDecode j`, so that a canonical query
+recovers its word.
 
-This certifies a strong reduction in this one direction and nothing else: no lower bound
-and no equivalence is claimed. The converse, and hence `WKL ≡sW C_Cantor`, needs a
-different construction and is not addressed here.
+Neither correspondence uses a promise: both are identities of sets holding for every
+stream. Prefix closure and infinity enter only to place a compiled name in the target's
+domain.
+
+The equivalence is at `≡sW` and is exactly what is proved: two certified strong
+reductions. No claim is made about the degree beyond that.
 -/
 
 namespace ComputableAnalysis
@@ -172,9 +178,11 @@ theorem wkl_le_c_cantor : WKL ≤sW C_Cantor :=
 The naive tree — take `w` as a node when no forbidden cylinder contains it — is not
 decidable from a finite prefix: it quantifies over the whole enumeration, so it is only
 co-r.e. Staging by length repairs this. At level `|w|` the tree consults exactly the
-first `|w|` entries, which a bounded prefix decides; and because the levels are nested, a
-word survives every level exactly when no entry ever forbids one of its prefixes. The
-staged tree is thus computable where the naive one is not, and has the same paths.
+first `|w|` entries, which a bounded prefix decides. A *fixed* word is tested only at its
+own length, so it may well pass and be killed later by an entry forbidding all of its
+extensions; what the staging preserves is the infinite picture — an infinite branch
+survives all levels exactly when no enumerated cylinder contains it. The staged tree is
+thus computable where the naive one is not, and has the same paths.
 -/
 
 /-- **Stage-`|w|` membership**: no cylinder forbidden by one of the first `|w|` entries of
@@ -290,7 +298,7 @@ theorem paths_closedCantorTreeName (q : Baire) :
       (by rw [length_streamTake]; exact hi) u hu hup
   · exact fun hx n => treeMem_closedCantorTreeName.mpr (stagedTreeMem_streamTake hx n)
 
-/-- The staged tree is in `WKL`'s domain exactly when the presented set is nonempty. -/
+/-- A nonempty presented closed set puts the staged tree in `WKL`'s domain. -/
 theorem wkl_dom_closedCantorTreeName {q : Baire} (hdom : C_Cantor.Dom q) :
     WKL.Dom (closedCantorTreeName q) :=
   WKL.dom_iff.mpr ⟨isPrefixClosed_closedCantorTreeName q,
