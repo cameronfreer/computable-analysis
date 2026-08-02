@@ -601,9 +601,11 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.C_Cantor.accepts_iff,
    ``ComputableAnalysis.C_Cantor.dom_iff,
    -- WKL as negative information: the canonical-reindexed strong reduction (issue #32)
+   ``ComputableAnalysis.treeForbiddenName,
    ``ComputableAnalysis.cantorForbiddenWord_treeForbiddenName,
    ``ComputableAnalysis.closedCantorSet_treeForbiddenName,
    ``ComputableAnalysis.c_Cantor_dom_treeForbiddenName,
+   ``ComputableAnalysis.exists_treeForbiddenCode,
    ``ComputableAnalysis.mem_evalStream_treeForbiddenCode,
    ``ComputableAnalysis.isStrongReductionPair_wkl_le_c_cantor,
    ``ComputableAnalysis.wkl_le_c_cantor,

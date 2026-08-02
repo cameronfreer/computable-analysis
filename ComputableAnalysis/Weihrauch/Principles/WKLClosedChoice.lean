@@ -138,13 +138,6 @@ theorem mem_evalStream_treeForbiddenCode (p : Baire) :
 
 /-! ### The reduction -/
 
-/-- The answer passes through unchanged: `OracleCode.query` is the identity stream
-operator, and the two problems answer in the same represented space. -/
-theorem mem_evalStream_query (a : Baire) : a ∈ OracleCode.query.evalStream a :=
-  OracleCode.mem_evalStream.mpr fun n => by
-    rw [OracleCode.eval_query]
-    exact Part.mem_some _
-
 /-- **`WKL ≤sW C_Cantor`, as an explicit pair**: `treeForbiddenCode` compiles the tree
 into negative information, and the postprocessor is the identity on the answer — every
 point of the presented closed set already *is* a path. -/
@@ -156,7 +149,12 @@ theorem isStrongReductionPair_wkl_le_c_cantor :
   refine ⟨treeForbiddenName x, mem_evalStream_treeForbiddenCode x, treeForbiddenName x,
     baireRep_names_iff.mpr rfl, c_Cantor_dom_treeForbiddenName hpc hinf, ?_⟩
   intro a y' hay' hacc
-  refine ⟨a, mem_evalStream_query a, y', hay', WKL.accepts_iff.mpr ⟨hpc, hinf, ?_⟩⟩
+  -- the answer passes through unchanged: `query` is the identity stream operator, and
+  -- the two problems answer in the same represented space
+  have hq : a ∈ OracleCode.query.evalStream a := by
+    rw [OracleCode.evalStream_query]
+    exact Part.mem_some _
+  refine ⟨a, hq, y', hay', WKL.accepts_iff.mpr ⟨hpc, hinf, ?_⟩⟩
   have hmem : y' ∈ closedCantorSet (treeForbiddenName x) := hacc
   rw [closedCantorSet_treeForbiddenName] at hmem
   exact hmem
