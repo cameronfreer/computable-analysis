@@ -46,6 +46,17 @@ theorem cantorForbiddenWord_eq_none_iff {p : Baire} {i : ℕ} :
     cantorForbiddenWord p i = none ↔ p i = 0 := by
   cases hp : p i <;> simp [cantorForbiddenWord, hp]
 
+/-- An entry forbids exactly the word its predecessor decodes to. The sibling of
+`cantorForbiddenWord_eq_none_iff`, letting a consumer read an entry without matching. -/
+theorem cantorForbiddenWord_eq_some_iff {p : Baire} {i : ℕ} {w : List Bool} :
+    cantorForbiddenWord p i = some w ↔ p i ≠ 0 ∧ treeWordDecode (p i - 1) = w := by
+  cases hp : p i <;> simp [cantorForbiddenWord, hp]
+
+/-- Entries agreeing at a coordinate forbid the same thing there. -/
+theorem cantorForbiddenWord_congr {p q : Baire} {i : ℕ} (h : p i = q i) :
+    cantorForbiddenWord p i = cantorForbiddenWord q i := by
+  rw [cantorForbiddenWord, cantorForbiddenWord, h]
+
 /-- The code that forbids a given word. -/
 def cantorForbiddenWordCode (w : List Bool) : ℕ := treeWordCode w + 1
 

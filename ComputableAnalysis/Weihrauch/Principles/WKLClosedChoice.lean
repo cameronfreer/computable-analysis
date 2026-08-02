@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.ForMathlib.PrimrecContainers
 import ComputableAnalysis.Weihrauch.StrongReduction
 import ComputableAnalysis.Weihrauch.Principles.ClosedChoiceCantor
 
@@ -165,5 +166,221 @@ suggested. -/
 theorem wkl_le_c_cantor : WKL ≤sW C_Cantor :=
   strongReduction_iff_exists_reductionPair.mpr
     ⟨_, _, isStrongReductionPair_wkl_le_c_cantor⟩
+
+/-! ## The converse: a closed set as a length-staged tree
+
+The naive tree — take `w` as a node when no forbidden cylinder contains it — is not
+decidable from a finite prefix: it quantifies over the whole enumeration, so it is only
+co-r.e. Staging by length repairs this. At level `|w|` the tree consults exactly the
+first `|w|` entries, which a bounded prefix decides; and because the levels are nested, a
+word survives every level exactly when no entry ever forbids one of its prefixes. The
+staged tree is thus computable where the naive one is not, and has the same paths.
+-/
+
+/-- **Stage-`|w|` membership**: no cylinder forbidden by one of the first `|w|` entries of
+the presentation has `w` inside it. -/
+def StagedTreeMem (q : Baire) (w : List Bool) : Prop :=
+  ∀ i < w.length, ∀ u, cantorForbiddenWord q i = some u → ¬ u <+: w
+
+/-- The stage test as a Boolean, reading the presentation only at the first `|w|`
+positions. -/
+def closedCantorTreeMemB (q : Baire) (w : List Bool) : Bool :=
+  (List.range w.length).all fun i =>
+    decide (q i = 0) || !decide (treeWordDecode (q i - 1) <+: w)
+
+theorem closedCantorTreeMemB_iff {q : Baire} {w : List Bool} :
+    closedCantorTreeMemB q w = true ↔ StagedTreeMem q w := by
+  rw [closedCantorTreeMemB, List.all_eq_true]
+  constructor
+  · intro h i hi u hu hup
+    obtain ⟨hne, rfl⟩ := cantorForbiddenWord_eq_some_iff.mp hu
+    have hb := h i (List.mem_range.mpr hi)
+    simp only [Bool.or_eq_true, decide_eq_true_eq, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not] at hb
+    exact hb.elim hne fun hnp => hnp hup
+  · intro h i hi
+    simp only [Bool.or_eq_true, decide_eq_true_eq, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not]
+    by_cases h0 : q i = 0
+    · exact Or.inl h0
+    · exact Or.inr (h i (List.mem_range.mp hi) _
+        (cantorForbiddenWord_eq_some_iff.mpr ⟨h0, rfl⟩))
+
+/-- The stage test reads only the first `|w|` entries, so presentations agreeing there
+decide the same words. -/
+theorem stagedTreeMem_congr {q₁ q₂ : Baire} {w : List Bool}
+    (h : ∀ i < w.length, q₁ i = q₂ i) : StagedTreeMem q₁ w ↔ StagedTreeMem q₂ w := by
+  constructor
+  · exact fun hm i hi u hu => hm i hi u ((cantorForbiddenWord_congr (h i hi)).trans hu)
+  · exact fun hm i hi u hu => hm i hi u ((cantorForbiddenWord_congr (h i hi)).symm.trans hu)
+
+theorem closedCantorTreeMemB_congr {q₁ q₂ : Baire} {w : List Bool}
+    (h : ∀ i < w.length, q₁ i = q₂ i) :
+    closedCantorTreeMemB q₁ w = closedCantorTreeMemB q₂ w := by
+  rw [Bool.eq_iff_iff, closedCantorTreeMemB_iff, closedCantorTreeMemB_iff]
+  exact stagedTreeMem_congr h
+
+/-- The staged tree, as a `WKL` name. Coordinate `j` decides the **canonical** word
+`treeWordDecode j`; at a canonical query `treeWordCode w` the decoder returns `w`. -/
+def closedCantorTreeName (q : Baire) : Baire := fun j =>
+  if closedCantorTreeMemB q (treeWordDecode j) then 1 else 0
+
+/-- **The canonical readback**: the presented tree's nodes are exactly the words passing
+their own stage test. -/
+theorem treeMem_closedCantorTreeName {q : Baire} {w : List Bool} :
+    TreeMem (closedCantorTreeName q) w ↔ StagedTreeMem q w := by
+  rw [TreeMem, closedCantorTreeName, treeWordDecode_treeWordCode]
+  by_cases h : closedCantorTreeMemB q w = true
+  · rw [if_pos h]
+    exact ⟨fun _ => closedCantorTreeMemB_iff.mp h, fun _ => one_ne_zero⟩
+  · rw [if_neg h]
+    exact ⟨fun hc => absurd rfl hc, fun hs => absurd (closedCantorTreeMemB_iff.mpr hs) h⟩
+
+/-! ### The staged tree keeps `WKL`'s promises -/
+
+/-- **Prefix closure.** A prefix examines fewer enumeration entries, and a forbidden
+prefix of the shorter word would be a forbidden prefix of the longer one too. -/
+theorem isPrefixClosed_closedCantorTreeName (q : Baire) :
+    IsPrefixClosed (closedCantorTreeName q) := by
+  intro w v hw hpre
+  rw [treeMem_closedCantorTreeName] at hw ⊢
+  intro i hi u hu hup
+  exact hw i (lt_of_lt_of_le hi hpre.length_le) u hu (hup.trans hpre)
+
+/-- Every prefix of a point of the closed set passes its own stage test. -/
+theorem stagedTreeMem_streamTake {q : Baire} {x : Cantor} (hx : x ∈ closedCantorSet q)
+    (n : ℕ) : StagedTreeMem q (streamTake x n) := by
+  intro i hi u hu hup
+  rw [length_streamTake] at hi
+  have hul : u.length ≤ n := by
+    have := hup.length_le
+    rwa [length_streamTake] at this
+  have hu' : streamTake x u.length = u := by
+    have h1 : u = (streamTake x n).take u.length := List.prefix_iff_eq_take.mp hup
+    rw [take_streamTake x hul] at h1
+    exact h1.symm
+  exact hx i u hu (mem_cylinder_iff.mpr hu')
+
+/-- **Infinitude from nonemptiness.** A point of the closed set supplies a node at every
+level, namely its own prefix. -/
+theorem isInfiniteTree_closedCantorTreeName {q : Baire}
+    (hne : (closedCantorSet q).Nonempty) : IsInfiniteTree (closedCantorTreeName q) := by
+  obtain ⟨x, hx⟩ := hne
+  exact fun n => ⟨streamTake x n, length_streamTake x n,
+    treeMem_closedCantorTreeName.mpr (stagedTreeMem_streamTake hx n)⟩
+
+/-- **The exact path identity**, with no promise used: the paths of the staged tree are
+exactly the points of the presented closed set. The nontrivial direction takes a level
+past both the offending entry and the forbidden word's length. -/
+theorem paths_closedCantorTreeName (q : Baire) :
+    {x : Cantor | ∀ n, TreeMem (closedCantorTreeName q) (streamTake x n)} =
+      closedCantorSet q := by
+  ext x
+  simp only [Set.mem_setOf_eq, closedCantorSet]
+  constructor
+  · intro hpath i u hu hcyl
+    have hi : i < max (i + 1) u.length := lt_of_lt_of_le (Nat.lt_succ_self i) (le_max_left _ _)
+    have hul : u.length ≤ max (i + 1) u.length := le_max_right _ _
+    have hup : u <+: streamTake x (max (i + 1) u.length) := by
+      have h1 : streamTake x u.length = u := mem_cylinder_iff.mp hcyl
+      have h2 : streamTake x u.length <+: streamTake x (max (i + 1) u.length) :=
+        streamTake_prefix x hul
+      rwa [h1] at h2
+    exact treeMem_closedCantorTreeName.mp (hpath _) i
+      (by rw [length_streamTake]; exact hi) u hu hup
+  · exact fun hx n => treeMem_closedCantorTreeName.mpr (stagedTreeMem_streamTake hx n)
+
+/-- The staged tree is in `WKL`'s domain exactly when the presented set is nonempty. -/
+theorem wkl_dom_closedCantorTreeName {q : Baire} (hdom : C_Cantor.Dom q) :
+    WKL.Dom (closedCantorTreeName q) :=
+  WKL.dom_iff.mpr ⟨isPrefixClosed_closedCantorTreeName q,
+    isInfiniteTree_closedCantorTreeName (C_Cantor.dom_iff.mp hdom)⟩
+
+/-! ### The preprocessor code
+
+Output coordinate `j` decodes `w := treeWordDecode j` and reads exactly the first
+`|w|` entries, so the prefix bound is `(treeWordDecode j).length` — not `j`, and not
+`treeWordCode w`. -/
+
+/-- A single code compiles the staged tree. -/
+theorem exists_closedCantorTreeCode : ∃ K : OracleCode, ∀ q : Baire,
+    closedCantorTreeName q ∈ K.evalStream q := by
+  have hu1 : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
+  have hu2 : Primrec fun v : ℕ => v.unpair.2 := Primrec.snd.comp Primrec.unpair
+  have hbound : Primrec₂ fun (j : ℕ) (_ : ℕ) => (treeWordDecode j).length :=
+    (Primrec.list_length.comp (primrec_treeWordDecode.comp Primrec.fst)).to₂
+  have hval : Primrec fun y : (List ℕ × List Bool) × ℕ => y.1.1.getD y.2 0 :=
+    (Primrec.list_getD 0).comp (Primrec.fst.comp Primrec.fst) Primrec.snd
+  have hzero : Primrec fun y : (List ℕ × List Bool) × ℕ => decide (y.1.1.getD y.2 0 = 0) :=
+    (PrimrecRel.comp Primrec.eq hval (Primrec.const 0)).decide
+  have hpre : Primrec fun y : (List ℕ × List Bool) × ℕ =>
+      decide (treeWordDecode (y.1.1.getD y.2 0 - 1) <+: y.1.2) :=
+    (PrimrecRel.comp primrec_isPrefix
+      (primrec_treeWordDecode.comp (Primrec.nat_sub.comp hval (Primrec.const 1)))
+      (Primrec.snd.comp Primrec.fst)).decide
+  have htest : Primrec₂ fun (L : List ℕ) (w : List Bool) =>
+      closedCantorTreeMemB (Baire.ofList L) w :=
+    primrec_list_all (Primrec.list_range.comp (Primrec.list_length.comp Primrec.snd))
+      ((Primrec.or.comp hzero (Primrec.not.comp hpre)).to₂)
+  have hb : Primrec fun v : ℕ =>
+      closedCantorTreeMemB (Baire.ofList (ofNat (List ℕ) v.unpair.2))
+        (treeWordDecode v.unpair.1) :=
+    htest.comp ((Primrec.ofNat (List ℕ)).comp hu2) (primrec_treeWordDecode.comp hu1)
+  have hg : Primrec fun v : ℕ =>
+      if closedCantorTreeMemB (Baire.ofList (ofNat (List ℕ) v.unpair.2))
+        (treeWordDecode v.unpair.1) then 1 else 0 := by
+    refine Primrec.of_eq (Primrec.cond hb (Primrec.const 1) (Primrec.const 0)) fun v => ?_
+    cases closedCantorTreeMemB (Baire.ofList (ofNat (List ℕ) v.unpair.2))
+      (treeWordDecode v.unpair.1) <;> rfl
+  obtain ⟨K, hK⟩ := OracleCode.exists_prefixPostCode hbound hg
+  refine ⟨K, fun q => OracleCode.mem_evalStream.mpr fun j => ?_⟩
+  rw [hK q j, Part.mem_some_iff, closedCantorTreeName]
+  simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
+  rw [closedCantorTreeMemB_congr fun i hi => Baire.ofList_streamTake q hi]
+
+/-- The preprocessor code, extracted once so consumers share a single combinator.
+Specified, not constructed. -/
+noncomputable def closedCantorTreeCode : OracleCode :=
+  Classical.choose exists_closedCantorTreeCode
+
+/-- **Specification of `closedCantorTreeCode`**: on any negative name it produces the
+staged tree. -/
+theorem mem_evalStream_closedCantorTreeCode (q : Baire) :
+    closedCantorTreeName q ∈ closedCantorTreeCode.evalStream q :=
+  Classical.choose_spec exists_closedCantorTreeCode q
+
+/-! ### The converse reduction, and the bridge -/
+
+/-- **`C_Cantor ≤sW WKL`, as an explicit pair**: `closedCantorTreeCode` stages the closed
+set into a tree, and the postprocessor is again the identity on the answer — every path
+of the staged tree already lies in the closed set. -/
+theorem isStrongReductionPair_c_cantor_le_wkl :
+    IsStrongReductionPair C_Cantor WKL closedCantorTreeCode OracleCode.query := by
+  intro q x hqx hdom
+  obtain rfl : x = q := baireRep_names_iff.mp hqx
+  refine ⟨closedCantorTreeName x, mem_evalStream_closedCantorTreeCode x,
+    closedCantorTreeName x, baireRep_names_iff.mpr rfl,
+    wkl_dom_closedCantorTreeName hdom, ?_⟩
+  intro a y' hay' hacc
+  have hq : a ∈ OracleCode.query.evalStream a := by
+    rw [OracleCode.evalStream_query]
+    exact Part.mem_some _
+  obtain ⟨-, -, hpath⟩ := WKL.accepts_iff.mp hacc
+  refine ⟨a, hq, y', hay', ?_⟩
+  have hmem : y' ∈ {z : Cantor | ∀ n, TreeMem (closedCantorTreeName x) (streamTake z n)} :=
+    hpath
+  rw [paths_closedCantorTreeName x] at hmem
+  exact hmem
+
+/-- **Closed choice on Cantor space reduces strongly to weak Kőnig's lemma**, through the
+length-staged tree. -/
+theorem c_cantor_le_wkl : C_Cantor ≤sW WKL :=
+  strongReduction_iff_exists_reductionPair.mpr
+    ⟨_, _, isStrongReductionPair_c_cantor_le_wkl⟩
+
+/-- **`WKL ≡sW C_Cantor`**: the tree and negative-information presentations are strongly
+Weihrauch equivalent. Both directions are certified by explicit pairs whose
+postprocessor is `OracleCode.query`, so neither reduction inspects its input twice. -/
+theorem wkl_equiv_c_cantor : WKL ≡sW C_Cantor := ⟨wkl_le_c_cantor, c_cantor_le_wkl⟩
 
 end ComputableAnalysis
