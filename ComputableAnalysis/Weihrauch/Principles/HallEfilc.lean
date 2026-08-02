@@ -178,9 +178,8 @@ private theorem exists_hall_tuple {q : Baire} (hmar : HallMarriage q) (k : ℕ) 
   rw [List.getElem_ofFn]
   exact List.mem_toFinset.mp (hfmem _)
 
-/-- The compiled system is in `EFILC`'s domain on every promised family: nonemptiness
-from the marriage promise through finite Hall, bonds into the fiber below by
-truncation. -/
+/-- Every level fiber is nonempty: the marriage promise, through finite Hall, supplies an
+injective in-list tuple at each length. -/
 theorem fibersNonempty_hallSystemName {q : Baire} (hmar : HallMarriage q) :
     FibersNonempty (hallSystemName q) := by
   intro k

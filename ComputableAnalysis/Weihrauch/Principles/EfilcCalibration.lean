@@ -15,10 +15,11 @@ result is an assembly of reductions already certified in the modules above, so t
 are the composites the witness calculus builds.
 
 `efilc_equiv_wkl` pairs `efilc_le_wkl` with `wkl_le_efilc`. The equivalence is stated at
-`≡W` and not `≡sW`, and that asymmetry is real rather than an artifact: `WKL ≤sW EFILC`
-is strong, while `EFILC ≤W WKL` is only ordinary because its decoder must consult the
-chunk widths of the *input* system. Whether the strong equivalence also holds is not
-addressed — no lower bound is claimed in either direction.
+`≡W` and not `≡sW` because the two *certified reductions* are asymmetric: `WKL ≤sW EFILC`
+is strong, while the reduction certified in the other direction is only ordinary, its
+decoder consulting the chunk widths of the *input* system. That is a fact about these
+codes, not about the degrees: whether some other strong reduction `EFILC ≤sW WKL` exists
+is not addressed here, and no lower bound is claimed in either direction.
 
 `hall_le_wkl` composes `Hall ≤sW EFILC` with `EFILC ≤W WKL`. It is an upper bound only:
 that countable Hall is *no harder* than weak Kőnig's lemma. The reverse direction, and

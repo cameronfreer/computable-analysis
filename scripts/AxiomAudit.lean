@@ -604,6 +604,7 @@ def headlineDecls : List Name :=
    -- problem, its domain anchor, and the two reductions with explicit pairs
    ``ComputableAnalysis.EFILC.dom_iff,
    ``ComputableAnalysis.exists_section_of_promises,
+   ``ComputableAnalysis.efilcSystemName,
    ``ComputableAnalysis.efilcFiber_efilcSystemName,
    ``ComputableAnalysis.efilcBond_efilcSystemName,
    ``ComputableAnalysis.isStrongReductionPair_efilc_of_system,
