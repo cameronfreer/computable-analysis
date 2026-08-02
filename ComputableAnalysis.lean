@@ -40,6 +40,7 @@ import ComputableAnalysis.Weihrauch.Principles.WKL
 import ComputableAnalysis.Weihrauch.Principles.WKLReduction
 import ComputableAnalysis.Weihrauch.Principles.ClosedChoiceCantor
 import ComputableAnalysis.Weihrauch.Principles.WKLClosedChoice
+import ComputableAnalysis.Weihrauch.Principles.ChoiceTwoClosedChoice
 import ComputableAnalysis.Weihrauch.Principles.EFILC
 import ComputableAnalysis.Weihrauch.Principles.EfilcCompiler
 import ComputableAnalysis.Weihrauch.Principles.WKLEfilc

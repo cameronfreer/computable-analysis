@@ -625,6 +625,19 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.isStrongReductionPair_c_cantor_le_wkl,
    ``ComputableAnalysis.c_cantor_le_wkl,
    ``ComputableAnalysis.wkl_equiv_c_cantor,
+   -- parallel binary choice as a closed set, and the LLPO/WKL calibration (issue #32)
+   ``ComputableAnalysis.c2ParallelForbiddenName,
+   ``ComputableAnalysis.c2ParallelForbiddenName_ne_zero_iff,
+   ``ComputableAnalysis.cantorForbiddenWord_c2ParallelForbiddenName,
+   ``ComputableAnalysis.closedCantorSet_c2ParallelForbiddenName,
+   ``ComputableAnalysis.c_Cantor_dom_c2ParallelForbiddenName,
+   ``ComputableAnalysis.exists_c2ParallelForbiddenCode,
+   ``ComputableAnalysis.mem_evalStream_c2ParallelForbiddenCode,
+   ``ComputableAnalysis.eval_trackSpreadCode,
+   ``ComputableAnalysis.mem_evalStream_trackSpreadCode,
+   ``ComputableAnalysis.isStrongReductionPair_parallelize_c2_le_c_cantor,
+   ``ComputableAnalysis.parallelize_c2_le_c_cantor,
+   ``ComputableAnalysis.parallelize_llpo_equiv_wkl,
    -- WKL/EFILC uniform-reduction pilot (issue #27 payload): the represented EFILC
    -- problem, its domain anchor, and the two reductions with explicit pairs
    ``ComputableAnalysis.EFILC.dom_iff,
