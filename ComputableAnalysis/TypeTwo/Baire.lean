@@ -199,8 +199,6 @@ the table covers (`ofList_streamTake`). -/
 /-- The stream a finite table presents: its entries, then zero. -/
 def Baire.ofList (P : List ℕ) : Baire := fun n => P.getD n 0
 
-theorem Baire.ofList_apply (P : List ℕ) (n : ℕ) : Baire.ofList P n = P.getD n 0 := rfl
-
 /-- Below its length, the table of a prefix presents the stream itself. -/
 theorem Baire.ofList_streamTake (p : Baire) {n i : ℕ} (h : i < n) :
     Baire.ofList (streamTake p n) i = p i :=

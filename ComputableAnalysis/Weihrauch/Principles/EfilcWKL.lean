@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
 import ComputableAnalysis.TypeTwo.PrefixTable
-import ComputableAnalysis.Weihrauch.StrongReduction
+import ComputableAnalysis.Weihrauch.Reduction
 import ComputableAnalysis.Weihrauch.Principles.EFILC
 import ComputableAnalysis.Weihrauch.Principles.WKL
 
