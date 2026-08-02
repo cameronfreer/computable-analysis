@@ -1,9 +1,17 @@
 # Blueprint: computable analysis on Cantor and Polish spaces
 
-This document is the **self-contained specification** for the project: every
-implementation-critical convention, the unit sequence with status, the acceptance
-checklist, and the standing risks. External design notes exist as local provenance
-only; nothing here depends on them.
+> **Historical implementation record. Not authoritative for current status.**
+>
+> This document records the original plan — the unit sequence, the signature freezes,
+> and the acceptance criteria each unit was held to — and is kept for provenance. Its
+> unit ledger is no longer maintained, and its "deferred" list has been overtaken.
+>
+> For what the library is, read `ARCHITECTURE.md`; for where it is going,
+> `ROADMAP.md`; for current state, the issues; for the actual API, the module
+> docstrings.
+
+It remains the fullest account of *why* the pinned conventions are what they are, which
+is why `ARCHITECTURE.md` states them and points here for their derivation.
 
 ## What this project is
 
