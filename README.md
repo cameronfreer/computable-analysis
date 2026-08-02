@@ -1,70 +1,106 @@
 # Computable Analysis
 
-A Lean 4 formalization of Type-2 (TTE) computable analysis, bridging mathlib's
-discrete computability stack and its classical Polish/Borel/measure stack.
+[![CI](https://github.com/cameronfreer/computable-analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/cameronfreer/computable-analysis/actions/workflows/ci.yml)
 
-## What is here
+A Lean 4 library connecting mathlib's discrete computability stack to its classical
+analysis stack, through explicit Type-2 machines, represented spaces, Weihrauch
+reducibility, and computable probability. Mathlib has `Partrec`, `Nat.RecursiveIn`,
+and `TuringDegree` on one side, and Polish spaces, standard Borel spaces, measures,
+and kernels on the other; this library is the bridge, built so that each layer is
+usable on its own terms.
 
-**Type-2 core.** A universal finite oracle-code model on Baire space (`ℕ → ℕ`),
-with universal evaluation, oracle substitution, and the use-principle/continuity
-layer.
+**Status.** An actively developed research library, pre-1.0. Nothing is admitted:
+no `sorry`s, no custom axioms, and every declaration is audited (see below). The
+lower layers are stable; APIs in layers under active development may still change.
 
-**Represented spaces.** Representations, computable points and maps,
-constructions (products, subtypes), function spaces via advice-realizable maps,
-and admissibility in both directions (continuous ⇔ advice-realizable between
-Cauchy-represented spaces).
+## Design commitments
 
-**Weihrauch reducibility.** Partial multivalued problems; ordinary (`≤W`) and
-strong (`≤sW`) reduction, each with an equivalent fixed-witness transformer
-characterization and bundled reduction witnesses; the benchmark principles
-`LPO`, `LLPO`, and `Lim`, with the classical separations between them.
+These are the choices the whole library is built on, and the ones most likely to
+differ from a reader's expectations.
 
-**Metric layer.** Computable metric presentations, fast-Cauchy representations,
-represented reals with arithmetic, and a computable presentation of the unit
-interval.
+- **Representations are explicit partial surjections.** Invalid names stay invalid;
+  nothing is totalized by mapping junk to a default point. A representation is an
+  object, not a typeclass instance.
+- **Problems are relation-valued, partial, and multivalued.** Domain conditions live
+  inside `accepts`, never as an unenforced side condition, so a problem's domain is
+  derived rather than asserted.
+- **Computability and reductions are witnessed by explicit `OracleCode`s**, always
+  in the uniform order `∃ code, ∀ input` — never `∀ input, ∃ code`. Headline
+  reductions are certified as named code pairs a consumer can reuse.
+- **Classical mathematics inside, audited claims outside.** Semantic arguments may
+  use classical logic freely; what is audited is that every declaration depends only
+  on the standard axioms, and that no result is admitted.
 
-**Measures.** Computable probability measures on Cantor space via cylinder
-values; generic weak (Lévy–Prokhorov) representations on computable metric
-spaces and their equivalence with the cylinder representation on Cantor space;
-continuous Markov kernels; bounded-Lipschitz integration as a computable map;
-the moment-sequence representation on the unit interval and a computable
-Hausdorff moment theorem.
+`ARCHITECTURE.md` states these and the rest of the invariants precisely.
 
-**Conditioning (target application).** The Weihrauch calibration of
-disintegration, after Ackerman–Freer–Roy
-([arXiv:1509.02992](https://arxiv.org/abs/1509.02992)): the Cantor-specific
-lower bound `Lim ≤sW Disintegrate` is complete; the generic upper bound
-`Disintegrate ≤sW Lim` is in progress (#10).
+## Architecture
 
-**`ForMathlib/`.** Mathlib-shaped modules staged for upstreaming (#21):
-`Primrec` arithmetic and container combinators, `REPred` closure lemmas, and
-staged approximations of r.e. predicates.
+| Layer | Role |
+| ----- | ---- |
+| `ForMathlib` | Generic computability lemmas awaiting upstreaming |
+| `TypeTwo` | Baire machines, universal evaluation, finite-use and prefix compilers |
+| `RepresentedSpace` | Representations, realizers, computable maps and function spaces |
+| `Metric` | Cauchy representations, effective metric presentations and reals |
+| `Weihrauch` | Problem algebra, reductions, products, cylinders and parallelization |
+| `Measure` | Computable measures, kernels, moments and conditioning |
 
-## Current direction
+## Selected results
 
-The next structural layer is the **Weihrauch degree spine** (#35): countable
-parallelization as a closure operator, parallel products and cylinders, and the
-standard calibrations `parallelize LPO ≡sW Lim` and
-`parallelize LLPO ≡sW WKL`, with uniform Σ₁-family compilers as the intended
-entry points for later upper bounds.
+Landmarks, not an inventory, and not a status report:
 
-`BLUEPRINT.md` is the self-contained specification: pinned conventions, the
-unit sequence with status, and the acceptance checklist. `ROADMAP.md` is the
-public plan.
+- `LPO.parallelize ≡sW Lim` — parallelized limited principle of omniscience
+- `C₂ ≡sW LLPO` — finite binary choice against the lesser principle
+- `WKL ≤sW LLPO.parallelize` — weak Kőnig's lemma below parallelized `LLPO`
+- `EFILC ≡W WKL` and `Hall ≤W WKL` — inverse-limit compactness and countable Hall
+- A computable Hausdorff moment theorem on the unit interval
+- `Lim ≤sW Disintegrate` on Cantor space — the lower bound for conditioning, after
+  Ackerman–Freer–Roy ([arXiv:1509.02992](https://arxiv.org/abs/1509.02992))
 
-- Toolchain: `leanprover/lean4:v4.32.0`
-- Mathlib pinned to `81a5d257c8e410db227a6665ed08f64fea08e997` (the `v4.32.0` tag)
+## Getting started
 
-## Building
+The umbrella import brings in everything:
+
+```lean
+import ComputableAnalysis
+```
+
+For downstream development, prefer the focused module imports — the layers are
+acyclic, and importing only what a file uses keeps that visible.
+
+## Building and verification
 
 ```
 lake exe cache get
 bash scripts/check.sh
 ```
 
-`scripts/check.sh` runs `lake build`, fails on any `sorry`-like token or `axiom`
-declaration in the sources, and runs the axiom audit (`scripts/AxiomAudit.lean`),
-which sweeps every declaration owned by a `ComputableAnalysis` module — including
-private and compiler-generated ones — asserting dependence only on `propext`,
-`Classical.choice`, and `Quot.sound`; a headline regression list additionally
-guards against deletions and renames.
+The gate builds the library, fails on any `sorry`-like token or `axiom` declaration
+in the sources, and runs an axiom audit over every declaration owned by a
+`ComputableAnalysis` module — private and compiler-generated included — asserting
+dependence only on `propext`, `Classical.choice`, and `Quot.sound`. A headline list
+additionally guards named results against silent deletion or renaming.
+
+The toolchain and mathlib revision are pinned in `lean-toolchain` and
+`lake-manifest.json`, which are authoritative.
+
+## Documentation
+
+| File | Contents |
+| ---- | -------- |
+| `ARCHITECTURE.md` | The invariants: representations, uniformity, reductions, codings |
+| `ROADMAP.md` | Active themes and direction |
+| `CONTRIBUTING.md` | Working practice: the gate, axiom policy, review discipline |
+| `BLUEPRINT.md` | Historical implementation record; not authoritative for status |
+
+Current state and open questions live in the
+[issues](https://github.com/cameronfreer/computable-analysis/issues). Module
+docstrings document the actual API.
+
+## Citation and license
+
+Released under the Apache License 2.0; see [LICENSE](LICENSE).
+
+To cite the library, use the repository and the commit you built against:
+
+> Cameron Freer, *Computable Analysis: a Lean 4 formalization of Type-2 computability*.
+> https://github.com/cameronfreer/computable-analysis

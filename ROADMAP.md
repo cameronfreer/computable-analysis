@@ -1,55 +1,49 @@
 # Roadmap
 
-This library develops a reusable, mathlib-style effective layer for computable analysis
-in Lean 4. Milestones are organized by **reusable capability**: each layer is a
-deliverable on its own terms, consumed by — but not defined by — the applications it
-enables. `BLUEPRINT.md` is the implementation contract (unit-by-unit signatures, pinned
-conventions, status); this file is the public plan.
+Where the library is going, by theme. Individual task status lives in the
+[issues](https://github.com/cameronfreer/computable-analysis/issues); this file
+deliberately does not duplicate it, and is not a record of what is finished.
 
-## Current: the semantic Type-2 / represented-space / Weihrauch core
+Each theme is developed as reusable theory first: a layer is a deliverable on its own
+terms, consumed by — but not defined by — the applications it enables.
 
-Complete (units 0–11): oracle codes and their evaluator; fuel-bounded executable
-simulation; the universal machine and s-m-n; the fixed-oracle `RecursiveIn` bridge to
-mathlib; finite use and continuity of Type-2 computable operators; effective compactness
-of Cantor space; representations and computable points; realizers and computable maps
-with products, sums, and subtypes; representation equivalence; problems (partial,
-multivalued); and ordinary and strong Weihrauch reducibility, with the fixed-witness
-transformer characterization and the formal `≤W`/`≤sW` separation.
+## Computability of conditioning
 
-## Completed prerequisite spine
+The application this substrate is built to support: the computability theory of
+conditional probability, after Ackerman–Freer–Roy. Three strands — the
+non-computability of conditional distributions in general, positive results under
+additional hypotheses, and the Weihrauch calibration of disintegration against `lim`.
+It consumes every layer below, which is why those layers are built generically rather
+than to its specification.
 
-Complete, each independently reusable:
+## The Weihrauch degree spine
 
-- **Represented reals**: computable metric presentations, the fast Cauchy
-  representation, represented reals with a `[0,1]` arithmetic contract including
-  uniform variable-length folds.
-- **Cantor-space computable measures**: cylinder masses, measure representation with
-  uniqueness/existence, the uniform cylinder-value characterization, constructors
-  (Dirac, Bernoulli, finite mixtures, products), and pushforward along computable maps.
-- **Weihrauch principles**: LPO, LLPO, and lim, with `LLPO ≤W LPO`, the
-  noncomputability of LPO, and `LPO ≤W Lim`.
+Countable parallelization, with extensivity, monotonicity, and idempotence, alongside
+parallel products and cylinders, and a widening set of benchmark degrees calibrated
+against one another by explicit code pairs. The direction of travel is compact choice:
+the closed-choice principles and their relationships to weak Kőnig's lemma and to the
+finite-choice hierarchy. Uniform
+compilers for recurring reduction shapes are part of the deliverable, not a by-product
+— they are the intended entry point for later upper bounds.
 
-## Completed: measure/kernel interfaces
+## Continuous reducibility and effective topology
 
-The general interfaces on computable metric spaces are complete: the weak
-(Lévy–Prokhorov) probability-measure representation with its equivalence to the Cantor
-cylinder representation, represented advice-realizable maps with the admissibility
-bridge (every continuous map is advice-realizable), the continuous Markov kernel
-carrier, and bounded-Lipschitz integration as a computable map.
+Continuous — not necessarily computable — realizability and Weihrauch reducibility
+alongside the computable notions, together with degree quotients and effective open,
+closed, and Borel structure. The witnesses stay uniform; what is dropped is the
+requirement that they be computable. This is the layer that
+lets topological and computability-theoretic statements be separated cleanly rather
+than proved together.
 
-## Target application: computability of conditioning
+## Upstreaming
 
-The application this substrate is built to support is the computability theory of
-conditional probability (Ackerman–Freer–Roy): the non-computability of conditional
-distributions in general, the positive computability results under additional
-hypotheses, and the Weihrauch calibration of disintegration against `lim`. It consumes
-every layer above — represented spaces, computable maps, Weihrauch reductions,
-represented reals and `[0,1]` arithmetic, computable probability measures,
-integration/moments, and the measure/kernel interfaces — and will receive its own
-signature and feasibility review once those APIs stabilize.
+`ForMathlib/` holds mathlib-shaped results that are not specific to this project:
+`Primrec` arithmetic and container combinators, `REPred` closure lemmas, and staged
+approximations of r.e. predicates. The intent is for these to leave the repository.
+Contributing them upstream is not allowed to block work here.
 
 ## Scope
 
-The layers above, each built as independently reusable theory, plus the conditioning
-application, are the whole of this repository's plan. Other applications of the
-substrate are out of scope here and are not part of this roadmap.
+The themes above, plus the conditioning application, are the whole of this
+repository's plan. Other applications of the substrate live elsewhere and are not
+part of this roadmap.
