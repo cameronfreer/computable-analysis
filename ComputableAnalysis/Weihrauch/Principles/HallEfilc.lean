@@ -4,9 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
 import ComputableAnalysis.ForMathlib.PrimrecContainers
-import ComputableAnalysis.Weihrauch.StrongReduction
+import ComputableAnalysis.Weihrauch.Principles.EfilcCompiler
 import ComputableAnalysis.Weihrauch.Principles.Hall
-import ComputableAnalysis.Weihrauch.Principles.EFILC
 
 /-!
 # `Hall ≤sW EFILC`: injective partial transversals as fibers
@@ -140,20 +139,18 @@ def hallBondValue (k x : ℕ) : ℕ := encode ((ofNat (List ℕ) x : List ℕ).t
 
 /-- The compiled system name: track `0` the coded injective-tuple fibers, track `1` the
 truncation bonds. Reads the family's **enumerator track only**. -/
-def hallSystemName (q : Baire) : Baire := fun m =>
-  if m.unpair.1 = 0 then encode ((hallTuples q m.unpair.2).map fun t => encode t)
-  else if m.unpair.1 = 1 then hallBondValue m.unpair.2.unpair.1 m.unpair.2.unpair.2
-  else 0
+def hallSystemName (q : Baire) : Baire :=
+  efilcSystemName (fun k => (hallTuples q k).map fun t => encode t) hallBondValue
 
 @[simp]
 theorem efilcFiber_hallSystemName (q : Baire) (k : ℕ) :
-    efilcFiber (hallSystemName q) k = (hallTuples q k).map fun t => encode t := by
-  simp [efilcFiber, hallSystemName, Nat.unpair_pair]
+    efilcFiber (hallSystemName q) k = (hallTuples q k).map fun t => encode t :=
+  efilcFiber_efilcSystemName _ _ k
 
 @[simp]
 theorem efilcBond_hallSystemName (q : Baire) (k x : ℕ) :
-    efilcBond (hallSystemName q) k x = hallBondValue k x := by
-  simp [efilcBond, hallSystemName, Nat.unpair_pair]
+    efilcBond (hallSystemName q) k x = hallBondValue k x :=
+  efilcBond_efilcSystemName _ _ k x
 
 /-! ### The compiled system keeps the promises -/
 
@@ -181,34 +178,40 @@ private theorem exists_hall_tuple {q : Baire} (hmar : HallMarriage q) (k : ℕ) 
   rw [List.getElem_ofFn]
   exact List.mem_toFinset.mp (hfmem _)
 
-/-- The compiled system is in `EFILC`'s domain on every promised family: nonemptiness
-from the marriage promise through finite Hall, bonds into the fiber below by
-truncation. -/
-theorem efilc_dom_hallSystemName {q : Baire} (hmar : HallMarriage q) :
-    EFILC.Dom (hallSystemName q) := by
-  rw [EFILC.dom_iff]
-  constructor
-  · intro k
-    obtain ⟨t, hlen, hmem, hnd⟩ := exists_hall_tuple hmar k
-    rw [efilcFiber_hallSystemName]
-    exact List.ne_nil_of_mem
-      (List.mem_map_of_mem ((mem_hallTuples q k t).mpr ⟨hlen, hmem, hnd⟩))
-  · intro k x hx
-    rw [efilcFiber_hallSystemName] at hx ⊢
-    rw [efilcBond_hallSystemName]
-    obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hx
-    obtain ⟨hlen, hmem, hnd⟩ := (mem_hallTuples q (k + 1) t).mp ht
-    refine List.mem_map.mpr ⟨t.take k, (mem_hallTuples q k _).mpr
-      ⟨?_, ?_, hnd.sublist (List.take_sublist k t)⟩, ?_⟩
-    · rw [List.length_take, hlen]
+/-- Every level fiber is nonempty: the marriage promise, through finite Hall, supplies an
+injective in-list tuple at each length. -/
+theorem fibersNonempty_hallSystemName {q : Baire} (hmar : HallMarriage q) :
+    FibersNonempty (hallSystemName q) := by
+  intro k
+  obtain ⟨t, hlen, hmem, hnd⟩ := exists_hall_tuple hmar k
+  rw [efilcFiber_hallSystemName]
+  exact List.ne_nil_of_mem
+    (List.mem_map_of_mem ((mem_hallTuples q k t).mpr ⟨hlen, hmem, hnd⟩))
+
+/-- Truncating an injective in-list tuple keeps it injective and in-list, so the second
+promise holds with no hypothesis on the family at all. -/
+theorem bondsIntoFiber_hallSystemName (q : Baire) : BondsIntoFiber (hallSystemName q) := by
+  intro k x hx
+  rw [efilcFiber_hallSystemName] at hx ⊢
+  rw [efilcBond_hallSystemName]
+  obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hx
+  obtain ⟨hlen, hmem, hnd⟩ := (mem_hallTuples q (k + 1) t).mp ht
+  refine List.mem_map.mpr ⟨t.take k, (mem_hallTuples q k _).mpr
+    ⟨?_, ?_, hnd.sublist (List.take_sublist k t)⟩, ?_⟩
+  · rw [List.length_take, hlen]
+    omega
+  · intro i hi
+    have hi' : i < k := by
+      simp only [List.length_take] at hi
       omega
-    · intro i hi
-      have hi' : i < k := by
-        simp only [List.length_take] at hi
-        omega
-      rw [List.getElem_take]
-      exact hmem i (by omega)
-    · rw [hallBondValue, Denumerable.ofNat_encode]
+    rw [List.getElem_take]
+    exact hmem i (by omega)
+  · rw [hallBondValue, Denumerable.ofNat_encode]
+
+/-- The compiled system keeps `Hall`'s promise as `EFILC`'s. -/
+theorem efilc_dom_hallSystemName {q : Baire} (hmar : HallMarriage q) :
+    EFILC.Dom (hallSystemName q) :=
+  EFILC.dom_iff.mpr ⟨fibersNonempty_hallSystemName hmar, bondsIntoFiber_hallSystemName q⟩
 
 /-! ### The transversal read off a section -/
 
@@ -411,7 +414,7 @@ theorem exists_hallSystemCode : ∃ K : OracleCode, ∀ q : Baire,
         (Primrec.const 0))
   obtain ⟨K, hK⟩ := OracleCode.exists_prefixPostCode hbound hg
   refine ⟨K, fun q => OracleCode.mem_evalStream.mpr fun m => ?_⟩
-  rw [hK q m, Part.mem_some_iff, hallSystemName]
+  rw [hK q m, Part.mem_some_iff, hallSystemName, efilcSystemName]
   simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
   have htab : hallTuples (ofList (streamTake q (hallPosBound m))) m.unpair.2 =
       hallTuples q m.unpair.2 := by
@@ -470,17 +473,17 @@ partial transversals from the enumerator track alone, and `hallTransversalCode` 
 any accepted section into an injective transversal, from the answer alone. -/
 theorem isStrongReductionPair_hall_le_efilc :
     IsStrongReductionPair Hall EFILC hallSystemCode hallTransversalCode := by
-  intro p x hpx hdom
-  obtain rfl : x = p := baireRep_names_iff.mp hpx
-  obtain ⟨f₀, hmem, hmar, -⟩ := hdom
-  refine ⟨hallSystemName x, mem_evalStream_hallSystemCode x, hallSystemName x,
-    baireRep_names_iff.mpr rfl, efilc_dom_hallSystemName hmar, ?_⟩
-  intro a y' hay' hacc
-  obtain rfl : y' = a := baireRep_names_iff.mp hay'
-  obtain ⟨-, -, hsec⟩ := EFILC.accepts_iff.mp hacc
-  refine ⟨transversalName y', mem_evalStream_hallTransversalCode y', transversalName y',
-    baireRep_names_iff.mpr rfl, ?_⟩
-  exact Hall.accepts_iff.mpr ⟨hmem, hmar, isHallTransversal_of_section hmem hsec⟩
+  refine isStrongReductionPair_efilc_of_system mem_evalStream_hallSystemCode
+    (fun p x hpx hdom => ?_) (fun p _ _ _ => bondsIntoFiber_hallSystemName p)
+    (fun p x hpx hdom s hsec => ?_)
+  · obtain rfl : x = p := baireRep_names_iff.mp hpx
+    obtain ⟨f₀, -, hmar, -⟩ := hdom
+    exact fibersNonempty_hallSystemName hmar
+  · obtain rfl : x = p := baireRep_names_iff.mp hpx
+    obtain ⟨f₀, hmem, hmar, -⟩ := hdom
+    refine ⟨transversalName s, mem_evalStream_hallTransversalCode s, transversalName s,
+      baireRep_names_iff.mpr rfl, ?_⟩
+    exact Hall.accepts_iff.mpr ⟨hmem, hmar, isHallTransversal_of_section hmem hsec⟩
 
 /-- **Countable Hall reduces strongly to explicit finite inverse-limit compactness**, for
 the one-sided relation-plus-enumerator presentation. A strong reduction in this one

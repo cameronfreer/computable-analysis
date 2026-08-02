@@ -40,10 +40,12 @@ import ComputableAnalysis.Weihrauch.Principles.WKL
 import ComputableAnalysis.Weihrauch.Principles.WKLReduction
 import ComputableAnalysis.Weihrauch.Principles.ClosedChoiceCantor
 import ComputableAnalysis.Weihrauch.Principles.EFILC
+import ComputableAnalysis.Weihrauch.Principles.EfilcCompiler
 import ComputableAnalysis.Weihrauch.Principles.WKLEfilc
 import ComputableAnalysis.Weihrauch.Principles.EfilcWKL
 import ComputableAnalysis.Weihrauch.Principles.Hall
 import ComputableAnalysis.Weihrauch.Principles.HallEfilc
+import ComputableAnalysis.Weihrauch.Principles.EfilcCalibration
 import ComputableAnalysis.Weihrauch.Principles.Limit
 import ComputableAnalysis.Weihrauch.Principles.LimCylinder
 import ComputableAnalysis.Weihrauch.Principles.LimParallelizeLPO
