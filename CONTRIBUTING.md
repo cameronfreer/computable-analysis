@@ -21,10 +21,15 @@ bash scripts/check.sh | tail          # WRONG: reports success on a failed gate
 lake build | tail -40                 # WRONG: same
 ```
 
-report success no matter what happened upstream. Redirect and check the status instead:
+report success no matter what happened upstream. Redirect, capture the status, and
+check it — noting that a `;`-chain has the same defect, since its status is the *last*
+command's, so the check must come after the log is displayed:
 
 ```
-bash scripts/check.sh > gate.log 2>&1; echo "exit=$?"; tail -3 gate.log
+bash scripts/check.sh > gate.log 2>&1
+status=$?
+tail -20 gate.log
+test "$status" -eq 0
 ```
 
 This has produced false "green" readings more than once, in both directions —

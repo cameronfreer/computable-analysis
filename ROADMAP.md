@@ -28,8 +28,10 @@ compilers for recurring reduction shapes are part of the deliverable, not a by-p
 
 ## Continuous reducibility and effective topology
 
-Continuous (non-uniform) reducibility alongside the computable notions, degree
-quotients, and effective open, closed, and Borel structure. This is the layer that
+Continuous — not necessarily computable — realizability and Weihrauch reducibility
+alongside the computable notions, together with degree quotients and effective open,
+closed, and Borel structure. The witnesses stay uniform; what is dropped is the
+requirement that they be computable. This is the layer that
 lets topological and computability-theoretic statements be separated cleanly rather
 than proved together.
 

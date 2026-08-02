@@ -59,14 +59,15 @@ Cauchy, no limit mentioned), so that incomplete spaces remain legitimate example
 A problem is relation-valued (`accepts : X → Y → Prop`), partial and multivalued, with
 `Dom` derived from `accepts`.
 
-**Representation validity and problem promises are distinct**, and it is worth keeping
-them apart. Representations may be partial: an invalid name stays invalid, and both the
-Cantor and Cauchy representations have some. What belongs in `accepts` — or in an
-enforced input subtype — is the condition defining a problem's *mathematical* domain:
-being a genuine tree, system, or family. That is never an external side condition, and
-never smuggled in by restricting which streams count as names.
+**Representation validity and problem promises are distinct.** Representations may be
+partial — both the Cantor and Cauchy representations have invalid names. Separately,
+some presentations are *total in their raw data*: for `WKL`, `EFILC`, and `Hall`, every
+Baire point presents raw data of the right shape, and the mathematical promise (being a
+genuine tree, system, or family) lives in `accepts`. More generally, domain conditions
+belong in `accepts` or in an enforced input subtype — never in an external side
+condition, and never smuggled in by restricting which streams count as names.
 
-Principle modules accordingly expose two lemmas: an `accepts_iff` unfolding the
+Public principle modules normally provide two lemmas: an `accepts_iff` unfolding the
 definition, and a `dom_iff` identifying the domain in semantic terms. The second is
 usually where the mathematical content sits — for weak Kőnig's lemma it *is* weak
 Kőnig's lemma.

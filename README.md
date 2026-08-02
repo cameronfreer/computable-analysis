@@ -54,6 +54,17 @@ Landmarks, not an inventory, and not a status report:
 - `Lim ≤sW Disintegrate` on Cantor space — the lower bound for conditioning, after
   Ackerman–Freer–Roy ([arXiv:1509.02992](https://arxiv.org/abs/1509.02992))
 
+## Getting started
+
+The umbrella import brings in everything:
+
+```lean
+import ComputableAnalysis
+```
+
+For downstream development, prefer the focused module imports — the layers are
+acyclic, and importing only what a file uses keeps that visible.
+
 ## Building and verification
 
 ```
@@ -85,7 +96,7 @@ docstrings document the actual API.
 
 ## Citation and license
 
-Released under the Apache License 2.0; see `LICENSE`.
+Released under the Apache License 2.0; see [LICENSE](LICENSE).
 
 To cite the library, use the repository and the commit you built against:
 
