@@ -18,10 +18,11 @@ than to its specification.
 
 ## The Weihrauch degree spine
 
-Parallelization as a closure operator, parallel products, and cylinders, with a
-widening set of benchmark degrees calibrated against one another by explicit code
-pairs. The direction of travel is compact choice: the closed-choice principles and
-their relationships to weak Kőnig's lemma and to the finite-choice hierarchy. Uniform
+Countable parallelization, with extensivity, monotonicity, and idempotence, alongside
+parallel products and cylinders, and a widening set of benchmark degrees calibrated
+against one another by explicit code pairs. The direction of travel is compact choice:
+the closed-choice principles and their relationships to weak Kőnig's lemma and to the
+finite-choice hierarchy. Uniform
 compilers for recurring reduction shapes are part of the deliverable, not a by-product
 — they are the intended entry point for later upper bounds.
 

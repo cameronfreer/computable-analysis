@@ -2,9 +2,10 @@
 
 > **Historical implementation record. Not authoritative for current status.**
 >
-> This document records the original plan — the unit sequence, the signature freezes,
-> and the acceptance criteria each unit was held to — and is kept for provenance. Its
-> unit ledger is no longer maintained, and its "deferred" list has been overtaken.
+> Current work is tracked in the issues. This document records the original plan — the
+> unit sequence, the signature freezes, and the acceptance criteria each unit was held
+> to — and its unit ledger is retained as design history rather than maintained as
+> status. Its "deferred" list has been overtaken.
 >
 > For what the library is, read `ARCHITECTURE.md`; for where it is going,
 > `ROADMAP.md`; for current state, the issues; for the actual API, the module

@@ -7,6 +7,10 @@ and `TuringDegree` on one side, and Polish spaces, standard Borel spaces, measur
 and kernels on the other; this library is the bridge, built so that each layer is
 usable on its own terms.
 
+**Status.** An actively developed research library, pre-1.0. Nothing is admitted:
+no `sorry`s, no custom axioms, and every declaration is audited (see below). The
+lower layers are stable; APIs in layers under active development may still change.
+
 ## Design commitments
 
 These are the choices the whole library is built on, and the ones most likely to
@@ -19,7 +23,8 @@ differ from a reader's expectations.
   inside `accepts`, never as an unenforced side condition, so a problem's domain is
   derived rather than asserted.
 - **Computability and reductions are witnessed by explicit `OracleCode`s**, always
-  in the uniform order `∃ code, ∀ input` — never `∀ input, ∃ code`.
+  in the uniform order `∃ code, ∀ input` — never `∀ input, ∃ code`. Headline
+  reductions are certified as named code pairs a consumer can reuse.
 - **Classical mathematics inside, audited claims outside.** Semantic arguments may
   use classical logic freely; what is audited is that every declaration depends only
   on the standard axioms, and that no result is admitted.
@@ -77,3 +82,12 @@ The toolchain and mathlib revision are pinned in `lean-toolchain` and
 Current state and open questions live in the
 [issues](https://github.com/cameronfreer/computable-analysis/issues). Module
 docstrings document the actual API.
+
+## Citation and license
+
+Released under the Apache License 2.0; see `LICENSE`.
+
+To cite the library, use the repository and the commit you built against:
+
+> Cameron Freer, *Computable Analysis: a Lean 4 formalization of Type-2 computability*.
+> https://github.com/cameronfreer/computable-analysis

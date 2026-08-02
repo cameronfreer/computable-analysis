@@ -57,13 +57,19 @@ Cauchy, no limit mentioned), so that incomplete spaces remain legitimate example
 ## Problems, and where promises live
 
 A problem is relation-valued (`accepts : X → Y → Prop`), partial and multivalued, with
-`Dom` derived from `accepts`. Consequently **every stream is a valid name of *some*
-object**, and being a genuine tree, system, or family is a promise carried inside
-`accepts` — never a condition on names, and never an unenforced side condition.
+`Dom` derived from `accepts`.
 
-Each problem therefore comes with two lemmas: an `accepts_iff` unfolding the definition,
-and a `dom_iff` identifying the domain in semantic terms. The second is usually where
-the mathematical content sits — for weak Kőnig's lemma it *is* weak Kőnig's lemma.
+**Representation validity and problem promises are distinct**, and it is worth keeping
+them apart. Representations may be partial: an invalid name stays invalid, and both the
+Cantor and Cauchy representations have some. What belongs in `accepts` — or in an
+enforced input subtype — is the condition defining a problem's *mathematical* domain:
+being a genuine tree, system, or family. That is never an external side condition, and
+never smuggled in by restricting which streams count as names.
+
+Principle modules accordingly expose two lemmas: an `accepts_iff` unfolding the
+definition, and a `dom_iff` identifying the domain in semantic terms. The second is
+usually where the mathematical content sits — for weak Kőnig's lemma it *is* weak
+Kőnig's lemma.
 
 ## Ordinary and strong reduction are separate definitions
 
@@ -88,11 +94,15 @@ worth stating plainly, because they are easy to over-read:
 
 ## Codes are named, and shapes are compiled once
 
-A code used by more than one theorem is extracted once — specified by a lemma, not
-reconstructed inline — so that consumers share a single combinator. Where several
-reductions have the same shape, a uniform *compiler* takes the semantic data and
-discharges the representation bookkeeping once; the compilers are reusable independently
-of the principles that motivated them.
+A **headline reduction** is certified as an explicit pair of named codes, with the
+`≤W`/`≤sW` statement a corollary. How a code is produced varies — some are outright
+definitions, others are extracted once by choice and pinned by a specification lemma —
+and that difference does not matter downstream. What matters is the invariant: a
+consumer can *name* the pair and reuse it, rather than re-deriving a witness inline.
+
+Where several reductions have the same shape, a uniform *compiler* takes the semantic
+data and discharges the representation bookkeeping once; the compilers are reusable
+independently of the principles that motivated them.
 
 ## The computational / classical boundary
 
