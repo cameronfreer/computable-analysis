@@ -3,8 +3,10 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.ForMathlib.PrimrecContainers
+import ComputableAnalysis.Weihrauch.StrongReduction
 import ComputableAnalysis.Weihrauch.Principles.Hall
-import ComputableAnalysis.Weihrauch.Principles.EfilcWKL
+import ComputableAnalysis.Weihrauch.Principles.EFILC
 
 /-!
 # `Hall ≤sW EFILC`: injective partial transversals as fibers
@@ -38,6 +40,7 @@ no equivalence is suggested.
 namespace ComputableAnalysis
 
 open Encodable Denumerable
+open Baire (ofList)
 
 /-! ### The compiled system -/
 
@@ -295,26 +298,13 @@ theorem isHallTransversal_of_section {q a : Baire} (hmem : HallMemIff q)
 
 /-! ### The codes -/
 
-private theorem lt_foldr_max {l : List ℕ} {i : ℕ} (h : i ∈ l) :
-    i < l.foldr (fun j b => max (j + 1) b) 0 := by
-  induction l with
-  | nil => simp at h
-  | cons j t ih =>
-    rcases List.mem_cons.mp h with rfl | h
-    · simp only [List.foldr_cons]
-      omega
-    · have := ih h
-      simp only [List.foldr_cons]
-      omega
-
 /-- A prefix length covering the enumerator positions below the coordinate's level. -/
 def hallPosBound (m : ℕ) : ℕ :=
-  ((List.range (m.unpair.2 + 1)).map fun i => Nat.pair 0 i).foldr
-    (fun i b => max (i + 1) b) 0
+  prefixBound ((List.range (m.unpair.2 + 1)).map fun i => Nat.pair 0 i)
 
 theorem hallPos_lt_hallPosBound {m i : ℕ} (h : i ≤ m.unpair.2) :
     Nat.pair 0 i < hallPosBound m :=
-  lt_foldr_max (List.mem_map_of_mem (List.mem_range.mpr (by omega)))
+  lt_prefixBound_of_mem (List.mem_map_of_mem (List.mem_range.mpr (by omega)))
 
 private theorem hallCand_congr {q₁ q₂ : Baire} {i : ℕ}
     (h : q₁ (Nat.pair 0 i) = q₂ (Nat.pair 0 i)) : hallCand q₁ i = hallCand q₂ i := by
@@ -342,11 +332,6 @@ private theorem memB_eq_foldr (a : ℕ) (l : List ℕ) :
   | nil => rfl
   | cons b t ih => rw [List.foldr_cons, ← ih]; rfl
 
-private theorem primrec_decide_eq {α : Type*} [Primcodable α] {f g : α → ℕ}
-    (hf : Primrec f) (hg : Primrec g) : Primrec fun a => decide (f a = g a) := by
-  obtain ⟨_, h⟩ := PrimrecRel.comp Primrec.eq hf hg
-  exact Primrec.of_eq h fun a => decide_eq_decide.mpr Iff.rfl
-
 private theorem primrec_memB : Primrec₂ memB := by
   have h : Primrec fun p : ℕ × List ℕ =>
       p.2.foldr (fun b acc => decide (b = p.1) || acc) false :=
@@ -355,22 +340,23 @@ private theorem primrec_memB : Primrec₂ memB := by
       (h := fun (p : ℕ × List ℕ) (z : ℕ × Bool) => decide (z.1 = p.1) || z.2)
       Primrec.snd (Primrec.const false)
       ((Primrec.or.comp
-        (primrec_decide_eq (Primrec.fst.comp Primrec.snd) (Primrec.fst.comp Primrec.fst))
+        (PrimrecRel.comp Primrec.eq (Primrec.fst.comp Primrec.snd)
+          (Primrec.fst.comp Primrec.fst)).decide
         (Primrec.snd.comp Primrec.snd)).to₂)
   exact h.of_eq fun p => (memB_eq_foldr p.1 p.2).symm
 
 private theorem primrec_tableHallCand :
-    Primrec₂ fun (P : List ℕ) (i : ℕ) => hallCand (tableQ P) i :=
+    Primrec₂ fun (P : List ℕ) (i : ℕ) => hallCand (ofList P) i :=
   (Primrec.ofNat (List ℕ)).comp ((Primrec.list_getD 0).comp Primrec.fst
     (Primrec₂.natPair.comp (Primrec.const 0) Primrec.snd))
 
 private theorem primrec_tableHallTuples :
-    Primrec₂ fun (P : List ℕ) (k : ℕ) => hallTuples (tableQ P) k := by
+    Primrec₂ fun (P : List ℕ) (k : ℕ) => hallTuples (ofList P) k := by
   have hinner : Primrec₂ fun (z : List ℕ × ℕ × List (List ℕ)) (t : List ℕ) =>
-      ((hallCand (tableQ z.1) z.2.1).filter fun y => !(memB y t)).map fun y => t ++ [y] :=
+      ((hallCand (ofList z.1) z.2.1).filter fun y => !(memB y t)).map fun y => t ++ [y] :=
     Primrec.list_map
       (f := fun w : (List ℕ × ℕ × List (List ℕ)) × List ℕ =>
-        (hallCand (tableQ w.1.1) w.1.2.1).filter fun y => !(memB y w.2))
+        (hallCand (ofList w.1.1) w.1.2.1).filter fun y => !(memB y w.2))
       (g := fun (w : (List ℕ × ℕ × List (List ℕ)) × List ℕ) (y : ℕ) => w.2 ++ [y])
       (primrec_list_filter
         (primrec_tableHallCand.comp (Primrec.fst.comp Primrec.fst)
@@ -380,13 +366,13 @@ private theorem primrec_tableHallTuples :
       ((Primrec.list_concat.comp (Primrec.snd.comp Primrec.fst) Primrec.snd).to₂)
   have hg : Primrec₂ fun (P : List ℕ) (z : ℕ × List (List ℕ)) =>
       z.2.flatMap fun t =>
-        ((hallCand (tableQ P) z.1).filter fun y => !(memB y t)).map fun y => t ++ [y] :=
+        ((hallCand (ofList P) z.1).filter fun y => !(memB y t)).map fun y => t ++ [y] :=
     Primrec.list_flatMap (f := fun z : List ℕ × ℕ × List (List ℕ) => z.2.2)
       (g := fun (z : List ℕ × ℕ × List (List ℕ)) (t : List ℕ) =>
-        ((hallCand (tableQ z.1) z.2.1).filter fun y => !(memB y t)).map fun y => t ++ [y])
+        ((hallCand (ofList z.1) z.2.1).filter fun y => !(memB y t)).map fun y => t ++ [y])
       (Primrec.snd.comp Primrec.snd) hinner
   exact (Primrec.nat_rec (Primrec.const [[]]) hg).of_eq fun P k =>
-    (hallTuples_eq_nat_rec (tableQ P) k).symm
+    (hallTuples_eq_nat_rec (ofList P) k).symm
 
 /-- A single code produces the compiled system name, consuming the enumerator track
 only, from a primitively bounded prefix. -/
@@ -394,23 +380,17 @@ theorem exists_hallSystemCode : ∃ K : OracleCode, ∀ q : Baire,
     hallSystemName q ∈ K.evalStream q := by
   have hu1 : Primrec fun v : ℕ => v.unpair.1 := Primrec.fst.comp Primrec.unpair
   have hu2 : Primrec fun v : ℕ => v.unpair.2 := Primrec.snd.comp Primrec.unpair
-  have hfold : Primrec fun l : List ℕ => l.foldr (fun j b => max (j + 1) b) 0 :=
-    Primrec.list_foldr (f := fun l : List ℕ => l) (g := fun _ : List ℕ => (0 : ℕ))
-      (h := fun (_ : List ℕ) (p : ℕ × ℕ) => max (p.1 + 1) p.2)
-      Primrec.id (Primrec.const 0)
-      ((Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
-        (Primrec.snd.comp Primrec.snd)).to₂)
   have hbound : Primrec₂ fun (m : ℕ) (_ : ℕ) => hallPosBound m :=
-    ((hfold.comp (Primrec.list_map
+    ((primrec_prefixBound.comp (Primrec.list_map
       (f := fun m : ℕ => List.range (m.unpair.2 + 1))
       (g := fun (_ : ℕ) (i : ℕ) => Nat.pair 0 i)
       (Primrec.list_range.comp (Primrec.succ.comp hu2))
       ((Primrec₂.natPair.comp (Primrec.const 0) Primrec.snd).to₂))).comp Primrec.fst).to₂
   have hfib : Primrec fun v : ℕ =>
-      encode ((hallTuples (tableQ (ofNat (List ℕ) v.unpair.2)) v.unpair.1.unpair.2).map
+      encode ((hallTuples (ofList (ofNat (List ℕ) v.unpair.2)) v.unpair.1.unpair.2).map
         fun t => encode t) :=
     Primrec.encode.comp (Primrec.list_map
-      (f := fun v : ℕ => hallTuples (tableQ (ofNat (List ℕ) v.unpair.2)) v.unpair.1.unpair.2)
+      (f := fun v : ℕ => hallTuples (ofList (ofNat (List ℕ) v.unpair.2)) v.unpair.1.unpair.2)
       (g := fun (_ : ℕ) (t : List ℕ) => encode t)
       (primrec_tableHallTuples.comp ((Primrec.ofNat (List ℕ)).comp hu2) (hu2.comp hu1))
       (Primrec.encode.comp Primrec.snd).to₂)
@@ -421,7 +401,7 @@ theorem exists_hallSystemCode : ∃ K : OracleCode, ∀ q : Baire,
       ((Primrec.ofNat (List ℕ)).comp (Primrec.snd.comp (Primrec.unpair.comp (hu2.comp hu1)))))
   have hg : Primrec fun v : ℕ =>
       if v.unpair.1.unpair.1 = 0 then
-        encode ((hallTuples (tableQ (ofNat (List ℕ) v.unpair.2)) v.unpair.1.unpair.2).map
+        encode ((hallTuples (ofList (ofNat (List ℕ) v.unpair.2)) v.unpair.1.unpair.2).map
           fun t => encode t)
       else if v.unpair.1.unpair.1 = 1 then
         hallBondValue v.unpair.1.unpair.2.unpair.1 v.unpair.1.unpair.2.unpair.2
@@ -433,11 +413,10 @@ theorem exists_hallSystemCode : ∃ K : OracleCode, ∀ q : Baire,
   refine ⟨K, fun q => OracleCode.mem_evalStream.mpr fun m => ?_⟩
   rw [hK q m, Part.mem_some_iff, hallSystemName]
   simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
-  have htab : hallTuples (tableQ (streamTake q (hallPosBound m))) m.unpair.2 =
+  have htab : hallTuples (ofList (streamTake q (hallPosBound m))) m.unpair.2 =
       hallTuples q m.unpair.2 := by
-    refine hallTuples_congr fun i hi => hallCand_congr ?_
-    change (streamTake q (hallPosBound m)).getD (Nat.pair 0 i) 0 = q (Nat.pair 0 i)
-    exact streamTake_getD q (hallPos_lt_hallPosBound (by omega))
+    exact hallTuples_congr fun i hi => hallCand_congr
+      (Baire.ofList_streamTake q (hallPos_lt_hallPosBound (by omega)))
   by_cases h0 : m.unpair.1 = 0
   · rw [if_pos h0, if_pos h0, htab]
   · by_cases h1 : m.unpair.1 = 1

@@ -189,6 +189,47 @@ theorem primrec_isPrefix :
 
 end WordComputability
 
+/-! ### Finite tables as streams
+
+A finite list of values presents a stream by reading off its entries and continuing with
+`0`. This is the shape every prefix-driven oracle code works in: the code sees a finite
+table, and its correctness is transferred to the stream by a congruence at the positions
+the table covers (`ofList_streamTake`). -/
+
+/-- The stream a finite table presents: its entries, then zero. -/
+def Baire.ofList (P : List ℕ) : Baire := fun n => P.getD n 0
+
+/-- Below its length, the table of a prefix presents the stream itself. -/
+theorem Baire.ofList_streamTake (p : Baire) {n i : ℕ} (h : i < n) :
+    Baire.ofList (streamTake p n) i = p i :=
+  streamTake_getD p h
+
+/-! ### Bounding a finite set of query positions
+
+A code that inspects finitely many positions of its oracle needs a prefix long enough to
+cover all of them. When the positions are computed as a list, `prefixBound` is that
+length, uniformly: it is primitive recursive in the list, so it can be fed directly to
+`OracleCode.exists_prefixPostCode` as the bound. -/
+
+/-- A prefix length covering every position in a finite list: one past the largest. -/
+def prefixBound (l : List ℕ) : ℕ := l.foldr (fun i b => max (i + 1) b) 0
+
+/-- Every listed position is covered. -/
+theorem lt_prefixBound_of_mem {l : List ℕ} {i : ℕ} (h : i ∈ l) : i < prefixBound l := by
+  induction l with
+  | nil => exact absurd h List.not_mem_nil
+  | cons a l ih =>
+      rcases List.mem_cons.mp h with rfl | hl
+      · exact lt_of_lt_of_le (Nat.lt_succ_self i) (le_max_left _ _)
+      · exact lt_of_lt_of_le (ih hl) (le_max_right _ _)
+
+theorem primrec_prefixBound : Primrec prefixBound :=
+  Primrec.list_foldr (f := fun l : List ℕ => l) (g := fun _ : List ℕ => (0 : ℕ))
+    (h := fun (_ : List ℕ) (p : ℕ × ℕ) => max (p.1 + 1) p.2)
+    Primrec.id (Primrec.const 0)
+    ((Primrec.nat_max.comp (Primrec.succ.comp (Primrec.fst.comp Primrec.snd))
+      (Primrec.snd.comp Primrec.snd)).to₂)
+
 /-- `streamTake` grows by snoc. -/
 theorem streamTake_succ (p : ℕ → α) (k : ℕ) :
     streamTake p (k + 1) = streamTake p k ++ [p k] := by

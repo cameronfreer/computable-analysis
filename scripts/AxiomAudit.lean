@@ -36,6 +36,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.isClopen_cylinder,
    ``ComputableAnalysis.cylinder_streamTake,
    ``ComputableAnalysis.primrec_isPrefix,
+   ``ComputableAnalysis.Baire.ofList_streamTake,
+   ``ComputableAnalysis.lt_prefixBound_of_mem,
+   ``ComputableAnalysis.primrec_prefixBound,
    ``ComputableAnalysis.primrec_boolWordToNat,
    ``ComputableAnalysis.primrec_natWordToBool,
    -- Unit 2: oracle-code syntax and evaluator
@@ -561,6 +564,9 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.WKL.accepts_iff,
    ``ComputableAnalysis.exists_path_of_isInfiniteTree,
    ``ComputableAnalysis.WKL.dom_iff,
+   ``ComputableAnalysis.treeMemB_streamTake,
+   ``ComputableAnalysis.treeMemB_streamTake_iff,
+   ``ComputableAnalysis.primrec_treeMemB,
    -- The strict death race: WKL against parallelized LLPO (issue #32)
    ``ComputableAnalysis.AliveAt.mono,
    ``ComputableAnalysis.not_raceEvent_both,
