@@ -1,5 +1,7 @@
 # Computable Analysis
 
+[![CI](https://github.com/cameronfreer/computable-analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/cameronfreer/computable-analysis/actions/workflows/ci.yml)
+
 A Lean 4 library connecting mathlib's discrete computability stack to its classical
 analysis stack, through explicit Type-2 machines, represented spaces, Weihrauch
 reducibility, and computable probability. Mathlib has `Partrec`, `Nat.RecursiveIn`,
