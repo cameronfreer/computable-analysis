@@ -6,19 +6,19 @@ deliverable on its own terms, consumed by — but not defined by — the applica
 enables. `BLUEPRINT.md` is the implementation contract (unit-by-unit signatures, pinned
 conventions, status); this file is the public plan.
 
-## Current: the semantic Type-2 / represented-space / Weihrauch core
+## The semantic Type-2 / represented-space / Weihrauch core
 
-Complete (units 0–11): oracle codes and their evaluator; fuel-bounded executable
-simulation; the universal machine and s-m-n; the fixed-oracle `RecursiveIn` bridge to
-mathlib; finite use and continuity of Type-2 computable operators; effective compactness
-of Cantor space; representations and computable points; realizers and computable maps
-with products, sums, and subtypes; representation equivalence; problems (partial,
-multivalued); and ordinary and strong Weihrauch reducibility, with the fixed-witness
-transformer characterization and the formal `≤W`/`≤sW` separation.
+Oracle codes and their evaluator; fuel-bounded executable simulation; the universal
+machine and s-m-n; the fixed-oracle `RecursiveIn` bridge to mathlib; finite use and
+continuity of Type-2 computable operators; effective compactness of Cantor space;
+representations and computable points; realizers and computable maps with products,
+sums, and subtypes; representation equivalence; problems (partial, multivalued); and
+ordinary and strong Weihrauch reducibility, with the fixed-witness transformer
+characterization and the formal `≤W`/`≤sW` separation.
 
-## Completed prerequisite spine
+## The reusable prerequisite layers
 
-Complete, each independently reusable:
+Each independently reusable:
 
 - **Represented reals**: computable metric presentations, the fast Cauchy
   representation, represented reals with a `[0,1]` arithmetic contract including
@@ -29,9 +29,22 @@ Complete, each independently reusable:
 - **Weihrauch principles**: LPO, LLPO, and lim, with `LLPO ≤W LPO`, the
   noncomputability of LPO, and `LPO ≤W Lim`.
 
-## Completed: measure/kernel interfaces
+## The Weihrauch degree spine
 
-The general interfaces on computable metric spaces are complete: the weak
+The structural layer over the core: countable parallelization as a closure
+operator, parallel products and cylinders, and an executable calculus of reduction
+pairs. On top of it, a widening set of benchmark degrees — finite binary choice,
+weak Kőnig's lemma, closed choice on Cantor space, explicit finite inverse-limit
+compactness, countable Hall — each presented over an explicit coding with its
+domain characterized semantically, and calibrated against the others by explicit
+code pairs. Where reductions share a shape, uniform compilers take the semantic
+data and discharge the representation bookkeeping once; these compilers are the
+intended entry point for later upper bounds, and are reusable independently of the
+principles that motivated them.
+
+## Measure and kernel interfaces
+
+The general interfaces on computable metric spaces: the weak
 (Lévy–Prokhorov) probability-measure representation with its equivalence to the Cantor
 cylinder representation, represented advice-realizable maps with the admissibility
 bridge (every continuous map is advice-realizable), the continuous Markov kernel
@@ -45,8 +58,8 @@ distributions in general, the positive computability results under additional
 hypotheses, and the Weihrauch calibration of disintegration against `lim`. It consumes
 every layer above — represented spaces, computable maps, Weihrauch reductions,
 represented reals and `[0,1]` arithmetic, computable probability measures,
-integration/moments, and the measure/kernel interfaces — and will receive its own
-signature and feasibility review once those APIs stabilize.
+integration/moments, and the measure/kernel interfaces. Its layers are frozen by
+signature and feasibility review before implementation, as the layers below were.
 
 ## Scope
 
