@@ -27,8 +27,9 @@ at instance `0` would empty the space. The gate is a correctness condition, not 
 convenience.
 
 The semantic anchor `closedCantorSet_c2ParallelForbiddenName` is promise-free: it is an
-identity of sets on every stream, so `C₂`'s at-most-one-answer promise enters only in
-placing the compiled name in `C_Cantor`'s domain.
+identity of sets on every stream, so `C₂`'s promise — that not both points are removed,
+so each instance has an answer — enters only in placing the compiled name in
+`C_Cantor`'s domain.
 
 Assembling with the bridge of `WKLClosedChoice.lean` and the death-race reduction of
 `WKLReduction.lean` gives `parallelize_llpo_equiv_wkl : LLPO.parallelize ≡sW WKL`.
@@ -42,7 +43,7 @@ open Encodable Denumerable
 
 /-- The last bit of a word; `false` on the empty word, which the compiled name gates
 away. -/
-def wordLastBit (w : List Bool) : Bool := w.getD (w.length - 1) false
+def c2WordLastBit (w : List Bool) : Bool := w.getD (w.length - 1) false
 
 /-- The negative name compiled from a parallel `C₂` name. Coordinate `m` decodes as a
 pair `(stage, wordCode)`; the decoded word `w` is forbidden exactly when instance
@@ -51,7 +52,7 @@ otherwise forbid the whole space. -/
 def c2ParallelForbiddenName (p : Baire) : Baire := fun m =>
   if (treeWordDecode m.unpair.2).length = 0 then 0
   else if p (Nat.pair ((treeWordDecode m.unpair.2).length - 1) m.unpair.1) =
-      (wordLastBit (treeWordDecode m.unpair.2)).toNat + 1 then
+      (c2WordLastBit (treeWordDecode m.unpair.2)).toNat + 1 then
     cantorForbiddenWordCode (treeWordDecode m.unpair.2)
   else 0
 
@@ -61,12 +62,12 @@ theorem c2ParallelForbiddenName_ne_zero_iff {p : Baire} {m : ℕ} :
     c2ParallelForbiddenName p m ≠ 0 ↔
       (treeWordDecode m.unpair.2).length ≠ 0 ∧
         p (Nat.pair ((treeWordDecode m.unpair.2).length - 1) m.unpair.1) =
-          (wordLastBit (treeWordDecode m.unpair.2)).toNat + 1 := by
+          (c2WordLastBit (treeWordDecode m.unpair.2)).toNat + 1 := by
   rw [c2ParallelForbiddenName]
   by_cases h0 : (treeWordDecode m.unpair.2).length = 0
   · simp [h0]
   · by_cases h1 : p (Nat.pair ((treeWordDecode m.unpair.2).length - 1) m.unpair.1) =
-        (wordLastBit (treeWordDecode m.unpair.2)).toNat + 1
+        (c2WordLastBit (treeWordDecode m.unpair.2)).toNat + 1
     · simp [h0, h1, cantorForbiddenWordCode]
     · simp [h0, h1]
 
@@ -91,8 +92,8 @@ theorem closedCantorSet_c2ParallelForbiddenName (p : Baire) :
     refine ⟨by cases x n <;> simp, fun s hs => ?_⟩
     -- the length-`(n + 1)` prefix of `x` is forbidden by the coordinate `(s, its code)`
     have hlen : (streamTake x (n + 1)).length = n + 1 := length_streamTake x (n + 1)
-    have hlast : wordLastBit (streamTake x (n + 1)) = x n := by
-      rw [wordLastBit, hlen, Nat.add_sub_cancel]
+    have hlast : c2WordLastBit (streamTake x (n + 1)) = x n := by
+      rw [c2WordLastBit, hlen, Nat.add_sub_cancel]
       exact streamTake_getD x (Nat.lt_succ_self n)
     set m : ℕ := Nat.pair s (treeWordCode (streamTake x (n + 1))) with hm
     have hu2 : treeWordDecode m.unpair.2 = streamTake x (n + 1) := by
@@ -117,10 +118,10 @@ theorem closedCantorSet_c2ParallelForbiddenName (p : Baire) :
     -- `x` starts with `u`, so `u`'s last bit is coordinate `|u| - 1` of `x`
     have hpre : streamTake x u.length = u := mem_cylinder_iff.mp hcyl
     have hulen : u.length ≠ 0 := by rw [hue]; exact h0
-    have hlast : wordLastBit u = x (u.length - 1) := by
+    have hlast : c2WordLastBit u = x (u.length - 1) := by
       have h2 : u.getD (u.length - 1) false
           = (streamTake x u.length).getD (u.length - 1) false := by rw [hpre]
-      rw [wordLastBit, h2]
+      rw [c2WordLastBit, h2]
       exact streamTake_getD x (by omega)
     rw [← hue, hlast] at h1
     exact absurd h1 ((hc (u.length - 1)).2 m.unpair.1)
@@ -174,7 +175,7 @@ theorem exists_c2ParallelForbiddenCode : ∃ K : OracleCode, ∀ p : Baire,
         (Nat.pair ((treeWordDecode v.unpair.1.unpair.2).length - 1) v.unpair.1.unpair.1) 0 :=
     (Primrec.list_getD 0).comp ((Primrec.ofNat (List ℕ)).comp hu2) (hqpos.comp hu1)
   have hbit : Primrec fun v : ℕ =>
-      (wordLastBit (treeWordDecode v.unpair.1.unpair.2)).toNat + 1 :=
+      (c2WordLastBit (treeWordDecode v.unpair.1.unpair.2)).toNat + 1 :=
     Primrec.succ.comp (Primrec.cond
       ((Primrec.list_getD false).comp hdecw (Primrec.nat_sub.comp hlen (Primrec.const 1)))
       (Primrec.const 1) (Primrec.const 0))
@@ -182,7 +183,7 @@ theorem exists_c2ParallelForbiddenCode : ∃ K : OracleCode, ∀ p : Baire,
       if (treeWordDecode v.unpair.1.unpair.2).length = 0 then 0
       else if (ofNat (List ℕ) v.unpair.2).getD
           (Nat.pair ((treeWordDecode v.unpair.1.unpair.2).length - 1) v.unpair.1.unpair.1) 0 =
-          (wordLastBit (treeWordDecode v.unpair.1.unpair.2)).toNat + 1 then
+          (c2WordLastBit (treeWordDecode v.unpair.1.unpair.2)).toNat + 1 then
         cantorForbiddenWordCode (treeWordDecode v.unpair.1.unpair.2)
       else 0 :=
     Primrec.ite (Primrec.eq.comp hlen (Primrec.const 0)) (Primrec.const 0)
@@ -212,18 +213,19 @@ answer's coordinate `m.unpair.1` over track `m.unpair.1` does exactly that, and 
 axiom-free two-node code. -/
 
 /-- Spread the answer across tracks: `r m = a m.unpair.1`, so track `n` is constantly
-`a n` and in particular `r (Nat.pair n 0) = a n`. -/
-def trackSpreadCode : OracleCode := OracleCode.comp OracleCode.query OracleCode.left
+`a n` and in particular `r (Nat.pair n 0) = a n`. Named for this reduction; promoting it
+to a general track-spreading combinator can wait for a second consumer. -/
+def c2ParallelAnswerCode : OracleCode := OracleCode.comp OracleCode.query OracleCode.left
 
-theorem eval_trackSpreadCode (a : Baire) (m : ℕ) :
-    trackSpreadCode.eval a m = Part.some (a m.unpair.1) :=
+theorem eval_c2ParallelAnswerCode (a : Baire) (m : ℕ) :
+    c2ParallelAnswerCode.eval a m = Part.some (a m.unpair.1) :=
   (OracleCode.eval_comp_some (OracleCode.eval_left a m)).trans
     (OracleCode.eval_query a m.unpair.1)
 
-theorem mem_evalStream_trackSpreadCode (a : Baire) :
-    (fun m => a m.unpair.1) ∈ trackSpreadCode.evalStream a :=
+theorem mem_evalStream_c2ParallelAnswerCode (a : Baire) :
+    (fun m => a m.unpair.1) ∈ c2ParallelAnswerCode.evalStream a :=
   OracleCode.mem_evalStream.mpr fun m => by
-    rw [eval_trackSpreadCode]
+    rw [eval_c2ParallelAnswerCode]
     exact Part.mem_some _
 
 /-! ### The reduction -/
@@ -231,7 +233,7 @@ theorem mem_evalStream_trackSpreadCode (a : Baire) :
 /-- **`C₂.parallelize ≤sW C_Cantor`, as an explicit pair.** -/
 theorem isStrongReductionPair_parallelize_c2_le_c_cantor :
     IsStrongReductionPair C₂.parallelize C_Cantor c2ParallelForbiddenCode
-      trackSpreadCode := by
+      c2ParallelAnswerCode := by
   intro p xs hpxs hdom
   obtain rfl : xs = fun n => Baire.track n p := funext (baireSequence_names_iff.mp hpxs)
   rw [Problem.parallelize_dom_iff] at hdom
@@ -240,7 +242,7 @@ theorem isStrongReductionPair_parallelize_c2_le_c_cantor :
     c_Cantor_dom_c2ParallelForbiddenName (fun n => hdom n), ?_⟩
   intro a y' hay' hacc
   obtain ⟨hle, rfl⟩ := cantorRep_names_iff.mp hay'
-  refine ⟨fun m => a m.unpair.1, mem_evalStream_trackSpreadCode a, fun n => a n, ?_, ?_⟩
+  refine ⟨fun m => a m.unpair.1, mem_evalStream_c2ParallelAnswerCode a, fun n => a n, ?_, ?_⟩
   · exact natSequence_names_iff.mpr fun n => by rw [Nat.unpair_pair]
   · intro n
     have hx : (fun n => a n == 1) ∈ closedCantorSet (c2ParallelForbiddenName p) := hacc
