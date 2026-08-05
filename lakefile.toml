@@ -4,12 +4,13 @@ license = "Apache-2.0"
 keywords = ["math"]
 defaultTargets = ["ComputableAnalysis"]
 
-# Pinned to the mathlib revision at the v4.32.0 tag, matching the other
-# projects in this workspace so everything builds against exactly one mathlib.
+# A mathlib revision on the `v4.32.0` toolchain, so it agrees with
+# `lean-toolchain`. Bumping this pin requires the candidate revision's own
+# `lean-toolchain` to match ours; otherwise update both together.
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
-rev = "81a5d257c8e410db227a6665ed08f64fea08e997"
+rev = "e0824fdc1cf95ea19518210636c74510a36acb05"
 
 [[lean_lib]]
 name = "ComputableAnalysis"
