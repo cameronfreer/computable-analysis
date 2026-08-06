@@ -34,6 +34,10 @@ topology on `ProbabilityMeasure X` (unit 27):
   **directly on the carrier** `ProbabilityMeasure X`: a name is a stream of atomic
   indices approximating the measure at the pinned rate `((2:ℝ)⁻¹)^n` in Lévy–Prokhorov
   distance, with the `@[simp]` names characterization `weakMeasureRep_names_iff`.
+* `exists_certifiedWeightCode` / `exists_completeCertifiedWeightCode` — masked atomic masses
+  from positive membership information alone. The first bounds the mass below from a bitmask
+  over the raw decoded list; the second supplies the uniform normalized atom list, whose
+  accumulator is exact once the mask is complete.
 * `prokhorovPresentation` — the effective Prokhorov presentation of the `LevyProkhorov`
   metric synonym: both convention 7 semidecisions are fully discharged through the Σ₁
   characterizations of strict LP-distance comparisons between atomics (five-level Σ₁
@@ -48,7 +52,7 @@ semantics/`Primrec` lemmas, and `repred_comp` on the gt-side assembly pins `(g :
 explicitly.
 -/
 
-set_option linter.style.longFile 2100
+set_option linter.style.longFile 2300
 
 namespace ComputableAnalysis
 
@@ -1726,6 +1730,151 @@ theorem exists_certifiedWeightCode :
       simp
   · rw [if_neg hdeg, ratOfCode_zeroCode]
     simp
+
+/-! ### The uniform normalized atom list, and a complete-mask accumulator
+
+`certWtCode` above accumulates over the *raw* decoded list, which on the degenerate branch
+names atoms the measure does not charge; a lower bound is therefore the most it can give. The
+package below accumulates over the list the uniform layer indexes instead, which makes the
+same accumulator exact as soon as the mask is complete. -/
+
+/-- The **uniform normalized atom list** of a coded atomic: the `(dense index, weight code)`
+pairs at the positions the uniform layer indexes, with weights already normalized.
+
+This is *not* a support. On the nondegenerate branch it keeps every position of the raw
+decoded list, so zero-weight entries survive and a dense-point index may repeat. Neither
+matters for the accumulator below: a zero-weight entry contributes nothing to either side of
+the sum, and repeated indices are summed on both sides alike, which is why the exactness
+proof needs no positivity or injectivity hypothesis.
+
+On the degenerate branch — zero total raw weight — `atomic P m` is the point mass at
+`P.dense 0` whatever the raw list holds, and this list is correspondingly the singleton
+`[(0, oneCode)]`. Naming the default atom explicitly is what lets the accumulator below be
+exact rather than merely a lower bound. -/
+private def certifiedAtoms (m : ℕ) : List (ℕ × ℕ) :=
+  (List.range (natAtomCount m)).map fun i => (natAtomIdx m i, natAtomWtCode m i)
+
+private theorem primrec_certifiedAtoms : Primrec certifiedAtoms :=
+  Primrec.list_map (Primrec.list_range.comp primrec_natAtomCount)
+    ((primrec_natAtomIdx.comp Primrec.fst Primrec.snd).pair
+      (primrec_natAtomWtCode.comp Primrec.fst Primrec.snd))
+
+private theorem length_certifiedAtoms (m : ℕ) : (certifiedAtoms m).length = natAtomCount m := by
+  rw [certifiedAtoms, List.length_map, List.length_range]
+
+private theorem fst_getD_certifiedAtoms {m i : ℕ} (h : i < natAtomCount m) :
+    ((certifiedAtoms m).getD i (0, 0)).1 = natAtomIdx m i := by
+  have hlen : i < ((List.range (natAtomCount m)).map
+      fun k => (natAtomIdx m k, natAtomWtCode m k)).length := by simpa using h
+  rw [certifiedAtoms, List.getD_eq_getElem _ _ hlen]
+  simp
+
+/-- The accumulator of `certifiedAtoms`: the masked weight sum taken to the *full* atom count,
+so that a complete mask sums every atom the measure charges. This is the existing masked-sum
+layer at a different bound, not a new one — `maskWtSumCode` already takes its bound
+independently of the atom index. -/
+private def completeCertWtCode (m mask : ℕ) : RatCode :=
+  maskWtSumCode m (natAtomCount m) mask
+
+private theorem primrec_completeCertWtCode : Primrec₂ completeCertWtCode :=
+  primrec_maskWtSumCode.comp
+    (Primrec.fst.pair ((primrec_natAtomCount.comp Primrec.fst).pair Primrec.snd))
+
+private theorem ratOfCode_completeCertWtCode (m mask : ℕ) :
+    ratOfCode (completeCertWtCode m mask)
+      = ∑ i ∈ Finset.range (natAtomCount m),
+          if mask.testBit i = true then atomWt (atomList m) i else 0 := by
+  rw [completeCertWtCode, ratOfCode_maskWtSumCode]
+
+private theorem nonneg_maskedWt (m mask : ℕ) :
+    ∀ i ∈ Finset.range (natAtomCount m),
+      (0 : ℝ) ≤ ((if mask.testBit i = true then atomWt (atomList m) i else 0 : ℚ) : ℝ) := by
+  intro i _
+  by_cases hb : mask.testBit i = true
+  · rw [if_pos hb]; exact_mod_cast atomWt_nonneg (atomList m) i
+  · rw [if_neg hb]; norm_num
+
+omit [BorelSpace X] in
+/-- The decoded atomic mass of a measurable set, as one `Finset.range` sum over the uniform
+atom layer — the same shape on both branches, which is what removes the degenerate case from
+every proof below. -/
+private theorem toMeasure_atomic_eq_range_sum (m : ℕ) {A : Set X} (hA : MeasurableSet A) :
+    (atomic P m).toMeasure A
+      = ∑ i ∈ Finset.range (natAtomCount m),
+          ENNReal.ofReal ((atomWt (atomList m) i : ℚ) : ℝ) *
+            Set.indicator A 1 (P.dense (natAtomIdx m i)) := by
+  simp only [natAtomCount_eq, natAtomIdx_eq]
+  rw [show (atomic P m) = atomicOfList P (atomList m) from rfl,
+    toMeasure_atomic_eq_sum P (atomList m), Measure.finsetSum_apply,
+    ← Fin.sum_univ_eq_sum_range
+      (fun i => ENNReal.ofReal ((atomWt (atomList m) i : ℚ) : ℝ) *
+        Set.indicator A 1 (P.dense (atomIdx (atomList m) i))) (atomCount (atomList m))]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hA]
+
+omit [BorelSpace X] in
+/-- **A certified-weight accumulator that is exact on complete masks.**
+
+One primitive recursive atom list and one primitive recursive accumulator over bitmasks of
+that list, such that for every coded atomic `m` and every measurable `A`:
+
+* *soundness* — if every bit set in `mask` marks an entry whose point lies in `A`, the
+  accumulator is a lower bound for the mass `atomic P m` gives `A`; and
+* *exactness* — if `mask` marks the entries whose points lie in `A` and **no others**, the
+  accumulator is that mass exactly.
+
+The second clause is what `exists_certifiedWeightCode` cannot provide. That interface
+accumulates over the raw decoded list, whose entries need not be atoms of the measure at all,
+so completing its mask does not account for the measure's mass. Here the list is the uniform
+normalized one, so a complete mask leaves nothing out — including on the degenerate branch,
+where the default atom appears in the list like any other and needs no separate case.
+
+The list is indexed positionally, not by point: it may carry zero-weight entries and repeat a
+dense-point index, and the mask is read at positions accordingly. Both clauses quantify over
+positions `i < (atoms m).length` for exactly that reason.
+
+Soundness is stated for the same accumulator, so a realizer that can only semidecide atom
+membership keeps the old lower-bound reading while a realizer that eventually decides it gets
+convergence to the true mass from the same code. -/
+theorem exists_completeCertifiedWeightCode :
+    ∃ (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode),
+      Primrec atoms ∧ Primrec₂ acc ∧
+      (∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
+        (∀ i, i < (atoms m).length → mask.testBit i = true →
+          P.dense ((atoms m).getD i (0, 0)).1 ∈ A) →
+        ENNReal.ofReal ((ratOfCode (acc m mask) : ℚ) : ℝ) ≤ (atomic P m).toMeasure A) ∧
+      (∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
+        (∀ i, i < (atoms m).length →
+          (mask.testBit i = true ↔ P.dense ((atoms m).getD i (0, 0)).1 ∈ A)) →
+        ENNReal.ofReal ((ratOfCode (acc m mask) : ℚ) : ℝ) = (atomic P m).toMeasure A) := by
+  classical
+  refine ⟨certifiedAtoms, completeCertWtCode, primrec_certifiedAtoms,
+    primrec_completeCertWtCode, ?_, ?_⟩
+  · intro m mask A hA hcert
+    rw [toMeasure_atomic_eq_range_sum P m hA, ratOfCode_completeCertWtCode, Rat.cast_sum,
+      ENNReal.ofReal_sum_of_nonneg (nonneg_maskedWt m mask)]
+    refine Finset.sum_le_sum fun i hi => ?_
+    have hi' : i < natAtomCount m := Finset.mem_range.mp hi
+    by_cases hb : mask.testBit i = true
+    · have hmem : P.dense (natAtomIdx m i) ∈ A := by
+        have h := hcert i (by rw [length_certifiedAtoms]; exact hi') hb
+        rwa [fst_getD_certifiedAtoms hi'] at h
+      rw [if_pos hb, Set.indicator_of_mem hmem]
+      simp
+    · rw [if_neg hb]
+      simp
+  · intro m mask A hA hcert
+    rw [toMeasure_atomic_eq_range_sum P m hA, ratOfCode_completeCertWtCode, Rat.cast_sum,
+      ENNReal.ofReal_sum_of_nonneg (nonneg_maskedWt m mask)]
+    refine Finset.sum_congr rfl fun i hi => ?_
+    have hi' : i < natAtomCount m := Finset.mem_range.mp hi
+    have hiff := hcert i (by rw [length_certifiedAtoms]; exact hi')
+    rw [fst_getD_certifiedAtoms hi'] at hiff
+    by_cases hb : mask.testBit i = true
+    · rw [if_pos hb, Set.indicator_of_mem (hiff.mp hb)]
+      simp
+    · rw [if_neg hb, Set.indicator_of_notMem (fun hmem => by simp [hiff.mpr hmem] at hb)]
+      simp
 
 omit [MeasurableSpace X] [BorelSpace X] in
 /-- **The fully coded form of the witnessed strict finite condition** between two
