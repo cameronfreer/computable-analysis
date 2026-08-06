@@ -1786,6 +1786,18 @@ private theorem ratOfCode_completeCertWtCode (m mask : ℕ) :
           if mask.testBit i = true then atomWt (atomList m) i else 0 := by
   rw [completeCertWtCode, ratOfCode_maskWtSumCode]
 
+/-- The accumulator never denotes a negative rational: it is a sum of masked atom weights, and
+`atomWt` is nonnegative on both branches. Needed at the *use* site rather than internally —
+`ENNReal.ofReal` truncates, so the exactness equation alone leaves the value unpinned when the
+mass is zero. -/
+private theorem nonneg_ratOfCode_completeCertWtCode (m mask : ℕ) :
+    0 ≤ ratOfCode (completeCertWtCode m mask) := by
+  rw [ratOfCode_completeCertWtCode]
+  refine Finset.sum_nonneg fun i _ => ?_
+  by_cases hb : mask.testBit i = true
+  · rw [if_pos hb]; exact atomWt_nonneg _ i
+  · rw [if_neg hb]
+
 private theorem nonneg_maskedWt (m mask : ℕ) :
     ∀ i ∈ Finset.range (natAtomCount m),
       (0 : ℝ) ≤ ((if mask.testBit i = true then atomWt (atomList m) i else 0 : ℚ) : ℝ) := by
@@ -1818,10 +1830,21 @@ omit [BorelSpace X] in
 One primitive recursive atom list and one primitive recursive accumulator over bitmasks of
 that list, such that for every coded atomic `m` and every measurable `A`:
 
+* *nonnegativity* — the accumulator never denotes a negative rational, unconditionally;
 * *soundness* — if every bit set in `mask` marks an entry whose point lies in `A`, the
   accumulator is a lower bound for the mass `atomic P m` gives `A`; and
 * *exactness* — if `mask` marks the entries whose points lie in `A` and **no others**, the
   accumulator is that mass exactly.
+
+Nonnegativity is load-bearing, not decoration. `ENNReal.ofReal` truncates at zero, so from the
+exactness equation alone the accumulator's value is unpinned whenever the mass is zero — it
+could be any negative rational. With this clause a consumer recovers the real equation:
+
+    have := congrArg ENNReal.toReal hexact
+    simpa [ENNReal.toReal_ofReal (hnonneg m mask)] using this
+
+It belongs inside the package so that it holds of the **same** chosen accumulator; deriving it
+externally would mean unfolding an implementation this interface deliberately hides.
 
 The second clause is what `exists_certifiedWeightCode` cannot provide. That interface
 accumulates over the raw decoded list, whose entries need not be atoms of the measure at all,
@@ -1839,6 +1862,7 @@ convergence to the true mass from the same code. -/
 theorem exists_completeCertifiedWeightCode :
     ∃ (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode),
       Primrec atoms ∧ Primrec₂ acc ∧
+      (∀ m mask : ℕ, (0 : ℝ) ≤ ((ratOfCode (acc m mask) : ℚ) : ℝ)) ∧
       (∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
         (∀ i, i < (atoms m).length → mask.testBit i = true →
           P.dense ((atoms m).getD i (0, 0)).1 ∈ A) →
@@ -1849,7 +1873,8 @@ theorem exists_completeCertifiedWeightCode :
         ENNReal.ofReal ((ratOfCode (acc m mask) : ℚ) : ℝ) = (atomic P m).toMeasure A) := by
   classical
   refine ⟨certifiedAtoms, completeCertWtCode, primrec_certifiedAtoms,
-    primrec_completeCertWtCode, ?_, ?_⟩
+    primrec_completeCertWtCode,
+    fun m mask => by exact_mod_cast nonneg_ratOfCode_completeCertWtCode m mask, ?_, ?_⟩
   · intro m mask A hA hcert
     rw [toMeasure_atomic_eq_range_sum P m hA, ratOfCode_completeCertWtCode, Rat.cast_sum,
       ENNReal.ofReal_sum_of_nonneg (nonneg_maskedWt m mask)]
