@@ -402,8 +402,8 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.hausdorffMomentRep_names_iff,
    -- Rider: certified weights under-estimate the atomic mass (unit 42 prerequisite)
    ``ComputableAnalysis.exists_certifiedWeightCode,
-   -- Rider: the normalized support, whose accumulator is exact on complete masks
-   ``ComputableAnalysis.exists_normalizedSupport,
+   -- Rider: the certified-weight accumulator that is exact on complete masks
+   ``ComputableAnalysis.exists_completeCertifiedWeightCode,
    -- Rider: the least-witness prefix search builder, promoted on its second consumer
    ``ComputableAnalysis.OracleCode.exists_prefixSearchCode,
    -- Rider: computable problems return computable answers; conditioning is not computable

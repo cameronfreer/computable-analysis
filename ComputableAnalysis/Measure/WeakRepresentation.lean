@@ -34,10 +34,10 @@ topology on `ProbabilityMeasure X` (unit 27):
   **directly on the carrier** `ProbabilityMeasure X`: a name is a stream of atomic
   indices approximating the measure at the pinned rate `((2:ℝ)⁻¹)^n` in Lévy–Prokhorov
   distance, with the `@[simp]` names characterization `weakMeasureRep_names_iff`.
-* `exists_certifiedWeightCode` / `exists_normalizedSupport` — masked atomic masses from
-  positive membership information alone. The first bounds the mass below from a bitmask over
-  the raw decoded list; the second supplies the *normalized support* — the atoms the measure
-  actually charges — whose accumulator is exact once the mask is complete.
+* `exists_certifiedWeightCode` / `exists_completeCertifiedWeightCode` — masked atomic masses
+  from positive membership information alone. The first bounds the mass below from a bitmask
+  over the raw decoded list; the second supplies the uniform normalized atom list, whose
+  accumulator is exact once the mask is complete.
 * `prokhorovPresentation` — the effective Prokhorov presentation of the `LevyProkhorov`
   metric synonym: both convention 7 semidecisions are fully discharged through the Σ₁
   characterizations of strict LP-distance comparisons between atomics (five-level Σ₁
@@ -1731,15 +1731,21 @@ theorem exists_certifiedWeightCode :
   · rw [if_neg hdeg, ratOfCode_zeroCode]
     simp
 
-/-! ### Normalized support: the atoms a coded atomic actually charges
+/-! ### The uniform normalized atom list, and a complete-mask accumulator
 
 `certWtCode` above accumulates over the *raw* decoded list, which on the degenerate branch
 names atoms the measure does not charge; a lower bound is therefore the most it can give. The
-package below accumulates over the atoms the uniform layer indexes instead, which makes the
+package below accumulates over the list the uniform layer indexes instead, which makes the
 same accumulator exact as soon as the mask is complete. -/
 
-/-- The **normalized support** of a coded atomic: the `(dense index, weight code)` pairs of
-the atoms `atomic P m` charges, in the order the uniform layer indexes them.
+/-- The **uniform normalized atom list** of a coded atomic: the `(dense index, weight code)`
+pairs at the positions the uniform layer indexes, with weights already normalized.
+
+This is *not* a support. On the nondegenerate branch it keeps every position of the raw
+decoded list, so zero-weight entries survive and a dense-point index may repeat. Neither
+matters for the accumulator below: a zero-weight entry contributes nothing to either side of
+the sum, and repeated indices are summed on both sides alike, which is why the exactness
+proof needs no positivity or injectivity hypothesis.
 
 On the degenerate branch — zero total raw weight — `atomic P m` is the point mass at
 `P.dense 0` whatever the raw list holds, and this list is correspondingly the singleton
@@ -1807,26 +1813,30 @@ private theorem toMeasure_atomic_eq_range_sum (m : ℕ) {A : Set X} (hA : Measur
   rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hA]
 
 omit [BorelSpace X] in
-/-- **The normalized support of a coded atomic, with an exact masked accumulator.**
+/-- **A certified-weight accumulator that is exact on complete masks.**
 
 One primitive recursive atom list and one primitive recursive accumulator over bitmasks of
 that list, such that for every coded atomic `m` and every measurable `A`:
 
-* *soundness* — if every bit set in `mask` marks an atom lying in `A`, the accumulator is a
-  lower bound for the mass `atomic P m` gives `A`; and
-* *exactness* — if `mask` marks the atoms in `A` and **no others**, the accumulator is that
-  mass exactly.
+* *soundness* — if every bit set in `mask` marks an entry whose point lies in `A`, the
+  accumulator is a lower bound for the mass `atomic P m` gives `A`; and
+* *exactness* — if `mask` marks the entries whose points lie in `A` and **no others**, the
+  accumulator is that mass exactly.
 
 The second clause is what `exists_certifiedWeightCode` cannot provide. That interface
 accumulates over the raw decoded list, whose entries need not be atoms of the measure at all,
-so completing its mask does not account for the measure's mass. Here the list is the
-normalized support, so a complete mask leaves nothing out — including on the degenerate
-branch, where the default atom appears in the list like any other and needs no separate case.
+so completing its mask does not account for the measure's mass. Here the list is the uniform
+normalized one, so a complete mask leaves nothing out — including on the degenerate branch,
+where the default atom appears in the list like any other and needs no separate case.
+
+The list is indexed positionally, not by point: it may carry zero-weight entries and repeat a
+dense-point index, and the mask is read at positions accordingly. Both clauses quantify over
+positions `i < (atoms m).length` for exactly that reason.
 
 Soundness is stated for the same accumulator, so a realizer that can only semidecide atom
 membership keeps the old lower-bound reading while a realizer that eventually decides it gets
 convergence to the true mass from the same code. -/
-theorem exists_normalizedSupport :
+theorem exists_completeCertifiedWeightCode :
     ∃ (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode),
       Primrec atoms ∧ Primrec₂ acc ∧
       (∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
