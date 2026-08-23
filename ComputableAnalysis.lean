@@ -71,6 +71,7 @@ import ComputableAnalysis.Measure.Pushforward
 import ComputableAnalysis.Measure.FiniteAtomicPerturbation
 import ComputableAnalysis.Measure.WeakRepresentation
 import ComputableAnalysis.Measure.WeakEquivalence
+import ComputableAnalysis.Measure.Marginals
 import ComputableAnalysis.Measure.Kernel
 import ComputableAnalysis.Measure.Integration
 import ComputableAnalysis.Measure.Conditioning

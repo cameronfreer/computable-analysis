@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
 import ComputableAnalysis.Measure.Kernel
+import ComputableAnalysis.Measure.Marginals
 import ComputableAnalysis.Weihrauch.Problem
 import Mathlib.Probability.Kernel.Disintegration.Unique
 import Mathlib.MeasureTheory.Measure.Support
@@ -31,8 +32,8 @@ Two problems, two output carriers, never conflated:
   (`FullFirstMarginalSupport`), which makes the accepted output pointwise **unique**
   (`disintegrate_accepts_unique`) — a theorem, not a definition.
 
-The product-Borel instance is DERIVED (`ComputableMetricPresentation.borelSpace_prod`),
-never a hypothesis.
+The product-Borel instance is DERIVED (`ComputableMetricPresentation.borelSpace_prod`, from
+`Measure/Marginals.lean`), never a hypothesis.
 -/
 
 namespace ComputableAnalysis
@@ -45,15 +46,6 @@ section Conditioning
 variable {X Y : Type} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
   [MetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
 variable (P : ComputableMetricPresentation X) (Q : ComputableMetricPresentation Y)
-
-include P in
-/-- The Borel structure of the presented product: second countability of the first
-factor comes from its dense sequence, so `Prod.borelSpace` applies. Always derived,
-never a hypothesis. -/
-theorem ComputableMetricPresentation.borelSpace_prod : BorelSpace (X × Y) := by
-  haveI := P.separableSpace
-  haveI : SecondCountableTopology X := UniformSpace.secondCountable_of_separable X
-  exact Prod.borelSpace
 
 /-! ### (a) The version relation, through mathlib's `Measure.IsCondKernel`
 

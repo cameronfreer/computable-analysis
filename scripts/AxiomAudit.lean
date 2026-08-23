@@ -273,7 +273,6 @@ def headlineDecls : List Name :=
    -- Unit 32: the shared conditioning layer
    ``ComputableAnalysis.ComputableMetricPresentation.prod,
    ``ComputableAnalysis.ComputableMetricPresentation.separableSpace,
-   ``ComputableAnalysis.ComputableMetricPresentation.borelSpace_prod,
    ``ComputableAnalysis.StrongWeihrauchEquivalent,
    ``ComputableAnalysis.funRep_computablePoint_iff,
    ``ComputableAnalysis.isCondKernel_ae_unique,
@@ -303,6 +302,15 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.computableMap_jointOfCantor,
    -- Unit 36 (Part A): noncomputability of conditional probability
    ``ComputableAnalysis.condition_noncomputable,
+   -- Computable marginals of a joint law (`Measure/Marginals.lean`), with the derived
+   -- product-Borel structure the conditioning layer consumes
+   ``ComputableAnalysis.ComputableMetricPresentation.borelSpace_prod,
+   ``ComputableAnalysis.fstMarginal,
+   ``ComputableAnalysis.fstMarginal_toMeasure,
+   ``ComputableAnalysis.sndMarginal,
+   ``ComputableAnalysis.sndMarginal_toMeasure,
+   ``ComputableAnalysis.computableMap_fstMarginal,
+   ``ComputableAnalysis.computableMap_sndMarginal,
    -- Unit 37 (Part B): the bounded-Lipschitz everywhere-positive specialization
    ``ComputableAnalysis.isCondKernel_bayesKernel,
    ``ComputableAnalysis.computableMap_reweight,
