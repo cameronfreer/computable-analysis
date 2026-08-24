@@ -3,14 +3,18 @@ version = "0.1.0"
 license = "Apache-2.0"
 keywords = ["math"]
 defaultTargets = ["ComputableAnalysis"]
+# `lake update` rewrites `lean-toolchain` from the dependency unless the toolchain
+# is declared fixed. Keep this set, and pass `--keep-toolchain` as well.
+fixedToolchain = true
 
-# A mathlib revision on the `v4.32.0` toolchain, so it agrees with
-# `lean-toolchain`. Bumping this pin requires the candidate revision's own
-# `lean-toolchain` to match ours; otherwise update both together.
+# The `v4.34.0-rc1` mathlib release tag, whose own `lean-toolchain` is
+# `leanprover/lean4:v4.34.0-rc1` — so this pin and `lean-toolchain` are a tested
+# pair. Bumping this pin requires the candidate revision's own `lean-toolchain`
+# to match ours; otherwise update both together.
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
-rev = "e0824fdc1cf95ea19518210636c74510a36acb05"
+rev = "de5ce8a9a66a4aa68a9bdbb35b63a06d34d9ca11"
 
 [[lean_lib]]
 name = "ComputableAnalysis"
