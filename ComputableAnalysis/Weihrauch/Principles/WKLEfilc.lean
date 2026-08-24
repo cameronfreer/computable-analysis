@@ -151,10 +151,10 @@ theorem exists_treeSystemCode : ∃ K : OracleCode, ∀ p : Baire,
   rw [hK p n, Part.mem_some_iff, treeSystemName, efilcSystemName]
   simp only [Nat.unpair_pair, Denumerable.ofNat_encode]
   by_cases h0 : n.unpair.1 = 0
-  · rw [if_pos h0, if_pos h0, treeLevelFiberB_eq p le_rfl]
+  · rw [ite_eq_left h0, ite_eq_left h0, treeLevelFiberB_eq p le_rfl]
   · by_cases h1 : n.unpair.1 = 1
-    · rw [if_neg h0, if_pos h1, if_neg h0]
-    · rw [if_neg h0, if_neg h1, if_neg h0]
+    · rw [ite_eq_right h0, ite_eq_left h1, ite_eq_right h0]
+    · rw [ite_eq_right h0, ite_eq_right h1, ite_eq_right h0]
 
 /-- The system code, extracted once so consumers share a single combinator. Specified,
 not constructed. -/
@@ -277,7 +277,7 @@ theorem isStrongReductionPair_wkl_le_efilc :
     rw [streamTake_sectionPath hsec n]
     exact (section_node (fun k => by
       have hk := hsec.1 k
-      rwa [efilcFiber_treeSystemName] at hk) n).2
+      rwa [efilcFiber_treeSystemName x k] at hk) n).2
 
 /-- **Weak Kőnig's lemma reduces strongly to explicit finite inverse-limit
 compactness.** -/

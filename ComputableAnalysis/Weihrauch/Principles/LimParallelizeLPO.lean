@@ -72,11 +72,11 @@ theorem stabFamily_track_allZero_iff {p : Baire} {n s v : ℕ} :
     have hts : s + (t - s) = t := by omega
     rw [hts] at hk
     by_contra hne
-    rw [if_neg hne] at hk
+    rw [ite_eq_right hne] at hk
     exact absurd hk one_ne_zero
   · intro h k
     rw [stabFamily_track_apply]
-    exact if_pos (h (s + k) (by omega))
+    exact ite_eq_left (h (s + k) (by omega))
 
 /-- The index of the queried table entry: `Nat.pair j k ↦ Nat.pair n (s + k)` for
 `j = Nat.pair n (Nat.pair s v)`. Explicit first-order term. -/
@@ -138,10 +138,10 @@ theorem eval_limStabCode (p : Baire) (m : ℕ) :
     (by rw [eval_comp_some (eval_pair_some (eval_const p 1 m) hd), eval_subCode])),
     eval_subCode]
   rcases eq_or_ne a v with h | h
-  · have hs : stabFamily p m = 0 := if_pos h
+  · have hs : stabFamily p m = 0 := ite_eq_left h
     rw [hs]
     exact congrArg Part.some (by omega)
-  · have hs : stabFamily p m = 1 := if_neg h
+  · have hs : stabFamily p m = 1 := ite_eq_right h
     rw [hs]
     exact congrArg Part.some (by omega)
 
@@ -167,7 +167,7 @@ theorem isStrongReductionPair_lim_le_parallelize_lpo :
   refine isStrongReductionPair_parallelize_lpo_of_questions fun w x hpx hdom => ?_
   obtain rfl : x = w := baireRep_names_iff.mp hpx
   obtain ⟨ℓ, hℓ⟩ := hdom
-  refine ⟨stabFamily x, by rw [evalStream_limStabCode]; exact Part.mem_some _, ?_⟩
+  refine ⟨stabFamily x, by rw [evalStream_limStabCode x]; exact Part.mem_some _, ?_⟩
   intro a hbits
   -- every column forces a zero bit at its true stability pair
   have hex : ∀ n, ∃ u, a (Nat.pair (Nat.pair n u) 0) = 0 := by
@@ -237,7 +237,7 @@ theorem isStrongReductionPair_parallelize_lim :
   intro F xs hF hdom
   have hxs : ∀ n, xs n = Baire.track n F := fun n =>
     baireRep_names_iff.mp (Representation.sequence_names_iff.mp hF n)
-  rw [Problem.parallelize_dom_iff] at hdom
+  replace hdom := Problem.parallelize_dom_iff.mp hdom
   choose ℓ hℓ using hdom
   set big : Baire := fun m => F (Nat.pair m.unpair.1.unpair.1
     (Nat.pair m.unpair.1.unpair.2 m.unpair.2)) with hbig
@@ -258,7 +258,8 @@ theorem isStrongReductionPair_parallelize_lim :
     simpa using h
   · intro a y' hay' hacc
     obtain rfl : y' = a := baireRep_names_iff.mp hay'
-    refine ⟨y', by simp, fun n => Baire.track n y',
+    refine ⟨y', OracleCode.mem_evalStream.mpr fun k => by
+        rw [OracleCode.eval_query y' k]; exact Part.mem_some _, fun n => Baire.track n y',
       Representation.sequence_names_iff.mpr fun n => baireRep_names_iff.mpr rfl, ?_⟩
     intro n
     rw [hxs n, Lim.accepts_iff]
@@ -267,7 +268,9 @@ theorem isStrongReductionPair_parallelize_lim :
     refine ⟨s, fun t ht => ?_⟩
     have h := hs t ht
     rw [hbigval, Nat.unpair_pair] at h
-    simpa using h
+    change Baire.track n F (Nat.pair i t) = Baire.track n y' i
+    rw [Baire.track_apply n y' i, Baire.track_apply n F (Nat.pair i t)]
+    exact h
 
 /-- **`Lim` is strongly parallelizable**: `Lim.parallelize ≡sW Lim`, the collapse by
 flattening and the expansion by extensivity. -/

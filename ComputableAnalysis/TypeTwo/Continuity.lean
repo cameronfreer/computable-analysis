@@ -178,17 +178,17 @@ theorem exists_pairStreams :
     fun m => Part.eq_some_iff.mpr (mem_evalStream.mp hr m)
   refine mem_evalStream.mpr fun n => ?_
   have h1 : (OracleCode.comp cf half).eval p n = Part.some (q (n / 2)) := by
-    rw [eval_comp, hhalf, Part.bind_eq_bind, Part.bind_some]; exact hqe (n / 2)
+    rw [eval_comp, hhalf, some_bind_pfun]; exact hqe (n / 2)
   have h2 : (OracleCode.comp cg half).eval p n = Part.some (r (n / 2)) := by
-    rw [eval_comp, hhalf, Part.bind_eq_bind, Part.bind_some]; exact hre (n / 2)
+    rw [eval_comp, hhalf, some_bind_pfun]; exact hre (n / 2)
   have h3 : (pair OracleCode.id
       (pair (OracleCode.comp cf half) (OracleCode.comp cg half))).eval p n
       = Part.some (Nat.pair n (Nat.pair (q (n / 2)) (r (n / 2)))) := by
-    rw [eval_pair, eval_id, eval_pair, h1, h2]; simp [Seq.seq, Part.map_some, Part.bind_some]
+    rw [eval_pair, eval_id, eval_pair, h1, h2]; simp [Seq.seq, Part.map_some]
   have h4 : (OracleCode.comp sel (pair OracleCode.id
       (pair (OracleCode.comp cf half) (OracleCode.comp cg half)))).eval p n
       = Part.some (Baire.interleave q r n) := by
-    rw [eval_comp, h3, Part.bind_eq_bind, Part.bind_some, hsel]
+    rw [eval_comp, h3, some_bind_pfun, hsel]
     simp only [Nat.unpair_pair, Baire.interleave]
     rcases Nat.mod_two_eq_zero_or_one n with h | h <;> simp [h]
   rw [h4]; exact Part.mem_some _
@@ -258,7 +258,7 @@ theorem type2Computable_query_comp {g : ℕ → ℕ} (hg : Computable g) :
   obtain ⟨E, hE⟩ := Nat.Partrec.Code.exists_code.1 hg.partrec
   refine ⟨comp query (ofPartrecCode E), fun p n => ?_⟩
   have hEn : (ofPartrecCode E).eval p n = Part.some (g n) := by rw [eval_ofPartrecCode, hE]; simp
-  rw [eval_comp, hEn, Part.bind_eq_bind, Part.bind_some, eval_query]
+  rw [eval_comp, hEn, some_bind_pfun, eval_query]
 
 /-- The even-track deinterleaving projection is Type-2 computable. -/
 theorem type2Computable_evenPart : Type2Computable Baire.evenPart :=

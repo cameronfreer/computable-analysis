@@ -55,7 +55,7 @@ theorem eval_addCode (p : Baire) (a b : ℕ) :
   | zero => simp [addCode]
   | succ b ih =>
       simp only [addCode] at ih ⊢
-      rw [eval_prec_succ, ih, Part.bind_eq_bind, Part.bind_some,
+      rw [eval_prec_succ, ih, some_bind_fun,
         eval_comp_some (eval_right_right_pair p a b (a + b)), eval_succ]
       exact congrArg Part.some (by omega)
 
@@ -69,7 +69,7 @@ theorem eval_predCode (p : Baire) (k : ℕ) : predCode.eval p k = Part.some (k -
   induction k with
   | zero => rw [eval_prec_zero]; rfl
   | succ k ih =>
-      rw [eval_prec_succ, ih, Part.bind_eq_bind, Part.bind_some,
+      rw [eval_prec_succ, ih, some_bind_fun,
         eval_comp_some (eval_right_pair p 0 (Nat.pair k (k - 1))), eval_left_pair]
       exact congrArg Part.some (by omega)
 
@@ -83,7 +83,7 @@ theorem eval_subCode (p : Baire) (a b : ℕ) :
   | zero => simp [subCode]
   | succ b ih =>
       simp only [subCode] at ih ⊢
-      rw [eval_prec_succ, ih, Part.bind_eq_bind, Part.bind_some,
+      rw [eval_prec_succ, ih, some_bind_fun,
         eval_comp_some (eval_right_right_pair p a b (a - b)), eval_predCode]
       exact congrArg Part.some (by omega)
 
@@ -108,7 +108,7 @@ theorem eval_caseszCode_one {cthen : OracleCode} (celse : OracleCode) {p : Baire
     (h : cthen.eval p x = Part.some v) :
     (caseszCode cthen celse).eval p (Nat.pair x 1) = celse.eval p x := by
   simp only [caseszCode]
-  rw [eval_prec_succ, eval_prec_zero, h, Part.bind_eq_bind, Part.bind_some]
+  rw [eval_prec_succ, eval_prec_zero, h, some_bind_fun]
   rw [eval_comp_some (show OracleCode.left.eval p (Nat.pair x (Nat.pair 0 v)) = Part.some x by
     simp [Nat.unpair_pair])]
 
@@ -127,10 +127,11 @@ private theorem eval_div2mod2Step (p : Baire) (a y q r : ℕ) (hr : r ≤ 1) :
     eval_pair_some (eval_right_right_pair ..)
       (by rw [eval_comp_some (eval_right_right_pair p a y (Nat.pair q r)), eval_right_pair]))]
   obtain rfl | rfl := Nat.le_one_iff_eq_zero_or_eq_one.mp hr
-  · rw [eval_caseszCode_zero, if_pos rfl]
+  · rw [eval_caseszCode_zero, ite_eq_left rfl]
     exact eval_pair_some (eval_left_pair ..) (eval_const ..)
   · rw [eval_caseszCode_one _
-      (eval_pair_some (eval_left_pair p q 1) (eval_const p 1 (Nat.pair q 1))), if_neg one_ne_zero]
+      (eval_pair_some (eval_left_pair p q 1) (eval_const p 1 (Nat.pair q 1))),
+      ite_eq_right one_ne_zero]
     exact eval_pair_some (by rw [eval_comp_some (eval_left_pair p q 1), eval_succ]) rfl
 
 /-- Division and remainder by two, jointly: `k ↦ Nat.pair (k / 2) (k % 2)`. -/
@@ -144,15 +145,15 @@ theorem eval_div2mod2Code (p : Baire) (k : ℕ) :
   induction k with
   | zero => rw [eval_prec_zero]; rfl
   | succ k ih =>
-      rw [eval_prec_succ, ih, Part.bind_eq_bind, Part.bind_some,
+      rw [eval_prec_succ, ih, some_bind_fun,
         eval_div2mod2Step p 0 k (k / 2) (k % 2) (by omega)]
       rcases Nat.mod_two_eq_zero_or_one k with h | h
       · have h1 : (k + 1) / 2 = k / 2 := by omega
         have h2 : (k + 1) % 2 = 1 := by omega
-        rw [if_pos h, h1, h2]
+        rw [ite_eq_left h, h1, h2]
       · have h1 : (k + 1) / 2 = k / 2 + 1 := by omega
         have h2 : (k + 1) % 2 = 0 := by omega
-        rw [if_neg (by omega), h1, h2]
+        rw [ite_eq_right (by omega), h1, h2]
 
 end OracleCode
 

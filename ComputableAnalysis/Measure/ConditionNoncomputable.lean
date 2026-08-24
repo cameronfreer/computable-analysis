@@ -103,12 +103,12 @@ private noncomputable def hStage (k : ℕ) : ℕ :=
   if h : KHalts k then Nat.find h else 0
 
 private theorem haltsByB_hStage {k : ℕ} (h : KHalts k) : haltsByB k (hStage k) = true := by
-  rw [hStage, dif_pos h]
+  rw [hStage, dite_eq_left h]
   exact Nat.find_spec h
 
 private theorem not_haltsByB_of_lt_hStage {k : ℕ} (h : KHalts k) {j : ℕ}
     (hj : j < hStage k) : haltsByB k j = false := by
-  rw [hStage, dif_pos h] at hj
+  rw [hStage, dite_eq_left h] at hj
   simpa using Nat.find_min h hj
 
 /-- The `n`-bounded halting stage: least fuel `< n` that halts, and `n` if none. -/
@@ -121,8 +121,10 @@ private theorem stageK_lt_iff {k n : ℕ} :
 
 private theorem stageK_halts {k n : ℕ} (h : stageK k n < n) :
     haltsByB k (stageK k n) = true := by
-  have h' : stageK k n < (List.range n).length := by simpa using h
+  have h' : List.findIdx (haltsByB k) (List.range n) < (List.range n).length := by
+    simpa [stageK] using h
   have := List.findIdx_getElem (p := haltsByB k) (xs := List.range n) (w := h')
+  rw [List.getElem_range] at this
   simpa [stageK] using this
 
 private theorem stageK_min {k n j : ℕ} (hj : j < stageK k n) : haltsByB k j = false := by
@@ -327,11 +329,11 @@ private theorem condMassQ_of_lt {k : ℕ} {b : Bool} {u : List Bool}
     (h : stageK k u.length < u.length) :
     condMassQ k b u =
       (if u.getD (stageK k u.length) false = b then 2 else 0) * (2⁻¹ : ℚ) ^ u.length := by
-  rw [condMassQ, if_pos h]
+  rw [condMassQ, ite_eq_left h]
 
 private theorem condMassQ_of_ge {k : ℕ} {b : Bool} {u : List Bool}
     (h : ¬ stageK k u.length < u.length) : condMassQ k b u = (2⁻¹ : ℚ) ^ u.length := by
-  rw [condMassQ, if_neg h]
+  rw [condMassQ, ite_eq_right h]
 
 /-- Binary splitting of the conditioned mass in the data word. -/
 private theorem condMassQ_split (k : ℕ) (b : Bool) (u : List Bool) :
@@ -360,9 +362,9 @@ private theorem condMassQ_split (k : ℕ) (b : Bool) (u : List Bool) :
         rw [condMassQ_of_lt hlt, hlen, hst, getD_append_self]
       rw [condMassQ_of_ge h1, hval false, hval true]
       rcases b with _ | _
-      · rw [if_pos rfl, if_neg (by decide), pow_succ]
+      · rw [ite_eq_left rfl, ite_eq_right (by decide), pow_succ]
         ring
-      · rw [if_neg (by decide), if_pos rfl, pow_succ]
+      · rw [ite_eq_right (by decide), ite_eq_left rfl, pow_succ]
         ring
     · have hval : ∀ c : Bool, condMassQ k b (u ++ [c]) = (2⁻¹ : ℚ) ^ (u.length + 1) := by
         intro c
@@ -376,25 +378,25 @@ private theorem condMassQ_split (k : ℕ) (b : Bool) (u : List Bool) :
 
 private theorem mQ_allFalse {u t : List Bool} (h : firstTrue t = t.length) :
     mQ u t = (2⁻¹ : ℚ) ^ (t.length + u.length) := by
-  rw [mQ, if_pos h]
+  rw [mQ, ite_eq_left h]
 
 private theorem mQ_oneLast {u t : List Bool} (h1 : ¬ firstTrue t = t.length)
     (h2 : firstTrue t + 1 = t.length) :
     mQ u t = (2⁻¹ : ℚ) ^ (t.length + u.length) := by
-  rw [mQ, if_neg h1, if_pos h2]
+  rw [mQ, ite_eq_right h1, ite_eq_left h2]
 
 private theorem mQ_atom {u t : List Bool} (h1 : ¬ firstTrue t = t.length)
     (h2 : ¬ firstTrue t + 1 = t.length)
     (h3 : firstTrue (t.drop (firstTrue t + 2)) = (t.drop (firstTrue t + 2)).length) :
     mQ u t = (2⁻¹ : ℚ) ^ (firstTrue t + 2)
       * condMassQ (firstTrue t) (t.getD (firstTrue t + 1) false) u := by
-  rw [mQ, if_neg h1, if_neg h2, if_pos h3]
+  rw [mQ, ite_eq_right h1, ite_eq_right h2, ite_eq_left h3]
 
 private theorem mQ_garbage {u t : List Bool} (h1 : ¬ firstTrue t = t.length)
     (h2 : ¬ firstTrue t + 1 = t.length)
     (h3 : ¬ firstTrue (t.drop (firstTrue t + 2)) = (t.drop (firstTrue t + 2)).length) :
     mQ u t = 0 := by
-  rw [mQ, if_neg h1, if_neg h2, if_neg h3]
+  rw [mQ, ite_eq_right h1, ite_eq_right h2, ite_eq_right h3]
 
 private theorem mQ_nonneg (u t : List Bool) : 0 ≤ mQ u t := by
   unfold mQ
@@ -876,20 +878,20 @@ private theorem atomPoint_apply (k : ℕ) (b : Bool) (i : ℕ) :
     atomPoint k b i = if i = k then true else if i = k + 1 then b else false := by
   rw [atomPoint, wordPoint_apply, atomWord]
   rcases lt_trichotomy i k with h | rfl | h
-  · rw [if_neg (by omega), if_neg (by omega),
+  · rw [ite_eq_right (by omega), ite_eq_right (by omega),
       List.getD_eq_getElem _ _ (by simp; omega),
       List.getElem_append_left (by simpa using h)]
     simp
-  · rw [if_pos rfl, List.getD_eq_getElem _ _ (by simp),
+  · rw [ite_eq_left rfl, List.getD_eq_getElem _ _ (by simp),
       List.getElem_append_right (by simp)]
     simp
-  · rw [if_neg (by omega)]
+  · rw [ite_eq_right (by omega)]
     by_cases h1 : i = k + 1
     · subst h1
-      rw [if_pos rfl, List.getD_eq_getElem _ _ (by simp),
+      rw [ite_eq_left rfl, List.getD_eq_getElem _ _ (by simp),
         List.getElem_append_right (by simp)]
       simp
-    · rw [if_neg h1, List.getD_eq_default _ _ (by simp; omega)]
+    · rw [ite_eq_right h1, List.getD_eq_default _ _ (by simp; omega)]
 
 private theorem atomPoint_mem_cyl {k : ℕ} {b : Bool} {t : List Bool} :
     atomPoint k b ∈ (cylinder t : Set Cantor) ↔
@@ -909,10 +911,10 @@ private theorem atom_mem_allFalse {k : ℕ} {b : Bool} {t : List Bool}
     by_contra hk
     push Not at hk
     have hkk := h k hk
-    rw [atomPoint_apply, if_pos rfl, firstTrue_eq_length_iff.mp hAF k hk] at hkk
+    rw [atomPoint_apply, ite_eq_left rfl, firstTrue_eq_length_iff.mp hAF k hk] at hkk
     exact Bool.noConfusion hkk
   · intro hk i hi
-    rw [atomPoint_apply, if_neg (by omega), if_neg (by omega)]
+    rw [atomPoint_apply, ite_eq_right (by omega), ite_eq_right (by omega)]
     exact firstTrue_eq_length_iff.mp hAF i hi
 
 private theorem atom_mem_oneLast {k : ℕ} {b : Bool} {t : List Bool}
@@ -924,20 +926,21 @@ private theorem atom_mem_oneLast {k : ℕ} {b : Bool} {t : List Bool}
     by_contra hk
     rcases lt_trichotomy k (firstTrue t) with hc | hc | hc
     · have hkk := h k (by omega)
-      rw [atomPoint_apply, if_pos rfl, firstTrue_false hc] at hkk
+      rw [atomPoint_apply, ite_eq_left rfl, firstTrue_false hc] at hkk
       exact Bool.noConfusion hkk
     · exact hk hc
     · have hjj := h (firstTrue t) hlt
-      rw [atomPoint_apply, if_neg (by omega), if_neg (by omega), firstTrue_true hlt] at hjj
+      rw [atomPoint_apply, ite_eq_right (by omega), ite_eq_right (by omega),
+        firstTrue_true hlt] at hjj
       exact Bool.noConfusion hjj
   · intro hk i hi
     rw [atomPoint_apply, hk]
     rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp (by omega : i < firstTrue t + 1)) with
       hik | hik
-    · rw [if_neg (by omega), if_neg (by omega)]
+    · rw [ite_eq_right (by omega), ite_eq_right (by omega)]
       exact firstTrue_false hik
     · subst hik
-      rw [if_pos rfl]
+      rw [ite_eq_left rfl]
       exact firstTrue_true hlt
 
 private theorem atom_mem_atomShape {k : ℕ} {b : Bool} {t : List Bool}
@@ -954,16 +957,16 @@ private theorem atom_mem_atomShape {k : ℕ} {b : Bool} {t : List Bool}
       by_contra hk
       rcases lt_trichotomy k (firstTrue t) with hc | hc | hc
       · have hkk := h k (by omega)
-        rw [atomPoint_apply, if_pos rfl, firstTrue_false hc] at hkk
+        rw [atomPoint_apply, ite_eq_left rfl, firstTrue_false hc] at hkk
         exact Bool.noConfusion hkk
       · exact hk hc
       · have hjj := h (firstTrue t) hjlt
-        rw [atomPoint_apply, if_neg (by omega), if_neg (by omega),
+        rw [atomPoint_apply, ite_eq_right (by omega), ite_eq_right (by omega),
           firstTrue_true hjlt] at hjj
         exact Bool.noConfusion hjj
     refine ⟨hk, ?_⟩
     have hb := h (firstTrue t + 1) (by omega)
-    rw [atomPoint_apply, if_neg (by omega), if_pos (by omega)] at hb
+    rw [atomPoint_apply, ite_eq_right (by omega), ite_eq_left (by omega)] at hb
     rw [List.getD_eq_getElem _ _ (by omega)]
     exact hb.symm
   · rintro ⟨rfl, rfl⟩
@@ -971,12 +974,12 @@ private theorem atom_mem_atomShape {k : ℕ} {b : Bool} {t : List Bool}
     rw [atomPoint_apply]
     by_cases hik : i = firstTrue t
     · subst hik
-      rw [if_pos rfl]
+      rw [ite_eq_left rfl]
       exact firstTrue_true hjlt
     · by_cases hik1 : i = firstTrue t + 1
       · subst hik1
-        rw [if_neg (by omega), if_pos rfl, List.getD_eq_getElem _ _ (by omega)]
-      · rw [if_neg hik, if_neg hik1]
+        rw [ite_eq_right (by omega), ite_eq_left rfl, List.getD_eq_getElem _ _ (by omega)]
+      · rw [ite_eq_right hik, ite_eq_right hik1]
         rcases lt_or_ge i (firstTrue t) with hc | hc
         · exact firstTrue_false hc
         · exact htail i (by omega) hi
@@ -1002,13 +1005,13 @@ private theorem atom_not_mem_garbage {k : ℕ} {b : Bool} {t : List Bool}
   have h2' := hmem (firstTrue t + 2 + firstTrue (t.drop (firstTrue t + 2))) hi0lt
   rw [atomPoint_apply, hi0true] at h2'
   by_cases hjk : firstTrue t = k
-  · rw [if_neg (by omega), if_neg (by omega)] at h2'
+  · rw [ite_eq_right (by omega), ite_eq_right (by omega)] at h2'
     exact Bool.noConfusion h2'
-  · rw [if_neg hjk] at h1
+  · rw [ite_eq_right hjk] at h1
     by_cases hjk1 : firstTrue t = k + 1
-    · rw [if_neg (by omega), if_neg (by omega)] at h2'
+    · rw [ite_eq_right (by omega), ite_eq_right (by omega)] at h2'
       exact Bool.noConfusion h2'
-    · rw [if_neg hjk1] at h1
+    · rw [ite_eq_right hjk1] at h1
       exact Bool.noConfusion h1
 
 /-! ### The explicit disintegration kernel -/
@@ -1043,7 +1046,7 @@ private theorem measurable_condBranch_apply (k : ℕ) (S : Set Cantor) :
         = fun x => ((2 : ℝ≥0∞)⁻¹) ^ (k + 1)
             * Measure.dirac (atomPoint k (x (hStage k))) S := by
       funext x
-      rw [condBranch, if_pos h, Measure.smul_apply, smul_eq_mul]
+      rw [condBranch, ite_eq_left h, Measure.smul_apply, smul_eq_mul]
     rw [heq]
     exact Measurable.const_mul
       ((measurable_of_countable fun b : Bool =>
@@ -1052,7 +1055,7 @@ private theorem measurable_condBranch_apply (k : ℕ) (S : Set Cantor) :
         = fun _ => ((2 : ℝ≥0∞)⁻¹) ^ (k + 2) • Measure.dirac (atomPoint k false) S
             + ((2 : ℝ≥0∞)⁻¹) ^ (k + 2) • Measure.dirac (atomPoint k true) S := by
       funext x
-      rw [condBranch, if_neg h, Measure.add_apply, Measure.smul_apply, Measure.smul_apply]
+      rw [condBranch, ite_eq_right h, Measure.add_apply, Measure.smul_apply, Measure.smul_apply]
     rw [heq]
     exact measurable_const
 
@@ -1099,11 +1102,11 @@ private theorem tail_tsum (L : ℕ) :
           + (if k < L + 1 then 0 else ((2 : ℝ≥0∞)⁻¹) ^ (k + 1)) := by
       intro k
       by_cases h1 : k < L
-      · rw [if_pos h1, if_neg (by omega), if_pos (by omega), add_zero]
+      · rw [ite_eq_left h1, ite_eq_right (by omega), ite_eq_left (by omega), add_zero]
       · by_cases h2 : k = L
         · subst h2
-          rw [if_neg (by omega), if_pos rfl, if_pos (by omega), add_zero]
-        · rw [if_neg h1, if_neg h2, if_neg (by omega), zero_add]
+          rw [ite_eq_right (by omega), ite_eq_left rfl, ite_eq_left (by omega), add_zero]
+        · rw [ite_eq_right h1, ite_eq_right h2, ite_eq_right (by omega), zero_add]
     have h1 : ((2 : ℝ≥0∞)⁻¹) ^ (L + 1)
         + (∑' k : ℕ, (if k < L + 1 then 0 else ((2 : ℝ≥0∞)⁻¹) ^ (k + 1)))
         = ((2 : ℝ≥0∞)⁻¹) ^ L := by
@@ -1130,14 +1133,14 @@ private theorem condKerM_le_tail {x x' : Cantor} {K : ℕ}
       ≤ condBranch k x B + (if k < K then 0 else ((2 : ℝ≥0∞)⁻¹) ^ (k + 1)) := by
     intro k
     by_cases hk : k < K
-    · rw [if_pos hk, add_zero]
+    · rw [ite_eq_left hk, add_zero]
       have heq : condBranch k x' = condBranch k x := by
         unfold condBranch
         split_ifs with h
         · rw [hagree k hk h]
         · rfl
       rw [heq]
-    · rw [if_neg hk]
+    · rw [ite_eq_right hk]
       calc condBranch k x' B ≤ condBranch k x' Set.univ :=
             measure_mono (Set.subset_univ B)
         _ = ((2 : ℝ≥0∞)⁻¹) ^ (k + 1) := condBranch_univ k x'
@@ -1219,11 +1222,11 @@ private theorem cyl_inter_eq_of_lt {s : List Bool} {j : ℕ} {c : Bool} (h : j <
       = if s[j] = c then (cylinder s : Set Cantor) else ∅ := by
   ext x
   by_cases hc : s[j] = c
-  · rw [if_pos hc]
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq]
+  · rw [ite_eq_left hc]
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
     exact ⟨fun hx => hx.1, fun h1 => ⟨h1, by rw [h1 j h, hc]⟩⟩
-  · rw [if_neg hc]
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+  · rw [ite_eq_right hc]
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
     rintro ⟨h1, h2⟩
     exact hc (by rw [← h2, h1 j h])
 
@@ -1238,7 +1241,7 @@ private theorem fairCoin_cyl_inter_aux :
     have hset : (cylinder s : Set Cantor) ∩ {x : Cantor | x j = c}
         = (cylinder (s ++ [c]) : Set Cantor) := by
       ext x
-      rw [Set.mem_inter_iff, Set.mem_setOf_eq, mem_cylinder_append_iff, hj, Nat.add_zero]
+      rw [Set.mem_inter_iff, Set.mem_ofPred_eq, mem_cylinder_append_iff, hj, Nat.add_zero]
     rw [hset, fairCoin_cyl]
     simp
   | succ d ih =>
@@ -1273,14 +1276,14 @@ private theorem condBranch_apply_halt {k : ℕ} (h : KHalts k) (x : Cantor)
     {S : Set Cantor} (hS : MeasurableSet S) :
     condBranch k x S
       = ((2 : ℝ≥0∞)⁻¹) ^ (k + 1) * S.indicator 1 (atomPoint k (x (hStage k))) := by
-  rw [condBranch, if_pos h, Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hS]
+  rw [condBranch, ite_eq_left h, Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hS]
 
 private theorem condBranch_apply_not {k : ℕ} (h : ¬ KHalts k) (x : Cantor)
     {S : Set Cantor} (hS : MeasurableSet S) :
     condBranch k x S
       = ((2 : ℝ≥0∞)⁻¹) ^ (k + 2) * S.indicator 1 (atomPoint k false)
         + ((2 : ℝ≥0∞)⁻¹) ^ (k + 2) * S.indicator 1 (atomPoint k true) := by
-  rw [condBranch, if_neg h, Measure.add_apply, Measure.smul_apply, Measure.smul_apply,
+  rw [condBranch, ite_eq_right h, Measure.add_apply, Measure.smul_apply, Measure.smul_apply,
     smul_eq_mul, smul_eq_mul, Measure.dirac_apply' _ hS, Measure.dirac_apply' _ hS]
 
 private theorem setLIntegral_condBranch_both {k : ℕ} {s t : List Bool}
@@ -1327,7 +1330,7 @@ private theorem setLIntegral_condBranch_single {k : ℕ} {s t : List Bool} {b₀
             ((cylinder s : Set Cantor) ∩ {x : Cantor | x (hStage k) = b₀})
         else ((2 : ℝ≥0∞)⁻¹) ^ (k + 2) * fairCoin.toMeasure (cylinder s) := by
   by_cases h : KHalts k
-  · rw [if_pos h]
+  · rw [ite_eq_left h]
     have hval : ∀ x : Cantor, condBranch k x (cylinder t)
         = ((2 : ℝ≥0∞)⁻¹) ^ (k + 1)
           * ({x : Cantor | x (hStage k) = b₀} : Set Cantor).indicator 1 x := by
@@ -1355,7 +1358,7 @@ private theorem setLIntegral_condBranch_single {k : ℕ} {s t : List Bool} {b₀
           rw [lintegral_indicator hV]
           simp only [Pi.one_apply]
           rw [setLIntegral_one, Measure.restrict_apply hV, Set.inter_comm]
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     have hval : ∀ x : Cantor, condBranch k x (cylinder t)
         = ((2 : ℝ≥0∞)⁻¹) ^ (k + 2) := by
       intro x
@@ -1398,11 +1401,11 @@ private theorem lintegral_condKerM_cyl (s t : List Bool) :
             * fairCoin.toMeasure (cylinder s) := by
       intro k
       by_cases hk : k < t.length
-      · rw [if_pos hk, zero_mul]
+      · rw [ite_eq_left hk, zero_mul]
         refine setLIntegral_condBranch_none fun b => ?_
         rw [atom_mem_allFalse h1]
         omega
-      · rw [if_neg hk]
+      · rw [ite_eq_right hk]
         exact setLIntegral_condBranch_both fun b => (atom_mem_allFalse h1).mpr (by omega)
     rw [tsum_congr hterm, ENNReal.tsum_mul_right, tail_tsum, fairCoin_cyl,
       mQ_allFalse h1, ofReal_qhalf_pow, ← pow_add]
@@ -1416,9 +1419,9 @@ private theorem lintegral_condKerM_cyl (s t : List Bool) :
         intro k
         by_cases hk : k = firstTrue t
         · subst hk
-          rw [if_pos rfl]
+          rw [ite_eq_left rfl]
           exact setLIntegral_condBranch_both fun b => (atom_mem_oneLast hlt h2).mpr rfl
-        · rw [if_neg hk]
+        · rw [ite_eq_right hk]
           exact setLIntegral_condBranch_none fun b hc =>
             hk ((atom_mem_oneLast hlt h2).mp hc)
       rw [tsum_congr hterm, tsum_ite_eq, fairCoin_cyl, mQ_oneLast h1 h2, ← h2,
@@ -1446,15 +1449,15 @@ private theorem lintegral_condKerM_cyl (s t : List Bool) :
           intro k
           by_cases hk : k = firstTrue t
           · subst hk
-            rw [if_pos rfl]
+            rw [ite_eq_left rfl]
             refine setLIntegral_condBranch_single fun b => ?_
             rw [hmemA (firstTrue t) b]
             simp
-          · rw [if_neg hk]
+          · rw [ite_eq_right hk]
             exact setLIntegral_condBranch_none fun b hc => hk ((hmemA k b).mp hc).1
         rw [tsum_congr hterm, tsum_ite_eq, mQ_atom h1 h2 h3]
         by_cases hh : KHalts (firstTrue t)
-        · rw [if_pos hh]
+        · rw [ite_eq_left hh]
           by_cases hst : hStage (firstTrue t) < s.length
           · have hsk : stageK (firstTrue t) s.length < s.length :=
               stageK_lt_of_hStage_lt hh hst
@@ -1464,11 +1467,11 @@ private theorem lintegral_condKerM_cyl (s t : List Bool) :
               List.getD_eq_getElem _ _ hst]
             by_cases hsb : s[hStage (firstTrue t)]'hst
                 = t.getD (firstTrue t + 1) false
-            · rw [if_pos hsb, if_pos hsb, fairCoin_cyl,
+            · rw [ite_eq_left hsb, ite_eq_left hsb, fairCoin_cyl,
                 show ((2⁻¹ : ℚ) ^ (firstTrue t + 2) * (2 * (2⁻¹ : ℚ) ^ s.length) : ℚ)
                     = (2⁻¹ : ℚ) ^ (firstTrue t + 1 + s.length) from by ring,
                 ofReal_qhalf_pow, ← pow_add]
-            · rw [if_neg hsb, if_neg hsb]
+            · rw [ite_eq_right hsb, ite_eq_right hsb]
               simp
           · have hns : ¬ stageK (firstTrue t) s.length < s.length := by
               intro hc
@@ -1480,7 +1483,7 @@ private theorem lintegral_condKerM_cyl (s t : List Bool) :
               ofReal_qhalf_pow, ← pow_add]
             congr 1
             omega
-        · rw [if_neg hh]
+        · rw [ite_eq_right hh]
           have hns : ¬ stageK (firstTrue t) s.length < s.length :=
             not_stageK_lt_of_not hh
           rw [condMassQ_of_ge hns, fairCoin_cyl,
@@ -1751,18 +1754,18 @@ private theorem condKerM_zeroC_atom (k : ℕ) :
     by_cases hk : k' = k
     · subst hk
       by_cases hh : KHalts k'
-      · rw [if_pos rfl, if_pos hh,
+      · rw [ite_eq_left rfl, ite_eq_left hh,
           condBranch_apply_halt hh zeroC (measurableSet_cylinder _),
           Set.indicator_of_notMem
             (fun hc => by simpa [zeroC] using ((mem_atomWordTrue_iff k' k' _).mp hc).2),
           mul_zero]
-      · rw [if_pos rfl, if_neg hh,
+      · rw [ite_eq_left rfl, ite_eq_right hh,
           condBranch_apply_not hh zeroC (measurableSet_cylinder _),
           Set.indicator_of_notMem
             (fun hc => Bool.noConfusion ((mem_atomWordTrue_iff k' k' false).mp hc).2),
           Set.indicator_of_mem ((mem_atomWordTrue_iff k' k' true).mpr ⟨rfl, rfl⟩)]
         simp only [Pi.one_apply, mul_one, mul_zero, zero_add]
-    · rw [if_neg hk]
+    · rw [ite_eq_right hk]
       by_cases hh : KHalts k'
       · rw [condBranch_apply_halt hh zeroC (measurableSet_cylinder _),
           Set.indicator_of_notMem
@@ -1888,7 +1891,7 @@ private theorem no_computable_accepted
     filter_upwards [hae, haeK] with x hx1 hx2
     exact ProbabilityMeasure.toMeasure_injective (hx1.trans hx2)
   rw [condJoint_fst] at haefun
-  haveI hOP : fairCoin.toMeasure.IsOpenPosMeasure :=
+  have hOP : fairCoin.toMeasure.IsOpenPosMeasure :=
     isOpenPosMeasure_bernoulliProduct (by norm_num) (by norm_num)
   have heq : f.toFun = condKer := Measure.eq_of_ae_eq haefun hcont continuous_condKer
   have hν : cantorMeasureRep.ComputablePoint (condKer zeroC) := by
@@ -1951,11 +1954,11 @@ private theorem no_computable_accepted
     have hmass := cylMass_condKer_zeroC_atom (encode cd)
     by_cases hh : (cd.eval 0).Dom
     · have hK : KHalts (encode cd) := kHalts_iff.mpr (by rwa [Denumerable.ofNat_encode])
-      rw [if_pos hK] at hmass
+      rw [ite_eq_left hK] at hmass
       exact iff_of_false (not_not_intro hh) (by rw [hmass]; exact lt_irrefl 0)
     · have hK : ¬ KHalts (encode cd) := fun hc =>
         hh (by have := kHalts_iff.mp hc; rwa [Denumerable.ofNat_encode] at this)
-      rw [if_neg hK] at hmass
+      rw [ite_eq_right hK] at hmass
       refine iff_of_true hh ?_
       rw [hmass]
       positivity

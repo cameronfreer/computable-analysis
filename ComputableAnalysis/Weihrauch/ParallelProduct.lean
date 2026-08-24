@@ -72,7 +72,7 @@ protected theorem IsStrongReductionPair.prod {f₁ : Problem X₁ Y₁} {g₁ : 
   refine ⟨Baire.interleave k₁ k₂, hkmem, (x₁', x₂'), prod_names_interleave hk₁x hk₂x,
     Problem.prod_dom_iff.mpr ⟨hdom₁, hdom₂⟩, fun a y' hay' hacc => ?_⟩
   obtain ⟨hy₁, hy₂⟩ := Representation.prod_names_iff.mp hay'
-  rw [Problem.prod_accepts_iff] at hacc
+  replace hacc := Problem.prod_accepts_iff.mp hacc
   obtain ⟨q₁, hq₁, y₁, hq₁y, hacc₁⟩ := hH₁ a.evenPart y'.1 hy₁ hacc.1
   obtain ⟨q₂, hq₂, y₂, hq₂y, hacc₂⟩ := hH₂ a.oddPart y'.2 hy₂ hacc.2
   have hqmem : Baire.interleave q₁ q₂ ∈
@@ -109,7 +109,7 @@ protected theorem IsReductionPair.prod {f₁ : Problem X₁ Y₁} {g₁ : Proble
   refine ⟨Baire.interleave k₁ k₂, hkmem, (x₁', x₂'), prod_names_interleave hk₁x hk₂x,
     Problem.prod_dom_iff.mpr ⟨hdom₁, hdom₂⟩, fun a y' hay' hacc => ?_⟩
   obtain ⟨hy₁, hy₂⟩ := Representation.prod_names_iff.mp hay'
-  rw [Problem.prod_accepts_iff] at hacc
+  replace hacc := Problem.prod_accepts_iff.mp hacc
   obtain ⟨q₁, hq₁, y₁, hq₁y, hacc₁⟩ := hH₁ a.evenPart y'.1 hy₁ hacc.1
   obtain ⟨q₂, hq₂, y₂, hq₂y, hacc₂⟩ := hH₂ a.oddPart y'.2 hy₂ hacc.2
   have hwr : w ∈ OracleCode.evenCode.evalStream (Baire.interleave w a) := by
@@ -248,7 +248,7 @@ theorem IsReductionPair.toProdId {f : Problem X Y} {g : Problem X' Y'} {K H : Or
     prod_names_interleave (baireRep_names_iff.mpr rfl) hkx,
     Problem.prod_dom_iff.mpr ⟨⟨p, rfl⟩, hdom'⟩, fun a y' hay' hacc => ?_⟩
   obtain ⟨hy₁, hy₂⟩ := Representation.prod_names_iff.mp hay'
-  rw [Problem.prod_accepts_iff] at hacc
+  replace hacc := Problem.prod_accepts_iff.mp hacc
   have hpa : a.evenPart = p := (baireRep_names_iff.mp hy₁).symm.trans hacc.1
   obtain ⟨q, hq, y, hqy, hfacc⟩ := hH a.oddPart y'.2 hy₂ hacc.2
   refine ⟨q, ?_, y, hqy, hfacc⟩

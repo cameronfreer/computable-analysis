@@ -262,7 +262,7 @@ private theorem exists_consCode (c : OracleCode) :
   | zero => simp [funPack]
   | succ m =>
     simp only [Nat.unpair_pair, Denumerable.ofNat_encode, Nat.add_sub_cancel,
-      Nat.succ_ne_zero, if_false]
+      Nat.succ_ne_zero, ite_false]
     rw [getElem?_streamTake_of_lt F (Nat.lt_succ_self m)]
     rfl
 

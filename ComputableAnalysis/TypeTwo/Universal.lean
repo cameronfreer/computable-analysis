@@ -74,7 +74,7 @@ private theorem recursiveIn_rfind' {O : Set (ℕ →. ℕ)} {f : ℕ →. ℕ}
         (Primrec.snd.comp <| Primrec.unpair.comp <| Primrec.fst.comp Primrec.unpair))
   have hf' : Nat.RecursiveIn O fun q => f (Nat.pair (Nat.unpair (Nat.unpair q).1).1
       ((Nat.unpair q).2 + (Nat.unpair (Nat.unpair q).1).2)) :=
-    (Nat.RecursiveIn.comp hf hρ.recursiveIn).of_eq fun q => by simp
+    (Nat.RecursiveIn.comp hf hρ.recursiveIn).of_eq fun q => by simp [some_bind_pfun]
   have hsnd : Nat.Primrec fun p => (Nat.unpair p).2 :=
     Primrec.nat_iff.1 (Primrec.snd.comp Primrec.unpair)
   have hadd : Nat.Primrec fun z => (Nat.unpair z).1 + (Nat.unpair z).2 :=
@@ -163,14 +163,14 @@ theorem exists_takeCode :
       (pair (OracleCode.const 0) OracleCode.id), fun P k => ?_⟩
   have hin : (pair (OracleCode.const 0) OracleCode.id).eval P k = Part.some (Nat.pair 0 k) := by
     simp [Seq.seq]
-  rw [eval_comp, hin, Part.bind_eq_bind, Part.bind_some]
+  rw [eval_comp, hin, some_bind_pfun]
   clear hin
   induction k with
   | zero => simp [eval_prec_zero, eval_const, streamTake]
   | succ k ih =>
-    rw [eval_prec_succ, ih, Part.bind_eq_bind, Part.bind_some]
-    simp only [eval_comp, eval_pair, eval_query, eval_left, eval_right, Seq.seq, Part.bind_eq_bind,
-      Part.bind_some, Part.map_some, Part.map_eq_map, Nat.unpair_pair]
+    rw [eval_prec_succ, ih, some_bind_fun]
+    simp only [eval_comp, eval_pair, eval_query, eval_left, eval_right, Seq.seq,
+      Part.bind_some, some_bind_pfun, Part.map_some, Part.map_eq_map, Nat.unpair_pair]
     rw [he P (P k) (streamTake P k), streamTake_succ]
 
 /-- The per-fuel simulation as an oracle code: on input `Nat.pair m k` it queries the
@@ -202,7 +202,7 @@ private theorem exists_bodyCode :
   obtain ⟨E, hE⟩ := Nat.Partrec.Code.exists_code.1 hbody.partrec
   refine ⟨comp (ofPartrecCode E) (pair (comp t right) OracleCode.id), fun P m k => ?_⟩
   rw [eval_comp, eval_pair]
-  simp only [eval_comp, eval_right, eval_id, Seq.seq, Part.bind_eq_bind, Part.bind_some,
+  simp only [eval_comp, eval_right, eval_id, Seq.seq, some_bind_pfun,
     Nat.unpair_pair, Part.map_some, Part.map_eq_map, ht P k, eval_ofPartrecCode, hE]
   simp [Nat.unpair_pair, Denumerable.ofNat_encode]
 
@@ -260,7 +260,7 @@ theorem exists_universal :
   have hsearch : (rfind (comp flag b)).eval P m =
       Nat.rfind fun k => (↑(f k).isSome : Part Bool) := by
     rw [eval_rfind]; congr 1; funext k
-    rw [eval_comp, hbmk k, Part.bind_eq_bind, Part.bind_some, hflag P (encode (f k))]
+    rw [eval_comp, hbmk k, some_bind_pfun, hflag P (encode (f k))]
     cases f k <;> simp
   -- evaluation as an `rfindOpt` over the bounded simulation
   have heval : c.eval P n = Nat.rfindOpt f := by
@@ -271,8 +271,18 @@ theorem exists_universal :
   have hlhs : (comp sub (comp b (pair OracleCode.id (rfind (comp flag b))))).eval P m
       = (rfind (comp flag b)).eval P m >>= fun k => Part.some (encode (f k) - 1) := by
     rw [eval_comp, eval_comp, eval_pair, eval_id]
-    simp only [Seq.seq, Part.map_eq_map, Part.map_some, Part.bind_eq_bind, Part.bind_assoc,
-      Part.bind_map, Part.bind_some, hbmk, hsub]
+    simp only [Seq.seq, Part.map_eq_map, Part.map_some, Part.bind_eq_bind, Part.bind_some]
+    -- `Part.bind_map` no longer rewrites under `>>=` at a partial-function continuation
+    rw [show (Part.map (Nat.pair m) ((flag.comp b).rfind.eval P m) >>= b.eval P)
+          = ((flag.comp b).rfind.eval P m).bind fun k => b.eval P (Nat.pair m k) from
+        Part.bind_map (Nat.pair m) _ (b.eval P)]
+    simp only [hbmk]
+    rw [show ((((flag.comp b).rfind.eval P m).bind fun k => Part.some (encode (f k)))
+            >>= sub.eval P)
+          = ((flag.comp b).rfind.eval P m).bind
+              fun k => (Part.some (encode (f k))).bind (sub.eval P) from
+        Part.bind_assoc _ _ _]
+    exact congrArg (Part.bind _) (funext fun k => by rw [bind_some_pfun, hsub])
   rw [hlhs, hsearch, heval, Nat.rfindOpt]
   refine Part.ext fun x => ?_
   simp only [Part.bind_eq_bind, Part.mem_bind_iff]
@@ -315,9 +325,9 @@ theorem exists_advisedEvalCode :
       = fun m => r (if m % 2 = 0 then m + 2 else m) := by
     funext m
     rcases Nat.even_or_odd' m with ⟨k, rfl | rfl⟩
-    · rw [Baire.interleave_even, if_pos (Nat.mul_mod_right 2 k)]
+    · rw [Baire.interleave_even, ite_eq_left (Nat.mul_mod_right 2 k)]
       rfl
-    · rw [Baire.interleave_odd, if_neg (by omega)]
+    · rw [Baire.interleave_odd, ite_eq_right (by omega)]
       rfl
   rw [eval_comp_some hinp, hsub, hhead, hu, hadv]
 
@@ -400,6 +410,7 @@ instance (b : ℕ → ℕ → ℕ) (g : ℕ → ℕ) (F : Baire) (a k : ℕ) :
   unfold SearchSuccess
   infer_instance
 
+set_option backward.isDefEq.respectTransparency false in
 /-- **Least-witness search over a primitive recursive predicate on an adaptively bounded oracle
 prefix.** The partial counterpart of `exists_prefixPostCode`: one oracle code returns, at
 coordinate `a`, the least search index passing the test — and returns nothing when no index

@@ -34,7 +34,7 @@ theorem type2Computable_const (k : ℕ) : Type2Computable (fun _ : Baire => fun 
 
 /-- The stream shift `p ↦ (n ↦ p (n+1))` is Type-2 computable. -/
 theorem type2Computable_shift : Type2Computable (fun p : Baire => fun n => p (n + 1)) :=
-  ⟨comp query succ, fun p n => by simp [eval_comp, eval_succ, eval_query]⟩
+  ⟨comp query succ, fun p n => by simp [eval_comp, eval_succ, some_bind_pfun]⟩
 
 /-- The name-level `truncate` retraction (defined in `Cantor.lean`) is Type-2 computable. -/
 theorem type2Computable_truncate : Type2Computable truncate := by
@@ -44,7 +44,7 @@ theorem type2Computable_truncate : Type2Computable truncate := by
       (fun m => by simp only [id_eq]; omega)
   obtain ⟨E, hE⟩ := Nat.Partrec.Code.exists_code.1 hmin.partrec
   refine ⟨comp (ofPartrecCode E) query, fun p n => ?_⟩
-  rw [eval_comp, eval_query, Part.bind_eq_bind, Part.bind_some, eval_ofPartrecCode, hE]
+  rw [eval_comp, eval_query, some_bind_pfun, eval_ofPartrecCode, hE]
   simp [truncate]
 
 /-! ### A total discontinuous map that is not Type-2 computable -/
@@ -65,9 +65,9 @@ theorem not_type2Computable_notAllZero : ¬ Type2Computable notAllZero := by
     ext p
     simp only [Set.mem_preimage, Set.mem_singleton_iff, notAllZero]
     by_cases hp : ∀ n, p n = 0
-    · rw [if_pos hp]
+    · rw [ite_eq_left hp]
       exact ⟨fun _ => funext hp, fun _ => rfl⟩
-    · rw [if_neg hp]
+    · rw [ite_eq_right hp]
       exact ⟨fun h1 => absurd h1 one_ne_zero, fun hpz => absurd (fun n => hpz ▸ rfl) hp⟩
   have hopen : IsOpen ({zeroStream} : Set Baire) :=
     hpre ▸ hc0.isOpen_preimage {0} (isOpen_discrete _)
@@ -77,12 +77,12 @@ theorem not_type2Computable_notAllZero : ¬ Type2Computable notAllZero := by
     ⟨I.sup id + 1, fun hmem => Nat.not_succ_le_self _ (Finset.le_sup (f := id) hmem)⟩
   have hqmem : (fun n => if n ∈ I then (0 : ℕ) else 1) ∈ (I : Set ℕ).pi t := by
     intro i hi
-    simp only [if_pos (Finset.mem_coe.mp hi)]
+    simp only [ite_eq_left (Finset.mem_coe.mp hi)]
     simpa [zeroStream] using (ht i (Finset.mem_coe.mp hi)).2
   have hqz := hsub hqmem
   rw [Set.mem_singleton_iff] at hqz
   have hm' := congrFun hqz m
-  simp only [if_neg hm, zeroStream] at hm'
+  simp only [ite_eq_right hm, zeroStream] at hm'
   exact one_ne_zero hm'
 
 end ComputableAnalysis

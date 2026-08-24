@@ -82,12 +82,12 @@ private def limInput (p : Baire) : Baire := fun m =>
 /-- The table entry is `0` when the input vanishes up to the stage. -/
 private theorem limInput_eq_zero {p : Baire} {m : ℕ} (h : ∀ k ≤ m.unpair.2, p k = 0) :
     limInput p m = 0 :=
-  if_pos (streamTake_sum_eq_zero.mpr h)
+  ite_eq_left (streamTake_sum_eq_zero.mpr h)
 
 /-- The table entry is `1` once a nonzero input entry has appeared by the stage. -/
 private theorem limInput_eq_one {p : Baire} {m k : ℕ} (hk : k ≤ m.unpair.2)
     (hpk : p k ≠ 0) : limInput p m = 1 :=
-  if_neg fun hsum => hpk (streamTake_sum_eq_zero.mp hsum k hk)
+  ite_eq_right fun hsum => hpk (streamTake_sum_eq_zero.mp hsum k hk)
 
 /-- The postprocessor `comp query (const 1)`: on any oracle `r` its stream value is the
 constant stream at `r 1` — coordinate `1` of the interleaved input is the oracle answer's
@@ -186,15 +186,15 @@ theorem limTable_dom (p : Baire) : Lim.Dom (limTable p) := by
   have hcol : ∀ n : ℕ, ∃ ln : ℕ, ∃ s : ℕ, ∀ t, s ≤ t → limTable p (Nat.pair n t) = ln := by
     intro n
     by_cases hpar : n % 2 = 0
-    · exact ⟨p (n / 2), 0, fun t _ => by simp only [limTable, Nat.unpair_pair, if_pos hpar]⟩
+    · exact ⟨p (n / 2), 0, fun t _ => by simp only [limTable, Nat.unpair_pair, ite_eq_left hpar]⟩
     · by_cases hhalt : ∃ t, jumpBit p (n / 2) t = 1
       · obtain ⟨t₀, ht₀⟩ := hhalt
         refine ⟨1, t₀, fun t ht => ?_⟩
-        simp only [limTable, Nat.unpair_pair, if_neg hpar]
+        simp only [limTable, Nat.unpair_pair, ite_eq_right hpar]
         exact jumpBit_mono p (n / 2) ht ht₀
       · have hnone := not_exists.mp hhalt
         refine ⟨0, 0, fun t _ => ?_⟩
-        simp only [limTable, Nat.unpair_pair, if_neg hpar]
+        simp only [limTable, Nat.unpair_pair, ite_eq_right hpar]
         rcases jumpBit_cases p (n / 2) t with h0 | h1
         · exact h0
         · exact absurd h1 (hnone t)
@@ -263,9 +263,9 @@ theorem exists_limTableCode : ∃ K : OracleCode, ∀ p : Baire, limTable p ∈ 
     lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_left _ _)
   have hle : m.unpair.2 ≤ max (m.unpair.1 / 2 + 1) m.unpair.2 := le_max_right _ _
   by_cases hpar : m.unpair.1 % 2 = 0
-  · simp only [limTable, limTableStep, Nat.unpair_pair, Denumerable.ofNat_encode, if_pos hpar,
+  · simp only [limTable, limTableStep, Nat.unpair_pair, Denumerable.ofNat_encode, ite_eq_left hpar,
       getElem?_streamTake_of_lt p hlt, Option.getD_some]
-  · simp only [limTable, limTableStep, Nat.unpair_pair, Denumerable.ofNat_encode, if_neg hpar,
+  · simp only [limTable, limTableStep, Nat.unpair_pair, Denumerable.ofNat_encode, ite_eq_right hpar,
       take_streamTake p hle, jumpBit]
 
 end ComputableAnalysis

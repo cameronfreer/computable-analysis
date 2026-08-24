@@ -60,10 +60,10 @@ private theorem exists_namesPoint_agree (P : ComputableMetricPresentation X) {p 
     obtain ⟨i, hi⟩ := P.denseRange.exists_dist_lt x'
       (by positivity : (0 : ℝ) < ((2 : ℝ)⁻¹) ^ n)
     exact ⟨i, by rw [dist_comm]; exact hi.le⟩
-  refine ⟨fun k => if k ≤ M then p k else (hd k).choose, fun k => ?_, fun k hk => if_pos hk⟩
+  refine ⟨fun k => if k ≤ M then p k else (hd k).choose, fun k => ?_, fun k hk => ite_eq_left hk⟩
   change dist (P.dense (if k ≤ M then p k else (hd k).choose)) x' ≤ ((2 : ℝ)⁻¹) ^ k
   by_cases hk : k ≤ M
-  · rw [if_pos hk]
+  · rw [ite_eq_left hk]
     have hMk : ((2 : ℝ)⁻¹) ^ (M + 1) ≤ ((2 : ℝ)⁻¹) ^ (k + 1) :=
       pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)
     calc dist (P.dense (p k)) x'
@@ -72,7 +72,7 @@ private theorem exists_namesPoint_agree (P : ComputableMetricPresentation X) {p 
           rw [dist_comm x x']
           exact add_le_add (hp k) (hx'.trans hMk)
       _ = ((2 : ℝ)⁻¹) ^ k := by rw [pow_succ]; ring
-  · rw [if_neg hk]
+  · rw [ite_eq_right hk]
     exact (hd k).choose_spec
 
 /-- **Realizable ⇒ continuous** (the converse admissibility half). A map advised-realized

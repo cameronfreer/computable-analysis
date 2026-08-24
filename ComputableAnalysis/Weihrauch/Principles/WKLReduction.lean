@@ -344,9 +344,9 @@ theorem raceFlagB_eq (p : Baire) (j k : ℕ) :
         · rfl
       exact h2 l (List.mem_range.mp hl) ((hpast l (List.mem_range.mp hl)).mp this)
   by_cases hc : RaceEvent p w b (k / 2) ∧ ∀ m < k / 2, ¬ RaceEvent p w b m
-  · rw [raceFlagB, if_pos (hiff.mpr hc), raceFlags, firstOccurrenceFlags, if_pos hc]
-  · rw [raceFlagB, if_neg (fun hh => hc (hiff.mp hh)), raceFlags, firstOccurrenceFlags,
-      if_neg hc]
+  · rw [raceFlagB, ite_eq_left (hiff.mpr hc), raceFlags, firstOccurrenceFlags, ite_eq_left hc]
+  · rw [raceFlagB, ite_eq_right (fun hh => hc (hiff.mp hh)), raceFlags, firstOccurrenceFlags,
+      ite_eq_right hc]
 
 /-- A single code produces the packed family of race flags. -/
 theorem exists_raceFlagsCode : ∃ K : OracleCode, ∀ p : Baire,

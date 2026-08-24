@@ -106,11 +106,11 @@ def efilcDown (q : Baire) : ℕ → ℕ → ℕ → ℕ
 theorem efilcDown_self (q : Baire) (i x : ℕ) : efilcDown q i i x = x := by
   cases i with
   | zero => rfl
-  | succ j => rw [efilcDown, if_pos le_rfl]
+  | succ j => rw [efilcDown, ite_eq_left le_rfl]
 
 theorem efilcDown_succ (q : Baire) {j i : ℕ} (h : i ≤ j) (x : ℕ) :
     efilcDown q (j + 1) i x = efilcDown q j i (efilcBond q j x) := by
-  rw [efilcDown, if_neg (by omega)]
+  rw [efilcDown, ite_eq_right (by omega)]
 
 theorem efilcDown_succ_self (q : Baire) (j x : ℕ) :
     efilcDown q (j + 1) j x = efilcBond q j x := by
@@ -158,8 +158,8 @@ theorem exists_section_of_promises {q : Baire} (hne : FibersNonempty q)
   let α : ℕ → Type := fun k => {x : ℕ // x ∈ efilcFiber q k}
   let proj : {i j : ℕ} → (hij : i ≤ j) → α j → α i := fun {i j} hij a =>
     ⟨efilcDown q j i a.1, efilcDown_mem hB hij a.2⟩
-  haveI : ∀ k, Finite (α k) := fun k => (List.finite_toSet _).to_subtype
-  haveI : ∀ k, Nonempty (α k) := fun k => by
+  have : ∀ k, Finite (α k) := fun k => (List.finite_toSet _).to_subtype
+  have : ∀ k, Nonempty (α k) := fun k => by
     obtain ⟨x, hx⟩ := List.exists_mem_of_ne_nil _ (hne k)
     exact ⟨⟨x, hx⟩⟩
   obtain ⟨f, hf⟩ := exists_seq_forall_proj_of_forall_finite (α := α) proj

@@ -77,8 +77,8 @@ private theorem primrec₂_choose : Primrec₂ Nat.choose := by
       (Primrec.const 0)
   refine hfac.of_eq fun n k ↦ ?_
   by_cases h : k ≤ n
-  · rw [if_pos h, Nat.choose_eq_factorial_div_factorial h]
-  · rw [if_neg h, Nat.choose_eq_zero_of_lt (Nat.lt_of_not_le h)]
+  · rw [ite_eq_left h, Nat.choose_eq_factorial_div_factorial h]
+  · rw [ite_eq_right h, Nat.choose_eq_zero_of_lt (Nat.lt_of_not_le h)]
 
 /-! ### The coded grid points -/
 

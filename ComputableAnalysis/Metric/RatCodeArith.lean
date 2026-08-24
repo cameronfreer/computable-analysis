@@ -193,13 +193,13 @@ theorem ratOfCode_absCode (m : ℕ) : ratOfCode (absCode m) = |ratOfCode m| := b
     have hq : ratOfCode m ≤ 0 := by
       rw [ratOfCode]
       exact div_nonpos_of_nonpos_of_nonneg (by linarith) hden.le
-    rw [absCode, if_pos h, ratOfCode_negCode, abs_of_nonpos hq]
+    rw [absCode, ite_eq_left h, ratOfCode_negCode, abs_of_nonpos hq]
   · have hba : (m.unpair.1.unpair.2 : ℚ) ≤ (m.unpair.1.unpair.1 : ℚ) := by
       exact_mod_cast (Nat.lt_of_not_le h).le
     have hq : 0 ≤ ratOfCode m := by
       rw [ratOfCode]
       exact div_nonneg (by linarith) hden.le
-    rw [absCode, if_neg h, abs_of_nonneg hq]
+    rw [absCode, ite_eq_right h, abs_of_nonneg hq]
 
 /-- Rational-code distance: `|q₁ - q₂|` on unnormalized fractions. -/
 def distCode (m₁ m₂ : ℕ) : ℕ := absCode (subCode m₁ m₂)
@@ -226,7 +226,7 @@ theorem ratOfCode_clampCode (m : ℕ) :
     have hr : ratOfCode m ≤ 0 := by
       unfold ratOfCode
       exact div_nonpos_of_nonpos_of_nonneg (by linarith) hden.le
-    rw [clampCode, if_pos h1, ratOfCode_zeroCode, eq_comm,
+    rw [clampCode, ite_eq_left h1, ratOfCode_zeroCode, eq_comm,
       max_eq_left ((min_le_right _ _).trans hr)]
   · by_cases h2 : m.unpair.1.unpair.2 + m.unpair.2 + 1 ≤ m.unpair.1.unpair.1
     · have hcast : (m.unpair.1.unpair.2 : ℚ) + (m.unpair.2 : ℚ) + 1
@@ -235,7 +235,7 @@ theorem ratOfCode_clampCode (m : ℕ) :
         unfold ratOfCode
         rw [le_div_iff₀ hden]
         linarith
-      rw [clampCode, if_neg h1, if_pos h2, ratOfCode_oneCode, eq_comm,
+      rw [clampCode, ite_eq_right h1, ite_eq_left h2, ratOfCode_oneCode, eq_comm,
         min_eq_left hr, max_eq_right zero_le_one]
     · have hba : (m.unpair.1.unpair.2 : ℚ) ≤ (m.unpair.1.unpair.1 : ℚ) := by
         exact_mod_cast (Nat.lt_of_not_le h1).le
@@ -249,7 +249,7 @@ theorem ratOfCode_clampCode (m : ℕ) :
         unfold ratOfCode
         rw [div_le_one hden]
         linarith
-      rw [clampCode, if_neg h1, if_neg h2, eq_comm, min_eq_right hr1, max_eq_right hr0]
+      rw [clampCode, ite_eq_right h1, ite_eq_right h2, eq_comm, min_eq_right hr1, max_eq_right hr0]
 
 /-- Rational-code unit complement: `1 - q` on unnormalized fractions. -/
 def symmCode (m : ℕ) : ℕ := addCode oneCode (negCode m)

@@ -51,10 +51,10 @@ theorem cylinder_eq_pi (s : List Bool) :
   ext x
   simp only [Set.mem_pi, Finset.coe_range, Set.mem_Iio, cylinderCoord]
   refine ⟨fun hx i hi => ?_, fun hx i hi => ?_⟩
-  · rw [dif_pos hi]
+  · rw [dite_eq_left hi]
     exact Set.mem_singleton_iff.mpr (hx i hi)
   · have h := hx i hi
-    rw [dif_pos hi, Set.mem_singleton_iff] at h
+    rw [dite_eq_left hi, Set.mem_singleton_iff] at h
     exact h
 
 /-- The one-bit Bernoulli measure of the constraint at coordinate `i`. -/
@@ -63,7 +63,7 @@ theorem bernoulliMeasure_cylinderCoord (p : Set.Icc (0 : ℝ) 1) {s : List Bool}
     bernoulliMeasure true false p (cylinderCoord s i)
       = ENNReal.ofReal (cond s[i] p.1 (1 - p.1)) := by
   classical
-  rw [cylinderCoord, dif_pos hi, bernoulliMeasure_apply p (by simp)]
+  rw [cylinderCoord, dite_eq_left hi, bernoulliMeasure_apply p (by simp)]
   cases hb : s[i] <;>
     simp [unitInterval.toNNReal, ENNReal.ofReal, Real.toNNReal_of_nonneg, p.2.1,
       sub_nonneg.mpr p.2.2] <;>

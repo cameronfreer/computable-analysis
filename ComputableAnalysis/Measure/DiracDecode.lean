@@ -120,7 +120,7 @@ private theorem foldr_select {α : Type*} (P : α → Prop) [DecidablePred P] (f
       · by_cases hPb : P b
         · rw [huniq b List.mem_cons_self hPb]
           simp [hP]
-        · rw [List.foldr_cons, if_neg hPb]
+        · rw [List.foldr_cons, ite_eq_right hPb]
           exact ih ha' fun c hc => huniq c (List.mem_cons_of_mem _ hc)
 
 /-! ### The decoding postprocessor -/

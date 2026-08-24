@@ -63,7 +63,6 @@ noncomputable def cantorMeasureRep : Representation (ProbabilityMeasure Cantor) 
             (Nat.pair (Encodable.encode s) n).unpair.2) = G s := by
         funext n
         rw [Nat.unpair_pair, Encodable.encodek]
-        rfl
       rw [hcomp]
       exact (h s).choose_spec
     exact ⟨⟨μ, hM⟩, measureNames_unique (Exists.choose_spec _) hM⟩

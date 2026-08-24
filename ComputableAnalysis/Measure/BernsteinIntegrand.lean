@@ -200,7 +200,7 @@ theorem bernsteinName_pair (s : List Bool) (m n : ℕ) :
     bernsteinName s (2 + Nat.pair m n) = bernsteinCode s m := by
   have h2 : 2 + Nat.pair m n - 2 = Nat.pair m n := by omega
   simp only [bernsteinName]
-  rw [if_neg (by omega), if_neg (by omega), h2, Nat.unpair_pair]
+  rw [ite_eq_right (by omega), ite_eq_right (by omega), h2, Nat.unpair_pair]
 
 /-- **`bernsteinName s` is an integrand layout for `bernsteinBL s`**, with heads
 `L = s.length` and `B = 1`; the approximation streams are exact. -/

@@ -416,7 +416,7 @@ private def mulHeads (p : Baire) : Baire := fun m =>
 private theorem mulHeads_apply_ne_zero (p : Baire) {j : ℕ} (h : j ≠ 0) :
     mulHeads p j = p (j - 1) := by
   unfold mulHeads
-  rw [if_neg h]
+  rw [ite_eq_right h]
 
 /-- Oracle-free postprocessor for the head-packing reindexer. -/
 private def mulReindexPost (w : ℕ) : ℕ :=
@@ -444,10 +444,10 @@ private theorem exists_mulHeadsCode : ∃ R : OracleCode, R.Computes mulHeads :=
   simp only [Nat.unpair_pair, ofNat_encode]
   by_cases h : n = 0
   · subst h
-    rw [if_pos rfl, if_pos rfl, streamTake_getD p (by omega : (0 : ℕ) < 0 + 2),
+    rw [ite_eq_left rfl, ite_eq_left rfl, streamTake_getD p (by omega : (0 : ℕ) < 0 + 2),
       streamTake_getD p (by omega : (1 : ℕ) < 0 + 2)]
   · have hlt : n - 1 < n + 2 := by omega
-    rw [if_neg h, if_neg h, streamTake_getD p hlt]
+    rw [ite_eq_right h, ite_eq_right h, streamTake_getD p hlt]
 
 /-- Oracle-free postprocessor for multiplication over the head-packed stream. -/
 private def mulPost (w : ℕ) : ℕ :=

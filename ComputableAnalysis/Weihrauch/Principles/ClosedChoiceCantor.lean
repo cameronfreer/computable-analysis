@@ -85,7 +85,7 @@ def closedCantorSet (p : Baire) : Set Cantor :=
 theorem closedCantorSet_eq_compl (p : Baire) :
     closedCantorSet p = (cantorForbiddenOpen p)ᶜ := by
   ext x
-  simp only [closedCantorSet, cantorForbiddenOpen, Set.mem_setOf_eq, Set.mem_compl_iff,
+  simp only [closedCantorSet, cantorForbiddenOpen, Set.mem_ofPred_eq, Set.mem_compl_iff,
     Set.mem_iUnion, not_exists]
 
 theorem isClosed_closedCantorSet (p : Baire) : IsClosed (closedCantorSet p) := by
@@ -104,7 +104,7 @@ theorem closedCantorSet_congr {p q : Baire}
 @[simp]
 theorem closedCantorSet_zero : closedCantorSet (fun _ => 0) = Set.univ := by
   ext x
-  simp only [closedCantorSet, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+  simp only [closedCantorSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
   intro i w hw
   exact absurd (cantorForbiddenWord_eq_none_iff.mpr rfl) (by rw [hw]; simp)
 

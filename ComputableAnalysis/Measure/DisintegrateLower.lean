@@ -172,14 +172,14 @@ private noncomputable def encodingMap (p q : Baire) : Cantor → Cantor := fun x
 private theorem encodingMap_allFalse (p q : Baire) :
     encodingMap p q (fun _ => false) = unaryEncode q := by
   unfold encodingMap
-  exact dif_neg (by simp)
+  exact dite_eq_right (by simp)
 
 /-- On a shell point (`Nat.find h` its first `true`), the encoding map reads the
 corresponding stage guess. -/
 private theorem encodingMap_of_true (p q : Baire) {x : Cantor} (h : ∃ t, x t = true) :
     encodingMap p q x = unaryEncode fun n => p (Nat.pair n (Nat.find h)) := by
   unfold encodingMap
-  rw [dif_pos h]
+  rw [dite_eq_left h]
 
 /-- **KEY LEMMA 1**: continuity of the encoding map. Away from `0^ω` the map is locally
 constant on each clopen shell; at `0^ω` column stabilization (`hLim`) forces convergence,
@@ -385,7 +385,7 @@ private theorem isOpenPosMeasure_baseMeasureM : baseMeasureM.IsOpenPosMeasure :=
 
 /-- **Full support of the base measure**: openness-positivity plus `support_eq_univ`. -/
 private theorem calibBase_support : calibBase.toMeasure.support = Set.univ := by
-  haveI := isOpenPosMeasure_baseMeasureM
+  have := isOpenPosMeasure_baseMeasureM
   change baseMeasureM.support = Set.univ
   exact Measure.support_eq_univ
 
@@ -411,7 +411,7 @@ private theorem runLength_unaryEncode (q : Baire) (n : ℕ) :
     runLength (unaryEncode q) (unaryCum q n) = q n := by
   have hex : ∃ j, unaryEncode q (unaryCum q n + j) = false :=
     ⟨q n, unaryEncode_apply_sep q n⟩
-  rw [runLength, dif_pos hex]
+  rw [runLength, dite_eq_left hex]
   refine le_antisymm (Nat.find_le (unaryEncode_apply_sep q n)) ?_
   refine (Nat.le_find_iff hex _).mpr fun j hj => ?_
   rw [unaryEncode_apply_mem q n j hj]
@@ -595,8 +595,8 @@ private theorem atomL_eq {L : List ℕ} {p : Baire} {i k : ℕ}
     atomL L i k = atomPoint p i k := by
   rw [atomL, atomPoint, Cantor.interleave]
   by_cases hk : k % 2 = 0
-  · rw [if_pos hk, if_pos hk, baseAtom_eq_wordPoint, wordPoint_apply]
-  · rw [if_neg hk, if_neg hk]
+  · rw [ite_eq_left hk, ite_eq_left hk, baseAtom_eq_wordPoint, wordPoint_apply]
+  · rw [ite_eq_right hk, ite_eq_right hk]
     exact encL_eq fun m hm => hL m (le_trans hm (Nat.div_le_self k 2))
 
 private theorem memCylL_eq {L : List ℕ} {p : Baire} {i : ℕ} {w : List Bool}
@@ -665,11 +665,11 @@ private theorem tsum_split (f : ℕ → ℝ≥0∞) (n : ℕ) :
   rw [tsum_congr hpt, ENNReal.tsum_add]
   congr 1
   · refine (tsum_eq_sum (s := Finset.range n) (f := fun a => if a < n then f a else 0)
-      fun b hb => if_neg (by simpa using hb)).trans ?_
-    exact Finset.sum_congr rfl fun i hi => if_pos (Finset.mem_range.mp hi)
+      fun b hb => ite_eq_right (by simpa using hb)).trans ?_
+    exact Finset.sum_congr rfl fun i hi => ite_eq_left (Finset.mem_range.mp hi)
   · rw [← Function.Injective.tsum_eq (g := fun j : ℕ => j + n)
       (fun a b h => Nat.add_right_cancel h) hsupp]
-    exact tsum_congr fun j => if_neg (by omega)
+    exact tsum_congr fun j => ite_eq_right (by omega)
 
 private theorem tsum_tail_half (n : ℕ) :
     ∑' i : ℕ, (2 : ℝ≥0∞)⁻¹ ^ (i + n + 1) = (2 : ℝ≥0∞)⁻¹ ^ n := by
@@ -784,9 +784,9 @@ private theorem headE_toReal_eq {L : List ℕ} {p : Baire} {w : List Bool} {n : 
   have hmem : memCylL L i w = true ↔ atomPoint p i ∈ (cylinder w : Set Cantor) :=
     memCylL_eq (hL i hin)
   by_cases h : atomPoint p i ∈ (cylinder w : Set Cantor)
-  · rw [Set.indicator_of_mem h, if_pos (hmem.mpr h), two_pow_div n i hin]
+  · rw [Set.indicator_of_mem h, ite_eq_left (hmem.mpr h), two_pow_div n i hin]
     simp
-  · rw [Set.indicator_of_notMem h, if_neg (fun hc => h (hmem.mp hc))]
+  · rw [Set.indicator_of_notMem h, ite_eq_right (fun hc => h (hmem.mp hc))]
     simp
 
 /-- **The level-`n` mass approximation.** The code names a rational within `2^-n` of the
@@ -1114,7 +1114,7 @@ private theorem countF_const_of_no_sep {w q : Baire}
           countF_const_of_no_sep hw hb fun j hj₁ hj₂ => hsep j hj₁ (by omega)
         have htrue : unaryEncode q b = true :=
           unaryEncode_eq_true_of_ne_sepPos fun m => hsep b hb (by omega) m
-        rw [countF_streamTake_succ, hprev, if_pos ((hw b).mpr htrue), Nat.add_zero]
+        rw [countF_streamTake_succ, hprev, ite_eq_left ((hw b).mpr htrue), Nat.add_zero]
 
 /-- At the `n`-th separator the prefix count is exactly `n + 1`. -/
 private theorem countF_sepPos {w q : Baire} (hw : ∀ k, w k = 1 ↔ unaryEncode q k = true) :
@@ -1127,7 +1127,7 @@ private theorem countF_sepPos {w q : Baire} (hw : ∀ k, w k = 1 ↔ unaryEncode
         rw [hw]
         rw [unaryEncode_sepPos]
         exact Bool.noConfusion
-      rw [countF_streamTake_succ, hzero, if_neg hsep]
+      rw [countF_streamTake_succ, hzero, ite_eq_right hsep]
       unfold countF
       rw [streamTake, List.ofFn_zero, List.foldr_nil]
   | n + 1 => by
@@ -1142,7 +1142,7 @@ private theorem countF_sepPos {w q : Baire} (hw : ∀ k, w k = 1 ↔ unaryEncode
       have hsep : ¬ (w (sepPos q (n + 1)) = 1) := by
         rw [hw, unaryEncode_sepPos]
         exact Bool.noConfusion
-      rw [countF_streamTake_succ, hgap, countF_sepPos hw n, if_neg hsep]
+      rw [countF_streamTake_succ, hgap, countF_sepPos hw n, ite_eq_right hsep]
 
 /-- Before the `n`-th separator the prefix count has not yet reached `n + 1`. -/
 private theorem countF_le_of_lt_sepPos {w q : Baire}
@@ -1213,7 +1213,7 @@ private theorem exists_unaryDecodeCode :
     intro n
     refine Part.eq_some_iff.mpr ((hSiff w n (sepPos q n)).mpr ⟨?_, fun j hj => ?_⟩)
     · simp only [SearchSuccess, Nat.unpair_pair, Denumerable.ofNat_encode]
-      exact if_pos (countF_sepPos hw n)
+      exact ite_eq_left (countF_sepPos hw n)
     · simp only [SearchSuccess, Nat.unpair_pair, Denumerable.ofNat_encode]
       have hle := countF_le_of_lt_sepPos hw hj
       have hne : ¬ (countF (streamTake w (j + 1)) = n + 1) := by omega
@@ -1332,7 +1332,7 @@ measure. Correctness rests on the accepted output being unique
 pair sees the other's data, which is what makes the reduction strong. -/
 theorem lim_le_disintegrate :
     Lim ≤sW Disintegrate cantorPresentation cantorPresentation := by
-  haveI : Nonempty Cantor := ⟨fun _ => false⟩
+  have : Nonempty Cantor := ⟨fun _ => false⟩
   obtain ⟨K, hK⟩ := exists_calibK
   obtain ⟨H, hH⟩ := exists_calibH
   refine strongReduction_iff_exists_reductionPair.mpr ⟨K, H, fun p x hpx hdom => ?_⟩

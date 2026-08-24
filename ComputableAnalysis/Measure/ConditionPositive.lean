@@ -272,7 +272,7 @@ omit [BorelSpace X] [BorelSpace Y] in
 /-- The normalizer of the pinned package is everywhere finite. -/
 theorem bayesZ_ne_top (_h : IsCondDensityPair μ q) (x : X) :
     bayesZ μ.toMeasure.snd q.toFun x ≠ ∞ := by
-  haveI : IsProbabilityMeasure μ.toMeasure := μ.prop
+  have : IsProbabilityMeasure μ.toMeasure := μ.prop
   obtain ⟨L, B, hL, hB⟩ := q.exists_bounds
   exact bayesZ_ne_top_of_bound μ.toMeasure.snd hB x
 
@@ -283,10 +283,10 @@ Second countability of the observed factor (automatic over a presentation, throu
 density datum to product-σ-algebra measurability. -/
 theorem isCondKernel [SecondCountableTopology X] (h : IsCondDensityPair μ q) :
     IsCondKernel μ (bayesKernel μ.toMeasure.snd q.toFun) := by
-  haveI : IsProbabilityMeasure μ.toMeasure := μ.prop
+  have : IsProbabilityMeasure μ.toMeasure := μ.prop
   have htop : ∀ x, bayesZ μ.toMeasure.snd q.toFun x ≠ ∞ := h.bayesZ_ne_top
   obtain ⟨ρ, hsf, hjoint, hnn, h0⟩ := h
-  haveI := hsf
+  have := hsf
   obtain ⟨L, B, hL, hB⟩ := q.exists_bounds
   have hq : Measurable q.toFun := hL.continuous.measurable
   exact ⟨isMarkovKernel_bayesKernel hq h0 htop,
@@ -425,7 +425,7 @@ private theorem reweight_toMeasure_apply
     (reweight w).toMeasure A
       = ENNReal.ofReal ((∫ y in A, w.val.1.toFun y ∂w.val.2.toMeasure)
           / ∫ y, w.val.1.toFun y ∂w.val.2.toMeasure) := by
-  haveI : IsProbabilityMeasure w.val.2.toMeasure := w.val.2.prop
+  have : IsProbabilityMeasure w.val.2.toMeasure := w.val.2.prop
   have hZpos : 0 < ∫ y, w.val.1.toFun y ∂w.val.2.toMeasure := w.prop.2
   have hlt : ∫⁻ y in A, ENNReal.ofReal (w.val.1.toFun y) ∂w.val.2.toMeasure
       = ENNReal.ofReal (∫ y in A, w.val.1.toFun y ∂w.val.2.toMeasure) :=
@@ -451,7 +451,7 @@ nonnegativity is the package's explicit conjunct, and positivity of the mean is 
 everywhere-positivity of the Bayes normalizer. -/
 theorem IsCondDensityPair.posDensityPair (h : IsCondDensityPair μ q) (x : X) :
     PosDensityPair (q.slice x, sndMarginal μ) := by
-  haveI : IsProbabilityMeasure μ.toMeasure := μ.prop
+  have : IsProbabilityMeasure μ.toMeasure := μ.prop
   refine ⟨fun y => h.nonneg (x, y), ?_⟩
   by_contra hcon
   refine h.bayesZ_ne_zero x ?_
@@ -579,7 +579,7 @@ private theorem setIntegral_le_thickening_add
         (mul_le_mul_of_nonneg_left hdist.le L.coe_nonneg))).1
       have hzf : t ≤ f z := hfeq z ▸ hz.1
       refine ⟨?_, Metric.mem_thickening_iff.mpr ⟨z, hz.2, hdist⟩⟩
-      simp only [Set.mem_setOf_eq, hfeq a]
+      simp only [Set.mem_ofPred_eq, hfeq a]
       linarith
     simp only [hg_def]
     rw [measureReal_def, measureReal_def, Measure.restrict_apply (hlev t),
@@ -698,11 +698,11 @@ private theorem levyProkhorovDist_reweight_le (f : BoundedLipschitzFun Y)
     levyProkhorovDist (reweight ⟨(f, ν₁), h₁⟩).toMeasure
         (reweight ⟨(f, ν₂), h₂⟩).toMeasure
       ≤ ε + 2 * ((L : ℝ) + B) * ε / z := by
-  haveI hP1 : IsProbabilityMeasure ν₁.toMeasure := ν₁.prop
-  haveI hP2 : IsProbabilityMeasure ν₂.toMeasure := ν₂.prop
-  haveI : IsProbabilityMeasure (reweight ⟨(f, ν₁), h₁⟩).toMeasure :=
+  have hP1 : IsProbabilityMeasure ν₁.toMeasure := ν₁.prop
+  have hP2 : IsProbabilityMeasure ν₂.toMeasure := ν₂.prop
+  have : IsProbabilityMeasure (reweight ⟨(f, ν₁), h₁⟩).toMeasure :=
     (reweight ⟨(f, ν₁), h₁⟩).prop
-  haveI : IsProbabilityMeasure (reweight ⟨(f, ν₂), h₂⟩).toMeasure :=
+  have : IsProbabilityMeasure (reweight ⟨(f, ν₂), h₂⟩).toMeasure :=
     (reweight ⟨(f, ν₂), h₂⟩).prop
   have hZ₁ : 0 < ∫ y, f.toFun y ∂ν₁.toMeasure := lt_of_lt_of_le hz hzZ
   have hZ₂ : 0 < ∫ y, f.toFun y ∂ν₂.toMeasure := h₂.2
@@ -900,19 +900,13 @@ private theorem toMeasure_atomicOfList_of_ne {l : List (ℕ × ℕ)} (h0 : wSumL
       = ∑ i : Fin l.length,
           ENNReal.ofReal ((wRaw l[i].2 / wSumL l : ℚ) : ℝ)
             • Measure.dirac (P.dense l[i].1) := by
-  rw [atomicOfList]
-  split
-  · next h => exact absurd h h0
-  · next h => rfl
+  exact congrArg ProbabilityMeasure.toMeasure (dite_eq_right h0)
 
 omit [BorelSpace X] in
 /-- Zero total weight: the decoded atomic is the default Dirac at dense point `0`. -/
 private theorem toMeasure_atomicOfList_of_eq {l : List (ℕ × ℕ)} (h0 : wSumL l = 0) :
     (atomicOfList P l).toMeasure = Measure.dirac (P.dense 0) := by
-  rw [atomicOfList]
-  split
-  · next h => rfl
-  · next h => exact absurd h0 h
+  exact congrArg ProbabilityMeasure.toMeasure (dite_eq_left h0)
 
 omit [BorelSpace X] in
 /-- Decoding an encoded atom list. -/
@@ -1063,11 +1057,11 @@ private theorem slicePost_value (p : Baire) (n : ℕ) :
     simp only [sliceVpos, sliceT, sliceJ, Nat.unpair_pair, hA3, hV_def, ht_def, hj_def]
   simp only [slicePost, prefListS, Nat.unpair_pair, ofNat_encode, hVpos3]
   by_cases h0 : n = 0
-  · rw [if_pos h0, if_pos h0, streamTake_getD p (by omega : (0 : ℕ) < m₂)]
-  · rw [if_neg h0, if_neg h0]
+  · rw [ite_eq_left h0, ite_eq_left h0, streamTake_getD p (by omega : (0 : ℕ) < m₂)]
+  · rw [ite_eq_right h0, ite_eq_right h0]
     by_cases h1 : n = 1
-    · rw [if_pos h1, if_pos h1, streamTake_getD p (by omega : (2 : ℕ) < m₂)]
-    · rw [if_neg h1, if_neg h1, streamTake_getD p (by omega : V < m₂), hV_def]
+    · rw [ite_eq_left h1, ite_eq_left h1, streamTake_getD p (by omega : (2 : ℕ) < m₂)]
+    · rw [ite_eq_right h1, ite_eq_right h1, streamTake_getD p (by omega : V < m₂), hV_def]
 
 variable {X Y : Type} [MetricSpace X] [MetricSpace Y]
 
@@ -1115,7 +1109,7 @@ theorem computableMap_blSlice (P : ComputableMetricPresentation X)
   have hne1 : ¬(2 + Nat.pair j t = 1) := by omega
   have hrv : r (2 + Nat.pair j t)
       = p.evenPart (2 + Nat.pair (Nat.pair (p.oddPart (t + 1 + p 0)) j) (t + 1)) := by
-    rw [hrval, if_neg hne0, if_neg hne1, hidx, Nat.unpair_pair]
+    rw [hrval, ite_eq_right hne0, ite_eq_right hne1, hidx, Nat.unpair_pair]
     rfl
   set k : ℕ := t + 1 + p 0 with hk_def
   set m' : ℕ := Nat.pair (p.oddPart k) j with hm'_def
@@ -1404,9 +1398,9 @@ private theorem reweight_toMeasure_of_dirac {f : BoundedLipschitzFun Y}
     exact setIntegral_dirac' hfm _ hA
   rw [hset, hZ]
   by_cases hy : y ∈ A
-  · rw [if_pos hy, div_self hfy.ne', ENNReal.ofReal_one, Set.indicator_of_mem hy]
+  · rw [ite_eq_left hy, div_self hfy.ne', ENNReal.ofReal_one, Set.indicator_of_mem hy]
     rfl
-  · rw [if_neg hy, zero_div, ENNReal.ofReal_zero, Set.indicator_of_notMem hy]
+  · rw [ite_eq_right hy, zero_div, ENNReal.ofReal_zero, Set.indicator_of_notMem hy]
 
 omit [MetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] in
 /-- Monotonicity of the pinned rate. -/
@@ -1430,8 +1424,8 @@ private theorem integ_le_integ_add (f : BoundedLipschitzFun Y) (ν : Probability
       < ENNReal.ofReal ε) :
     (∫ y, f.toFun y ∂ν.toMeasure)
       ≤ (∫ y, f.toFun y ∂(atomicOfList Q l).toMeasure) + ((L : ℝ) + B) * ε := by
-  haveI : IsProbabilityMeasure ν.toMeasure := ν.prop
-  haveI : IsProbabilityMeasure (atomicOfList Q l).toMeasure := (atomicOfList Q l).prop
+  have : IsProbabilityMeasure ν.toMeasure := ν.prop
+  have : IsProbabilityMeasure (atomicOfList Q l).toMeasure := (atomicOfList Q l).prop
   have hcore := setIntegral_le_thickening_add hname.lip hnn hname.bound hε0 hedist
     MeasurableSet.univ
   push_cast at hcore
@@ -1653,7 +1647,7 @@ private theorem reweight_atomic_candidate_le_pos (f : BoundedLipschitzFun Y)
         (atomicOfList Q (l.map fun pr =>
           (pr.1, fuseCode pr.2 (Ψ (2 + Nat.pair pr.1 s)) B))).toMeasure
       ≤ (2 : ℝ)⁻¹ ^ (n + 1) := by
-  haveI : IsProbabilityMeasure (atomicOfList Q l).toMeasure := (atomicOfList Q l).prop
+  have : IsProbabilityMeasure (atomicOfList Q l).toMeasure := (atomicOfList Q l).prop
   have hBnd := hname.bound
   have hfm : StronglyMeasurable f.toFun := hname.lip.continuous.stronglyMeasurable
   set l' : List (ℕ × ℕ) := l.map fun pr =>
@@ -1821,8 +1815,8 @@ private theorem levyProkhorovDist_reweight_candidate_le
           (pr.1, fuseCode pr.2 (Ψ (2 + Nat.pair pr.1 s)) B))).toMeasure
       ≤ (2 : ℝ)⁻¹ ^ n := by
   have hnn := hw.1
-  haveI : IsProbabilityMeasure ν.toMeasure := ν.prop
-  haveI : IsProbabilityMeasure (atomicOfList Q l).toMeasure := (atomicOfList Q l).prop
+  have : IsProbabilityMeasure ν.toMeasure := ν.prop
+  have : IsProbabilityMeasure (atomicOfList Q l).toMeasure := (atomicOfList Q l).prop
   have hε0 : (0 : ℝ) < 2 * (2 : ℝ)⁻¹ ^ s := by positivity
   have hdε : levyProkhorovDist ν.toMeasure (atomicOfList Q l).toMeasure
       < 2 * (2 : ℝ)⁻¹ ^ s := by
@@ -1848,11 +1842,11 @@ private theorem levyProkhorovDist_reweight_candidate_le
       (atomicOfList Q (l.map fun pr =>
         (pr.1, fuseCode pr.2 (Ψ (2 + Nat.pair pr.1 s)) B))).toMeasure ≤ (2 : ℝ)⁻¹ ^ (n + 1) :=
     reweight_atomic_candidate_le Q f l h₂ hname hnn hs hZs_lb
-  haveI : IsProbabilityMeasure (reweight ⟨(f, ν), hw⟩).toMeasure :=
+  have : IsProbabilityMeasure (reweight ⟨(f, ν), hw⟩).toMeasure :=
     (reweight ⟨(f, ν), hw⟩).prop
-  haveI : IsProbabilityMeasure (reweight ⟨(f, atomicOfList Q l), h₂⟩).toMeasure :=
+  have : IsProbabilityMeasure (reweight ⟨(f, atomicOfList Q l), h₂⟩).toMeasure :=
     (reweight ⟨(f, atomicOfList Q l), h₂⟩).prop
-  haveI : IsProbabilityMeasure (atomicOfList Q (l.map fun pr =>
+  have : IsProbabilityMeasure (atomicOfList Q (l.map fun pr =>
       (pr.1, fuseCode pr.2 (Ψ (2 + Nat.pair pr.1 s)) B))).toMeasure :=
     (atomicOfList Q _).prop
   calc levyProkhorovDist (reweight ⟨(f, ν), hw⟩).toMeasure
@@ -2196,7 +2190,7 @@ theorem computableMap_bayesCond (P : ComputableMetricPresentation X)
     (Q : ComputableMetricPresentation Y) :
     ComputableMap ((densityPairRep P Q).prod P.cauchyRep) (weakMeasureRep Q)
       (fun w => bayesLaw w.1.val.2 w.1.val.1 w.1.property w.2) := by
-  letI : BorelSpace (X × Y) := P.borelSpace_prod
+  let : BorelSpace (X × Y) := P.borelSpace_prod
   have hslice : ComputableMap ((densityPairRep P Q).prod P.cauchyRep) (blRep Q)
       (fun w => w.1.val.1.slice w.2) :=
     (computableMap_blSlice P Q).comp
@@ -2249,7 +2243,7 @@ theorem computableMap_bayesCond_curried (P : ComputableMetricPresentation X)
       ∀ d : {d : BoundedLipschitzFun (X × Y) × ProbabilityMeasure (X × Y) //
           IsCondDensityPair d.2 d.1},
         (Condition P Q).accepts d.val.2 (bayesCondFun P Q d) := by
-  letI : BorelSpace (X × Y) := P.borelSpace_prod
+  let : BorelSpace (X × Y) := P.borelSpace_prod
   refine ⟨computableMap_funRep_curry (computableMap_bayesCond P Q), fun d => ?_⟩
   refine ⟨bayesKernel d.val.2.toMeasure.snd d.val.1.toFun,
     d.property.isCondKernel, Filter.Eventually.of_forall fun x => ?_⟩

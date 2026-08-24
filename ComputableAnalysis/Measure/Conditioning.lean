@@ -97,10 +97,10 @@ routed through `Measure.condKernel` twice. -/
 theorem isCondKernel_ae_unique [StandardBorelSpace Y] [Nonempty Y]
     {μ : ProbabilityMeasure (X × Y)} {κ κ' : Kernel X Y}
     (h : IsCondKernel μ κ) (h' : IsCondKernel μ κ') : CondKernelAEEq μ κ κ' := by
-  haveI := h.1
-  haveI := h'.1
-  haveI := h.2
-  haveI := h'.2
+  have := h.1
+  have := h'.1
+  have := h.2
+  have := h'.2
   have h1 := eq_condKernel_of_measure_eq_compProd κ (μ.toMeasure.disintegrate κ).symm
   have h2 := eq_condKernel_of_measure_eq_compProd κ' (μ.toMeasure.disintegrate κ').symm
   filter_upwards [h1, h2] with x hx hx'
@@ -221,7 +221,7 @@ theorem disintegrate_accepts_unique [StandardBorelSpace Y] [Nonempty Y]
   obtain ⟨-, hk'⟩ := h'
   have hae : CondKernelAEEq μ (inducedKernel f) (inducedKernel f') :=
     isCondKernel_ae_unique hk hk'
-  haveI : μ.toMeasure.fst.IsOpenPosMeasure := hs.isOpenPosMeasure
+  have : μ.toMeasure.fst.IsOpenPosMeasure := hs.isOpenPosMeasure
   have haefun : f.val.toFun =ᵐ[μ.toMeasure.fst] f'.val.toFun := by
     filter_upwards [hae] with x hx
     rw [inducedKernel_apply, inducedKernel_apply] at hx

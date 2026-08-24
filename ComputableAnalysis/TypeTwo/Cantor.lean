@@ -122,7 +122,7 @@ def interleave (x y : Cantor) : Cantor :=
 @[simp]
 theorem interleave_even (x y : Cantor) (n : ℕ) : interleave x y (2 * n) = x n := by
   unfold interleave
-  rw [if_pos (by omega)]
+  rw [ite_eq_left (by omega)]
   congr 1
   omega
 
@@ -130,7 +130,7 @@ theorem interleave_even (x y : Cantor) (n : ℕ) : interleave x y (2 * n) = x n 
 @[simp]
 theorem interleave_odd (x y : Cantor) (n : ℕ) : interleave x y (2 * n + 1) = y n := by
   unfold interleave
-  rw [if_neg (by omega)]
+  rw [ite_eq_right (by omega)]
   congr 1
   omega
 

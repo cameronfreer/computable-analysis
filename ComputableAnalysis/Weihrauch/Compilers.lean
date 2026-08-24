@@ -69,8 +69,7 @@ theorem isStrongReductionPair_parallelize_lpo_of_questions {f : Problem X Y}
   obtain ⟨G, hG, hpost⟩ := h p x hpx hdom
   refine ⟨G, hG, fun j => Baire.track j G, ?_, ?_, ?_⟩
   · exact Representation.sequence_names_iff.mpr fun j => baireRep_names_iff.mpr rfl
-  · rw [Problem.parallelize_dom_iff]
-    intro j
+  · refine Problem.parallelize_dom_iff.mpr fun j => ?_
     by_cases hall : ∀ k, Baire.track j G k = 0
     · exact ⟨(0 : ℕ), LPO.accepts_iff.mpr (Or.inl ⟨rfl, hall⟩)⟩
     · obtain ⟨k, hk⟩ := not_forall.mp hall
@@ -142,7 +141,7 @@ theorem firstOccurrenceFlags_ne_zero {E : Bool → ℕ → Prop} {k : ℕ}
     (h : firstOccurrenceFlags E k ≠ 0) :
     E (decide (k % 2 = 1)) (k / 2) ∧ ∀ m < k / 2, ¬ E (decide (k % 2 = 1)) m := by
   by_contra hc
-  exact h (if_neg hc)
+  exact h (ite_eq_right hc)
 
 /-- **The promise, from incompatibility alone.** If the two sides of the family never both
 occur — at any pair of levels — then flagging first occurrences yields an at-most-one
@@ -184,11 +183,11 @@ theorem not_event_of_track_zero {E : Bool → ℕ → Prop} {b : Bool}
   have hkdiv : k / 2 = Nat.find hex := by
     rw [hk]; cases b
     · simp
-    · simp only [if_true]
+    · simp only [ite_true]
       omega
   have hkmod : (decide (k % 2 = 1)) = b := by rw [hk]; cases b <;> simp
   have hone : firstOccurrenceFlags E k = 1 := by
-    rw [firstOccurrenceFlags, if_pos]
+    rw [firstOccurrenceFlags, ite_eq_left]
     rw [hkdiv, hkmod]
     exact ⟨hfind, hmin⟩
   rw [hall (Nat.find hex)] at hone

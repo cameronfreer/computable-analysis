@@ -65,30 +65,30 @@ theorem cantorForbiddenWord_treeForbiddenName (p : Baire) (i : ℕ) :
     cantorForbiddenWord (treeForbiddenName p) i =
       if TreeMem p (treeWordDecode i) then none else some (treeWordDecode i) := by
   by_cases h : TreeMem p (treeWordDecode i)
-  · rw [if_pos h, cantorForbiddenWord_eq_none_iff, treeForbiddenName, if_neg h]
-  · rw [if_neg h]
+  · rw [ite_eq_left h, cantorForbiddenWord_eq_none_iff, treeForbiddenName, ite_eq_right h]
+  · rw [ite_eq_right h]
     refine cantorForbiddenWord_of_eq_code ?_
-    rw [treeForbiddenName, if_pos (not_not.mp h)]
+    rw [treeForbiddenName, ite_eq_left (not_not.mp h)]
 
 /-- **The presented closed set is the set of paths.** An identity of sets on every
 stream: no promise about the tree is used. -/
 theorem closedCantorSet_treeForbiddenName (p : Baire) :
     closedCantorSet (treeForbiddenName p) = {x : Cantor | ∀ n, TreeMem p (streamTake x n)} := by
   ext x
-  simp only [closedCantorSet, Set.mem_setOf_eq]
+  simp only [closedCantorSet, Set.mem_ofPred_eq]
   constructor
   · intro hx n
     by_contra hmem
     have hcode : cantorForbiddenWord (treeForbiddenName p) (treeWordCode (streamTake x n))
         = some (streamTake x n) := by
-      rw [cantorForbiddenWord_treeForbiddenName, treeWordDecode_treeWordCode, if_neg hmem]
+      rw [cantorForbiddenWord_treeForbiddenName, treeWordDecode_treeWordCode, ite_eq_right hmem]
     exact hx _ _ hcode (mem_cylinder_streamTake x n)
   · intro hx i w hw hcyl
     rw [cantorForbiddenWord_treeForbiddenName] at hw
     by_cases hmem : TreeMem p (treeWordDecode i)
-    · rw [if_pos hmem] at hw
+    · rw [ite_eq_left hmem] at hw
       simp at hw
-    · rw [if_neg hmem] at hw
+    · rw [ite_eq_right hmem] at hw
       have hwe : treeWordDecode i = w := Option.some_injective _ hw
       have hp : TreeMem p w := by
         have h2 := hx w.length
@@ -163,7 +163,7 @@ theorem isStrongReductionPair_wkl_le_c_cantor :
     exact Part.mem_some _
   refine ⟨a, hq, y', hay', WKL.accepts_iff.mpr ⟨hpc, hinf, ?_⟩⟩
   have hmem : y' ∈ closedCantorSet (treeForbiddenName x) := hacc
-  rw [closedCantorSet_treeForbiddenName] at hmem
+  rw [closedCantorSet_treeForbiddenName x] at hmem
   exact hmem
 
 /-- **Weak Kőnig's lemma reduces strongly to closed choice on Cantor space.** A strong
@@ -239,9 +239,9 @@ theorem treeMem_closedCantorTreeName {q : Baire} {w : List Bool} :
     TreeMem (closedCantorTreeName q) w ↔ StagedTreeMem q w := by
   rw [TreeMem, closedCantorTreeName, treeWordDecode_treeWordCode]
   by_cases h : closedCantorTreeMemB q w = true
-  · rw [if_pos h]
+  · rw [ite_eq_left h]
     exact ⟨fun _ => closedCantorTreeMemB_iff.mp h, fun _ => one_ne_zero⟩
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     exact ⟨fun hc => absurd rfl hc, fun hs => absurd (closedCantorTreeMemB_iff.mpr hs) h⟩
 
 /-! ### The staged tree keeps `WKL`'s promises -/
@@ -284,7 +284,7 @@ theorem paths_closedCantorTreeName (q : Baire) :
     {x : Cantor | ∀ n, TreeMem (closedCantorTreeName q) (streamTake x n)} =
       closedCantorSet q := by
   ext x
-  simp only [Set.mem_setOf_eq, closedCantorSet]
+  simp only [Set.mem_ofPred_eq, closedCantorSet]
   constructor
   · intro hpath i u hu hcyl
     have hi : i < max (i + 1) u.length := lt_of_lt_of_le (Nat.lt_succ_self i) (le_max_left _ _)

@@ -76,7 +76,7 @@ protected theorem IsStrongReductionPair.parallelize {f : Problem X Y} {g : Probl
     IsStrongReductionPair f.parallelize g.parallelize K.mapTracks H.mapTracks := by
   intro F xs hF hdom
   have hFn := Representation.sequence_names_iff.mp hF
-  rw [Problem.parallelize_dom_iff] at hdom
+  replace hdom := Problem.parallelize_dom_iff.mp hdom
   choose k hk x' hx' hdom' hH using fun n => hp (Baire.track n F) (xs n) (hFn n) (hdom n)
   refine ⟨Baire.packTracks k, ?_, x', ?_, ?_, ?_⟩
   · rw [OracleCode.evalStream_mapTracks_iff]
@@ -105,7 +105,7 @@ protected theorem IsReductionPair.parallelize {f : Problem X Y} {g : Problem X' 
       (H.mapTracks.subst .zipTracksCode) := by
   intro F xs hF hdom
   have hFn := Representation.sequence_names_iff.mp hF
-  rw [Problem.parallelize_dom_iff] at hdom
+  replace hdom := Problem.parallelize_dom_iff.mp hdom
   choose k hk x' hx' hdom' hH using fun n => hp (Baire.track n F) (xs n) (hFn n) (hdom n)
   refine ⟨Baire.packTracks k, ?_, x', ?_, ?_, ?_⟩
   · rw [OracleCode.evalStream_mapTracks_iff]
@@ -212,7 +212,7 @@ theorem isStrongReductionPair_parallelize_flatten (f : Problem X Y) :
       .flattenTracksCode .unflattenTracksCode := by
   intro F xss hF hdom
   have hFn := Representation.sequence_names_iff.mp hF
-  rw [Problem.parallelize_dom_iff] at hdom
+  replace hdom := Problem.parallelize_dom_iff.mp hdom
   refine ⟨fun m => F (Nat.pair m.unpair.1.unpair.1 (Nat.pair m.unpair.1.unpair.2
       m.unpair.2)), ?_, fun m => xss m.unpair.1 m.unpair.2, ?_, ?_, ?_⟩
   · rw [OracleCode.evalStream_flattenTracksCode]
@@ -243,7 +243,7 @@ theorem isStrongReductionPair_parallelize_unflatten (f : Problem X Y) :
       .unflattenTracksCode .flattenTracksCode := by
   intro F xs hF hdom
   have hFn := Representation.sequence_names_iff.mp hF
-  rw [Problem.parallelize_dom_iff] at hdom
+  replace hdom := Problem.parallelize_dom_iff.mp hdom
   refine ⟨fun m => F (Nat.pair (Nat.pair m.unpair.1 m.unpair.2.unpair.1)
       m.unpair.2.unpair.2), ?_, fun s t => xs (Nat.pair s t), ?_, ?_, ?_⟩
   · rw [OracleCode.evalStream_unflattenTracksCode]
@@ -252,10 +252,8 @@ theorem isStrongReductionPair_parallelize_unflatten (f : Problem X Y) :
     refine Representation.sequence_names_iff.mpr fun t => ?_
     rw [OracleCode.track_unflattenTracks]
     exact hFn (Nat.pair s t)
-  · rw [Problem.parallelize_dom_iff]
-    intro s
-    rw [Problem.parallelize_dom_iff]
-    intro t
+  · refine Problem.parallelize_dom_iff.mpr fun s => ?_
+    refine Problem.parallelize_dom_iff.mpr fun t => ?_
     exact hdom (Nat.pair s t)
   · intro a yss hays hacc
     have han := Representation.sequence_names_iff.mp hays

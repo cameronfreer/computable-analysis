@@ -175,10 +175,12 @@ mismatch. -/
 private theorem firstDiff_wordPoint {s t : List Bool} (h : wordPoint s ≠ wordPoint t) :
     PiNat.firstDiff (wordPoint s) (wordPoint t) = wordFirstDiff s t := by
   have hdlt := wordFirstDiff_lt_bound h
-  have hdlt' : wordFirstDiff s t < (List.range (wordBound s t)).length := by simpa using hdlt
+  have hdlt' : List.findIdx (wordMism s t) (List.range (wordBound s t))
+      < (List.range (wordBound s t)).length := by simpa [wordFirstDiff] using hdlt
   have hmism : wordMism s t (wordFirstDiff s t) = true := by
     have := List.findIdx_getElem (p := wordMism s t)
       (xs := List.range (wordBound s t)) (w := hdlt')
+    rw [List.getElem_range] at this
     simpa [wordFirstDiff] using this
   have hne_d : wordPoint s (wordFirstDiff s t) ≠ wordPoint t (wordFirstDiff s t) := by
     rw [wordPoint_apply, wordPoint_apply]
@@ -251,12 +253,12 @@ private theorem primrec₂_distCode : Primrec₂ distCode := by
 private theorem dist_densePoint_eq (m₁ m₂ : ℕ) :
     dist (densePoint m₁) (densePoint m₂) = ((ratOfCode (distCode m₁ m₂) : ℚ) : ℝ) := by
   by_cases h : densePoint m₁ = densePoint m₂
-  · rw [distCode, if_pos (wordFirstDiff_eq_bound h), ratOfCode_zeroCode, h, dist_self]
+  · rw [distCode, ite_eq_left (wordFirstDiff_eq_bound h), ratOfCode_zeroCode, h, dist_self]
     norm_num
   · have hne : wordFirstDiff (denseWord m₁) (denseWord m₂)
         ≠ wordBound (denseWord m₁) (denseWord m₂) :=
       Nat.ne_of_lt (wordFirstDiff_lt_bound h)
-    rw [distCode, if_neg hne, cantor_dist_eq_of_ne h]
+    rw [distCode, ite_eq_right hne, cantor_dist_eq_of_ne h]
     have h' : wordPoint (denseWord m₁) ≠ wordPoint (denseWord m₂) := h
     rw [show PiNat.firstDiff (densePoint m₁) (densePoint m₂)
         = wordFirstDiff (denseWord m₁) (denseWord m₂) from firstDiff_wordPoint h']

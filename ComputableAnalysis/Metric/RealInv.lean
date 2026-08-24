@@ -125,7 +125,7 @@ private theorem ratOfCode_invRatCode {m : ℕ} (h : 0 < ratOfCode m) :
       _ = ((m.unpair.1.unpair.1 - m.unpair.1.unpair.2 : ℕ) : ℚ) := by rw [hone]
       _ = (m.unpair.1.unpair.1 : ℚ) - (m.unpair.1.unpair.2 : ℚ) :=
           Nat.cast_sub hba.le
-  rw [invRatCode, if_pos hba]
+  rw [invRatCode, ite_eq_left hba]
   simp only [ratOfCode, Nat.unpair_pair]
   rw [hsub, inv_div]
   push_cast

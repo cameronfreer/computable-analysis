@@ -86,19 +86,13 @@ private theorem toMeasure_atomicOfList_of_ne {l : List (ℕ × ℕ)} (h0 : wSumL
       = ∑ i : Fin l.length,
           ENNReal.ofReal ((wRaw l[i].2 / wSumL l : ℚ) : ℝ)
             • Measure.dirac (cantorPresentation.dense l[i].1) := by
-  rw [atomicOfList]
-  split
-  · next h => exact absurd h h0
-  · next h => rfl
+  exact congrArg ProbabilityMeasure.toMeasure (dite_eq_right h0)
 
 /-- Zero total weight: the decoded atomic is the default Dirac at dense point `0`. -/
 private theorem toMeasure_atomicOfList_of_eq {l : List (ℕ × ℕ)} (h0 : wSumL l = 0) :
     (atomicOfList cantorPresentation l).toMeasure
       = Measure.dirac (cantorPresentation.dense 0) := by
-  rw [atomicOfList]
-  split
-  · next h => rfl
-  · next h => exact absurd h0 h
+  exact congrArg ProbabilityMeasure.toMeasure (dite_eq_left h0)
 
 private theorem atomic_eq (m : ℕ) :
     atomic cantorPresentation m = atomicOfList cantorPresentation (ofNat (List (ℕ × ℕ)) m) :=
@@ -507,7 +501,7 @@ private theorem toMeasure_atomicOfList_cylinder (l : List (ℕ × ℕ)) (s : Lis
     (atomicOfList cantorPresentation l).toMeasure (cylinder s)
       = ENNReal.ofReal ((cylWtQ l s : ℚ) : ℝ) := by
   by_cases h0 : wSumL l = 0
-  · rw [toMeasure_atomicOfList_of_eq h0, cylWtQ, if_pos h0,
+  · rw [toMeasure_atomicOfList_of_eq h0, cylWtQ, ite_eq_left h0,
       show cantorPresentation.dense 0 = densePoint 0 from congrFun cantorPresentation_dense 0,
       Measure.dirac_apply' _ (measurableSet_cylinder s)]
     by_cases hmem : densePoint 0 ∈ (cylinder s : Set Cantor)
@@ -519,7 +513,7 @@ private theorem toMeasure_atomicOfList_cylinder (l : List (ℕ × ℕ)) (s : Lis
       norm_num
   · have hpos : (0 : ℚ) < wSumL l := lt_of_le_of_ne (wSumL_nonneg l) (Ne.symm h0)
     rw [toMeasure_atomicOfList_of_ne h0,
-      sum_smul_dirac_apply _ _ (measurableSet_cylinder s), cylWtQ, if_neg h0]
+      sum_smul_dirac_apply _ _ (measurableSet_cylinder s), cylWtQ, ite_eq_right h0]
     have hterm : ∀ i : Fin l.length,
         (cylinder s : Set Cantor).indicator
             (fun _ => ENNReal.ofReal ((wRaw l[i].2 / wSumL l : ℚ) : ℝ))
@@ -530,8 +524,8 @@ private theorem toMeasure_atomicOfList_cylinder (l : List (ℕ × ℕ)) (s : Lis
       have hdp : cantorPresentation.dense l[i].1 = wordPoint (denseWord l[i].1) :=
         congrFun cantorPresentation_dense l[i].1
       by_cases hc : inCylB (denseWord l[i].1) s = true
-      · rw [hc, cond_true, Set.indicator_of_mem (by rw [hdp]; exact inCylB_iff_mem.mp hc)]
-      · rw [Bool.eq_false_iff.mpr hc, cond_false,
+      · rw [hc, Bool.cond_true, Set.indicator_of_mem (by rw [hdp]; exact inCylB_iff_mem.mp hc)]
+      · rw [Bool.eq_false_iff.mpr hc, Bool.cond_false,
           Set.indicator_of_notMem
             (by rw [hdp]; exact fun hmem => hc (inCylB_iff_mem.mpr hmem)),
           zero_div]
@@ -563,8 +557,8 @@ private theorem ratOfCode_sumCode_sel (l : List (ℕ × ℕ)) (s : List Bool) :
   change ratOfCode (cond (inCylB (denseWord pr.1) s) (clampCode pr.2) zeroCode)
       = cond (inCylB (denseWord pr.1) s) (wRaw pr.2) 0
   cases hc : inCylB (denseWord pr.1) s
-  · rw [cond_false, cond_false, ratOfCode_zeroCode]
-  · rw [cond_true, cond_true]
+  · rw [Bool.cond_false, Bool.cond_false, ratOfCode_zeroCode]
+  · rw [Bool.cond_true, Bool.cond_true]
     exact ratOfCode_clampCode_wRaw pr.2
 
 /-- The cylinder-weight code: an exact rational code of `cylWtQ`, total in `(l, s)`. -/
@@ -586,7 +580,7 @@ private theorem ratOfCode_cylWtCode (l : List (ℕ × ℕ)) (s : List Bool) :
   · have hw0 : wSumL l = 0 := by
       rw [← hSval]
       exact (ratOfCode_eq_zero_iff S).mpr h0
-    rw [cylWtCode, if_pos h0, cylWtQ, if_pos hw0]
+    rw [cylWtCode, ite_eq_left h0, cylWtQ, ite_eq_left hw0]
     cases inCylB (denseWord 0) s
     · simpa using ratOfCode_zeroCode
     · simpa using ratOfCode_oneCode
@@ -605,8 +599,8 @@ private theorem ratOfCode_cylWtCode (l : List (ℕ × ℕ)) (s : List Bool) :
           exact_mod_cast hle
         linarith
       linarith
-    rw [cylWtCode, if_neg h0, ratOfCode_divPosCode _ _ hba, ratOfCode_sumCode_sel, hSval,
-      cylWtQ, if_neg hw0]
+    rw [cylWtCode, ite_eq_right h0, ratOfCode_divPosCode _ _ hba, ratOfCode_sumCode_sel, hSval,
+      cylWtQ, ite_eq_right hw0]
 
 private theorem primrec₂_cylWtCode : Primrec₂ cylWtCode := by
   have hS : Primrec fun p : List (ℕ × ℕ) × List Bool =>

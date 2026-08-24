@@ -52,7 +52,7 @@ theorem exists_realizer (f : Problem X Y) : ∃ G, f.Realizes G := by
     then Part.some (Y.rep.onto h.choose_spec.2.choose).choose else Part.none,
     fun p x hpx hdom => ?_⟩
   have h : ∃ x, X.rep.Names p x ∧ f.Dom x := ⟨x, hpx, hdom⟩
-  simp only [dif_pos h]
+  simp only [dite_eq_left h]
   refine ⟨_, Part.mem_some _, h.choose_spec.2.choose, (Y.rep.onto _).choose_spec, ?_⟩
   have hxx : h.choose = x := Representation.names_unique h.choose_spec.1 hpx
   exact hxx ▸ h.choose_spec.2.choose_spec
@@ -71,7 +71,7 @@ theorem exists_realizer_patch {f : Problem X Y} {p : Baire} {x : X} {y : Y} {q :
     simp only
     have hxx : x' = x := Representation.names_unique hrx' hp
     exact ⟨q, Part.mem_some _, y, hq, hxx ▸ hy⟩
-  · simp only [if_neg hr]
+  · simp only [ite_eq_right hr]
     exact hG₀ r x' hrx' hdom
 
 /-- Two problems with the same endpoints are equivalent when they accept the same

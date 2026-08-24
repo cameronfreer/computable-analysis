@@ -144,6 +144,7 @@ theorem evalnPrefix_mono :
       by_cases x0 : x = 0 <;> simp [x0]
       exact evalnPrefix_mono hl' hst
 
+set_option backward.isDefEq.respectTransparency false in
 set_option linter.flexible false in
 /-- Soundness: a bounded run whose oracle word is a prefix of the stream `p`
 computes a value of `eval · p`. Adapted from `Nat.Partrec.Code.evaln_sound`. -/
@@ -194,6 +195,7 @@ theorem evalnPrefix_sound :
 theorem evaln_sound {k c n x} {p : Baire} (h : x ∈ evaln k c p n) : x ∈ c.eval p n :=
   evalnPrefix_sound (mem_cylinder_streamTake p k) h
 
+set_option backward.isDefEq.respectTransparency false in
 set_option linter.flexible false in
 /-- Completeness: every converging evaluation is reached by the bounded
 simulation at some fuel, with the length-`fuel` prefix of the oracle stream as

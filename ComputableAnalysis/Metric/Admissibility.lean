@@ -111,7 +111,7 @@ private theorem advice_pack_eq {P : ComputableMetricPresentation X}
 private theorem advice_pack_pos {P : ComputableMetricPresentation X}
     {Q : ComputableMetricPresentation Y} {f : X → Y} {n i k : ℕ}
     (h : ∃ j, Cert P Q f n i k j) : 0 < advice P Q f (Nat.pair n (Nat.pair i k)) := by
-  rw [advice_pack_eq, adviceAt, dif_pos h]
+  rw [advice_pack_eq, adviceAt, dite_eq_left h]
   exact Nat.succ_pos _
 
 /-- A positive advice value decodes (via `· - 1`) to a certified index. -/
@@ -121,9 +121,9 @@ private theorem advice_pack_cert {P : ComputableMetricPresentation X}
     Cert P Q f n i k (advice P Q f (Nat.pair n (Nat.pair i k)) - 1) := by
   rw [advice_pack_eq] at h ⊢
   by_cases hex : ∃ j, Cert P Q f n i k j
-  · rw [adviceAt, dif_pos hex, Nat.add_sub_cancel]
+  · rw [adviceAt, dite_eq_left hex, Nat.add_sub_cancel]
     exact hex.choose_spec
-  · rw [adviceAt, dif_neg hex] at h
+  · rw [adviceAt, dite_eq_right hex] at h
     exact absurd h (lt_irrefl 0)
 
 /-! ### The code layer -/

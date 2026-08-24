@@ -67,14 +67,14 @@ def sum (X : Representation α) (Y : Representation β) : Representation (α ⊕
       refine ⟨Baire.interleave (fun _ => 0) q, ?_⟩
       have h0 : Baire.interleave (fun _ => 0) q 0 = 0 := by
         simpa using Baire.interleave_even (fun _ => 0) q 0
-      rw [if_pos h0, Baire.oddPart_interleave]
+      rw [ite_eq_left h0, Baire.oddPart_interleave]
       exact Part.mem_map Sum.inl hq
     | inr b =>
       obtain ⟨q, hq⟩ := Y.onto b
       refine ⟨Baire.interleave (fun _ => 1) q, ?_⟩
       have h0 : Baire.interleave (fun _ => 1) q 0 = 1 := by
         simpa using Baire.interleave_even (fun _ => 1) q 0
-      rw [if_neg (by omega), Baire.oddPart_interleave]
+      rw [ite_eq_right (by omega), Baire.oddPart_interleave]
       exact Part.mem_map Sum.inr hq
 
 /-- A name denotes `Sum.inl a` exactly when its tag is `0` and its odd track names `a`. -/

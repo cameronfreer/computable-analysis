@@ -59,8 +59,8 @@ include P in
 factor comes from its dense sequence, so `Prod.borelSpace` applies. Always derived,
 never a hypothesis. -/
 theorem ComputableMetricPresentation.borelSpace_prod : BorelSpace (X × Y) := by
-  haveI := P.separableSpace
-  haveI : SecondCountableTopology X := UniformSpace.secondCountable_of_separable X
+  have := P.separableSpace
+  have : SecondCountableTopology X := UniformSpace.secondCountable_of_separable X
   exact Prod.borelSpace
 
 end ProductBorel
@@ -100,7 +100,7 @@ private theorem levyProkhorovEDist_fst_le (μ ν : Measure (X × Y)) :
     levyProkhorovEDist μ.fst ν.fst ≤ levyProkhorovEDist μ ν := by
   apply sInf_le_sInf
   intro ε hε
-  simp only [Set.mem_setOf_eq] at hε ⊢
+  simp only [Set.mem_ofPred_eq] at hε ⊢
   intro A hA
   have step : ∀ ρ σ : Measure (X × Y),
       ρ (Prod.fst ⁻¹' A) ≤ σ (thickening ε.toReal (Prod.fst ⁻¹' A)) + ε →
@@ -123,7 +123,7 @@ private theorem levyProkhorovEDist_snd_le (μ ν : Measure (X × Y)) :
     levyProkhorovEDist μ.snd ν.snd ≤ levyProkhorovEDist μ ν := by
   apply sInf_le_sInf
   intro ε hε
-  simp only [Set.mem_setOf_eq] at hε ⊢
+  simp only [Set.mem_ofPred_eq] at hε ⊢
   intro A hA
   have step : ∀ ρ σ : Measure (X × Y),
       ρ (Prod.snd ⁻¹' A) ≤ σ (thickening ε.toReal (Prod.snd ⁻¹' A)) + ε →
@@ -259,7 +259,7 @@ theorem computableMap_fstMarginal (P : ComputableMetricPresentation X)
       (haveI : BorelSpace (X × Y) := P.borelSpace_prod
        weakMeasureRep (P.prod Q))
       (weakMeasureRep P) fstMarginal := by
-  haveI : BorelSpace (X × Y) := P.borelSpace_prod
+  have : BorelSpace (X × Y) := P.borelSpace_prod
   obtain ⟨gC, hgC⟩ := exists_ofNatFnCode (computable_projWithCode primrec_unpairFst)
   refine ⟨.comp gC .query, fun p μ hpμ => ?_⟩
   have hM := (weakMeasureRep_names_iff (P.prod Q)).mp hpμ
@@ -269,8 +269,8 @@ theorem computableMap_fstMarginal (P : ComputableMetricPresentation X)
   · rw [eval_comp_some (eval_query p n), hgC]
     exact Part.mem_some _
   · refine (weakMeasureRep_names_iff P).mpr fun n => ?_
-    haveI : IsProbabilityMeasure μ.toMeasure := μ.prop
-    haveI : IsProbabilityMeasure (atomic (P.prod Q) (p n)).toMeasure :=
+    have : IsProbabilityMeasure μ.toMeasure := μ.prop
+    have : IsProbabilityMeasure (atomic (P.prod Q) (p n)).toMeasure :=
       (atomic (P.prod Q) (p n)).prop
     have hproj : (atomic P (Encodable.encode (projListWith (fun i => i.unpair.1)
         (ofNat (List (ℕ × ℕ)) (p n))))).toMeasure
@@ -291,7 +291,7 @@ theorem computableMap_sndMarginal (P : ComputableMetricPresentation X)
       (haveI : BorelSpace (X × Y) := P.borelSpace_prod
        weakMeasureRep (P.prod Q))
       (weakMeasureRep Q) sndMarginal := by
-  haveI : BorelSpace (X × Y) := P.borelSpace_prod
+  have : BorelSpace (X × Y) := P.borelSpace_prod
   obtain ⟨gC, hgC⟩ := exists_ofNatFnCode (computable_projWithCode primrec_unpairSnd)
   refine ⟨.comp gC .query, fun p μ hpμ => ?_⟩
   have hM := (weakMeasureRep_names_iff (P.prod Q)).mp hpμ
@@ -301,8 +301,8 @@ theorem computableMap_sndMarginal (P : ComputableMetricPresentation X)
   · rw [eval_comp_some (eval_query p n), hgC]
     exact Part.mem_some _
   · refine (weakMeasureRep_names_iff Q).mpr fun n => ?_
-    haveI : IsProbabilityMeasure μ.toMeasure := μ.prop
-    haveI : IsProbabilityMeasure (atomic (P.prod Q) (p n)).toMeasure :=
+    have : IsProbabilityMeasure μ.toMeasure := μ.prop
+    have : IsProbabilityMeasure (atomic (P.prod Q) (p n)).toMeasure :=
       (atomic (P.prod Q) (p n)).prop
     have hproj : (atomic Q (Encodable.encode (projListWith (fun i => i.unpair.2)
         (ofNat (List (ℕ × ℕ)) (p n))))).toMeasure

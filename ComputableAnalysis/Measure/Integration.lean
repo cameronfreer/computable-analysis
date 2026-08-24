@@ -307,19 +307,13 @@ private theorem toMeasure_atomicOfList_of_ne {l : List (ℕ × ℕ)} (h0 : wSumL
       = ∑ i : Fin l.length,
           ENNReal.ofReal ((wRaw l[i].2 / wSumL l : ℚ) : ℝ)
             • Measure.dirac (P.dense l[i].1) := by
-  rw [atomicOfList]
-  split
-  · next h => exact absurd h h0
-  · next h => rfl
+  exact congrArg ProbabilityMeasure.toMeasure (dite_eq_right h0)
 
 omit [BorelSpace X] in
 /-- Zero total weight: the decoded atomic is the default Dirac at dense point `0`. -/
 private theorem toMeasure_atomicOfList_of_eq {l : List (ℕ × ℕ)} (h0 : wSumL l = 0) :
     (atomicOfList P l).toMeasure = Measure.dirac (P.dense 0) := by
-  rw [atomicOfList]
-  split
-  · next h => rfl
-  · next h => exact absurd h0 h
+  exact congrArg ProbabilityMeasure.toMeasure (dite_eq_left h0)
 
 end AtomicEval
 
@@ -408,9 +402,9 @@ private theorem abs_integralApprox_sub_integral_le {Φ : Baire} {L B : ℕ} {φ 
       ≤ (2 : ℝ)⁻¹ ^ n := by
   have hφm : StronglyMeasurable φ := stronglyMeasurable_of_lipschitz hname.lip
   by_cases h0 : wSumL l = 0
-  · rw [integralApprox, if_pos h0, integral_atomicOfList_zero P h0 hφm]
+  · rw [integralApprox, ite_eq_left h0, integral_atomicOfList_zero P h0 hφm]
     exact hname.approx 0 n
-  · rw [integralApprox, if_neg h0, integral_atomicOfList P h0 hφm hname.bound]
+  · rw [integralApprox, ite_eq_right h0, integral_atomicOfList P h0 hφm hname.bound]
     have hpos : (0 : ℚ) < wSumL l := lt_of_le_of_ne (wSumL_nonneg l) (Ne.symm h0)
     have hw0 : ∀ i : Fin l.length, (0 : ℝ) ≤ ((wRaw l[i].2 / wSumL l : ℚ) : ℝ) :=
       normWt_nonneg h0
@@ -771,8 +765,8 @@ private theorem ratOfCode_postValue (M Φ : Baire) {L B : ℕ}
     exact ⟨fun h => le_antisymm h (wSumL_nonneg l), fun h => le_of_eq h⟩
   simp only [integPost, denCode, numCode, valPos, hal, hpl, hn1]
   by_cases h0 : wSumL l = 0
-  · rw [if_pos (htest.mpr h0), hval0, integralApprox, if_pos h0]
-  · rw [if_neg fun hc => h0 (htest.mp hc)]
+  · rw [ite_eq_left (htest.mpr h0), hval0, integralApprox, ite_eq_left h0]
+  · rw [ite_eq_right fun hc => h0 (htest.mp hc)]
     have hmapnum : (l.map fun pr => mulCode (clampCode pr.2)
           ((streamTake F m₂).getD (2 * (2 + Nat.pair pr.1 (n + 1)) + 1) 0))
         = l.map fun pr => mulCode (clampCode pr.2) (Φ (2 + Nat.pair pr.1 (n + 1))) :=
@@ -789,7 +783,7 @@ private theorem ratOfCode_postValue (M Φ : Baire) {L B : ℕ}
         change ratOfCode (mulCode (clampCode pr.2) (Φ (2 + Nat.pair pr.1 (n + 1)))) = _
         rw [ratOfCode_mulCode, ← wRaw_eq_ratOfCode_clampCode])
     rw [ratOfCode_divCode _ _ ((ratOfCode_pos_iff _).mp hpos), hnum, hden,
-      integralApprox, if_neg h0,
+      integralApprox, ite_eq_right h0,
       listSum_map_eq_finSum l fun pr =>
         wRaw pr.2 * ratOfCode (Φ (2 + Nat.pair pr.1 (n + 1))),
       Finset.sum_div]
@@ -1049,8 +1043,8 @@ private theorem ratOfCode_famPostValue (M Ψ Φ : Baire) {i L B : ℕ}
     exact ⟨fun h => le_antisymm h (wSumL_nonneg l), fun h => le_of_eq h⟩
   simp only [famIntegPost, famDenCode, famNumCode, famValPos, hal, hpl, hwi, hwn]
   by_cases h0 : wSumL l = 0
-  · rw [if_pos (htest.mpr h0), hval0, integralApprox, if_pos h0]
-  · rw [if_neg fun hc => h0 (htest.mp hc)]
+  · rw [ite_eq_left (htest.mpr h0), hval0, integralApprox, ite_eq_left h0]
+  · rw [ite_eq_right fun hc => h0 (htest.mp hc)]
     have hmapnum : (l.map fun pr => mulCode (clampCode pr.2)
           ((streamTake F m₂).getD (famPos i (2 + Nat.pair pr.1 (n + 1))) 0))
         = l.map fun pr => mulCode (clampCode pr.2) (Φ (2 + Nat.pair pr.1 (n + 1))) :=
@@ -1067,7 +1061,7 @@ private theorem ratOfCode_famPostValue (M Ψ Φ : Baire) {i L B : ℕ}
         change ratOfCode (mulCode (clampCode pr.2) (Φ (2 + Nat.pair pr.1 (n + 1)))) = _
         rw [ratOfCode_mulCode, ← wRaw_eq_ratOfCode_clampCode])
     rw [ratOfCode_divCode _ _ ((ratOfCode_pos_iff _).mp hpos), hnum, hden,
-      integralApprox, if_neg h0,
+      integralApprox, ite_eq_right h0,
       listSum_map_eq_finSum l fun pr =>
         wRaw pr.2 * ratOfCode (Φ (2 + Nat.pair pr.1 (n + 1))),
       Finset.sum_div]
@@ -1308,7 +1302,7 @@ noncomputable def blRep : Representation (BoundedLipschitzFun X) where
       intro m n
       have h2 : 2 + Nat.pair m n - 2 = Nat.pair m n := by omega
       simp only [hΦ_def]
-      rw [if_neg (by omega), if_neg (by omega), h2, Nat.unpair_pair]
+      rw [ite_eq_right (by omega), ite_eq_right (by omega), h2, Nat.unpair_pair]
     have hname : IntegrandName P Φ (Φ 0) (Φ 1) f.toFun :=
       { headL := rfl
         headB := rfl

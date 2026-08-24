@@ -158,7 +158,7 @@ theorem wordEven_wordInterleave {s t : List Bool} (h : s.length = t.length) :
     omega
   · rw [getElem_wordEven h1]
     simp only [wordInterleave, List.getElem_ofFn]
-    rw [if_pos (show 2 * i % 2 = 0 by omega), show 2 * i / 2 = i from by omega]
+    rw [ite_eq_left (show 2 * i % 2 = 0 by omega), show 2 * i / 2 = i from by omega]
     exact List.getD_eq_getElem _ _ h2
 
 /-- At equal lengths, the odd subword of an interleaved word is the second word. -/
@@ -169,7 +169,7 @@ theorem wordOdd_wordInterleave {s t : List Bool} (h : s.length = t.length) :
     omega
   · rw [getElem_wordOdd h1]
     simp only [wordInterleave, List.getElem_ofFn]
-    rw [if_neg (show ¬(2 * i + 1) % 2 = 0 by omega),
+    rw [ite_eq_right (show ¬(2 * i + 1) % 2 = 0 by omega),
       show (2 * i + 1) / 2 = i from by omega]
     exact List.getD_eq_getElem _ _ h2
 
@@ -213,10 +213,7 @@ private theorem toMeasure_prodAtomicOfList_of_ne {l : List (ℕ × ℕ)} (h0 : w
           ENNReal.ofReal ((wRaw l[i].2 / wSumL l : ℚ) : ℝ)
             • Measure.dirac
                 ((cantorPresentation.prod cantorPresentation).dense l[i].1) := by
-  rw [atomicOfList]
-  split
-  · next h => exact absurd h h0
-  · next h => rfl
+  exact congrArg ProbabilityMeasure.toMeasure (dite_eq_right h0)
 
 /-- Decoding an encoded atom list. -/
 private theorem prodAtomic_encode (l : List (ℕ × ℕ)) :

@@ -421,10 +421,10 @@ theorem exists_hallSystemCode : ∃ K : OracleCode, ∀ q : Baire,
     exact hallTuples_congr fun i hi => hallCand_congr
       (Baire.ofList_streamTake q (hallPos_lt_hallPosBound (by omega)))
   by_cases h0 : m.unpair.1 = 0
-  · rw [if_pos h0, if_pos h0, htab]
+  · rw [ite_eq_left h0, ite_eq_left h0, htab]
   · by_cases h1 : m.unpair.1 = 1
-    · rw [if_neg h0, if_pos h1, if_neg h0]
-    · rw [if_neg h0, if_neg h1, if_neg h0]
+    · rw [ite_eq_right h0, ite_eq_left h1, ite_eq_right h0]
+    · rw [ite_eq_right h0, ite_eq_right h1, ite_eq_right h0]
 
 /-- The system code, extracted once so consumers share a single combinator. Specified,
 not constructed. -/

@@ -212,9 +212,9 @@ theorem Cantor.measurable_interleave :
     Measurable fun p : Cantor × Cantor => Cantor.interleave p.1 p.2 := by
   refine measurable_pi_lambda _ fun n => ?_
   by_cases h : n % 2 = 0
-  · simp only [Cantor.interleave, if_pos h]
+  · simp only [Cantor.interleave, ite_eq_left h]
     exact (measurable_pi_apply _).comp measurable_fst
-  · simp only [Cantor.interleave, if_neg h]
+  · simp only [Cantor.interleave, ite_eq_right h]
     exact (measurable_pi_apply _).comp measurable_snd
 
 /-! ### The Dirac measure -/
@@ -236,9 +236,9 @@ theorem cylMass_diracMeasure (x : Cantor) (s : List Bool) :
   change ((Measure.dirac x) (cylinder s)).toReal = _
   rw [Measure.dirac_apply' _ (measurableSet_cylinder s)]
   by_cases h : x ∈ (cylinder s : Set Cantor)
-  · rw [Set.indicator_of_mem h, if_pos h]
+  · rw [Set.indicator_of_mem h, ite_eq_left h]
     simp
-  · rw [Set.indicator_of_notMem h, if_neg h]
+  · rw [Set.indicator_of_notMem h, ite_eq_right h]
     simp
 
 /-- The primrec decision kernel of the cylinder test: compare a decoded word with the
@@ -299,9 +299,9 @@ theorem computablePoint_diracMeasure {x : Cantor} (hx : cantorRep.ComputablePoin
         = if x ∈ (cylinder s : Set Cantor) then 1 else 0 := cylMass_diracMeasure x s
     rw [hts', hval]
     by_cases hxs : x ∈ (cylinder s : Set Cantor)
-    · rw [if_pos (mem_cylinder_iff.mp hxs), if_pos hxs, ratOfCode_oneCode]
+    · rw [ite_eq_left (mem_cylinder_iff.mp hxs), ite_eq_left hxs, ratOfCode_oneCode]
       norm_num
-    · rw [if_neg fun h => hxs (mem_cylinder_iff.mpr h), if_neg hxs, ratOfCode_zeroCode]
+    · rw [ite_eq_right fun h => hxs (mem_cylinder_iff.mpr h), ite_eq_right hxs, ratOfCode_zeroCode]
       norm_num
 
 /-! ### The Bernoulli product measure -/
@@ -700,7 +700,7 @@ private theorem wordOdd_nil : wordOdd ([] : List Bool) = [] := rfl
 private theorem wordEven_append_bit (s : List Bool) (b : Bool) :
     wordEven (s ++ [b]) = if s.length % 2 = 0 then wordEven s ++ [b] else wordEven s := by
   by_cases h : s.length % 2 = 0
-  · rw [if_pos h]
+  · rw [ite_eq_left h]
     refine List.ext_getElem (by simp; omega) fun i h1 h2 => ?_
     have hi : 2 * i < s.length + 1 := by
       have h1' := h1
@@ -715,7 +715,7 @@ private theorem wordEven_append_bit (s : List Bool) (b : Bool) :
     · rw [List.getElem_append_right hge,
         List.getElem_append_right (by rw [length_wordEven]; omega)]
       simp
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     refine List.ext_getElem (by simp; omega) fun i h1 h2 => ?_
     have hi : 2 * i < s.length := by
       have h1' := h1
@@ -727,14 +727,14 @@ private theorem wordEven_append_bit (s : List Bool) (b : Bool) :
 private theorem wordOdd_append_bit (s : List Bool) (b : Bool) :
     wordOdd (s ++ [b]) = if s.length % 2 = 0 then wordOdd s else wordOdd s ++ [b] := by
   by_cases h : s.length % 2 = 0
-  · rw [if_pos h]
+  · rw [ite_eq_left h]
     refine List.ext_getElem (by simp; omega) fun i h1 h2 => ?_
     have hi : 2 * i + 1 < s.length := by
       have h1' := h1
       simp at h1'
       omega
     rw [getElem_wordOdd h1, getElem_wordOdd h2, List.getElem_append_left hi]
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     refine List.ext_getElem (by simp; omega) fun i h1 h2 => ?_
     have hi : 2 * i + 1 < s.length + 1 := by
       have h1' := h1
@@ -763,10 +763,10 @@ private theorem prodMass_consistent (μ ν : ProbabilityMeasure Cantor) :
   · unfold prodMass
     simp only [wordEven_append_bit, wordOdd_append_bit]
     by_cases h : s.length % 2 = 0
-    · simp only [if_pos h]
+    · simp only [ite_eq_left h]
       rw [cylMass_split μ (wordEven s)]
       ring
-    · simp only [if_neg h]
+    · simp only [ite_eq_right h]
       rw [cylMass_split ν (wordOdd s)]
       ring
 
@@ -797,7 +797,7 @@ theorem productMeasure_eq_map_prod (μ ν : ProbabilityMeasure Cantor) :
     ext p
     simp only [Set.mem_preimage, Set.mem_prod]
     exact Cantor.interleave_mem_cylinder_iff
-  haveI : IsProbabilityMeasure ((μ.toMeasure.prod ν.toMeasure).map
+  have : IsProbabilityMeasure ((μ.toMeasure.prod ν.toMeasure).map
       fun p => Cantor.interleave p.1 p.2) :=
     Measure.isProbabilityMeasure_map Cantor.measurable_interleave.aemeasurable
   refine Measure.ext_of_generateFrom_of_iUnion cantorCylinders (fun _ => Set.univ)

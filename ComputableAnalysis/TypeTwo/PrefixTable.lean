@@ -165,6 +165,7 @@ def uniformPrefixTableSearch : Part (ℕ × List (List Bool)) :=
   (Nat.rfind fun k => ↑(allDetermined c s k)).map fun k =>
     (k, (binaryWords k).filter (outMatches c s k))
 
+set_option backward.isDefEq.respectTransparency false in
 /-- Result equation for the search. -/
 theorem mem_uniformPrefixTableSearch {p : ℕ × List (List Bool)} :
     p ∈ uniformPrefixTableSearch c s ↔
@@ -209,7 +210,7 @@ private theorem isOpen_good (k : ℕ) : IsOpen {x : Cantor | Good c s k x} := by
     (mem_cylinder_streamTake x k)) fun y hy => ?_
   have hst : streamTake y k = streamTake x k := by
     have := mem_cylinder_iff.mp hy; rwa [length_streamTake] at this
-  simp only [Set.mem_setOf_eq, Good, hst]; exact hx
+  simp only [Set.mem_ofPred_eq, Good, hst]; exact hx
 
 /-- Every Cantor point is eventually good (finite use of its `s.length` output coords). -/
 private theorem good_cover (hc : TotalOnCantor c) (x : Cantor) : ∃ k, Good c s k x := by
@@ -229,12 +230,13 @@ private theorem good_cover (hc : TotalOnCantor c) (x : Cantor) : ∃ k, Good c s
 private theorem exists_uniform_good (hc : TotalOnCantor c) : ∃ K, ∀ x : Cantor, Good c s K x := by
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover (fun k => {x : Cantor | Good c s k x})
     (fun k => isOpen_good c s k)
-    (fun x _ => by simp only [Set.mem_iUnion, Set.mem_setOf_eq]; exact good_cover c s hc x)
+    (fun x _ => by simp only [Set.mem_iUnion, Set.mem_ofPred_eq]; exact good_cover c s hc x)
   refine ⟨t.sup id, fun x => ?_⟩
   obtain ⟨k, hkt, hgk⟩ := by
-    simpa only [Set.mem_iUnion, Set.mem_setOf_eq] using ht (Set.mem_univ x)
+    simpa only [Set.mem_iUnion, Set.mem_ofPred_eq] using ht (Set.mem_univ x)
   exact good_mono c s (Finset.le_sup (f := id) hkt) hgk
 
+set_option backward.isDefEq.respectTransparency false in
 /-- **Termination.** On a code total on Cantor, the prefix-table search converges. -/
 theorem uniformPrefixTableSearch_dom (hc : TotalOnCantor c) :
     (uniformPrefixTableSearch c s).Dom := by
@@ -307,7 +309,7 @@ theorem uniformPrefixTableSearch_preimage (hc : TotalOnCantor c)
   have hpivot : (streamFn c hc x ∈ Cantor.cylinder s)
       ↔ outMatches c s m (streamTake x m) = true := by
     rw [outMatches, boolWordToNat_streamTake, List.all_eq_true]
-    simp only [List.mem_range, Cantor.cylinder, cylinder, Set.mem_setOf_eq]
+    simp only [List.mem_range, Cantor.cylinder, cylinder, Set.mem_ofPred_eq]
     refine ⟨fun hcyl i hi => (hcoord i hi).mpr (by rw [hgetD i hi]; exact hcyl i hi),
       fun hall i hi => ?_⟩
     rw [← hgetD i hi]

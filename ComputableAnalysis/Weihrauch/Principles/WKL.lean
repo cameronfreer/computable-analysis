@@ -146,8 +146,8 @@ theorem exists_path_of_isInfiniteTree {p : Baire} (hpc : IsPrefixClosed p)
     rw [List.length_take, w.2.1, Nat.min_eq_left hij]
   let proj : {i j : ℕ} → (hij : i ≤ j) → α j → α i := fun {i _} hij w =>
     ⟨w.val.take i, hlen hij w, hpc w.val _ w.2.2 (List.take_prefix i w.val)⟩
-  haveI : ∀ n, Finite (α n) := finite_level p
-  haveI : ∀ n, Nonempty (α n) := fun n => by
+  have : ∀ n, Finite (α n) := finite_level p
+  have : ∀ n, Nonempty (α n) := fun n => by
     obtain ⟨w, hw, hmem⟩ := hinf n
     exact ⟨⟨w, hw, hmem⟩⟩
   obtain ⟨f, hf⟩ := exists_seq_forall_proj_of_forall_finite (α := α) proj

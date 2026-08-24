@@ -1026,7 +1026,7 @@ theorem isReductionPair_efilc_le_wkl :
   obtain ⟨-, -, hpath⟩ := WKL.accepts_iff.mp hacc
   refine ⟨sectionFromF (Baire.interleave x a), mem_evalStream_treeSectionCode _,
     sectionFromF (Baire.interleave x a), baireRep_names_iff.mpr rfl, ?_⟩
-  rw [sectionFromF_interleave]
+  rw [sectionFromF_interleave x a]
   exact EFILC.accepts_iff.mpr ⟨hne, hB, isEfilcSection_of_path hne hpath⟩
 
 /-- **Explicit finite inverse-limit compactness reduces ordinarily to weak Kőnig's

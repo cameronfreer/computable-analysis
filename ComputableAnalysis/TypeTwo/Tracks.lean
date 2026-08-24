@@ -72,12 +72,12 @@ def assocIn : OracleCode :=
 theorem eval_assocArg (p : Baire) (m : ℕ) :
     assocArg.eval p m =
       Part.some (Nat.pair (Nat.pair m.unpair.1 m.unpair.2.unpair.1) m.unpair.2.unpair.2) := by
-  simp [assocArg, Seq.seq]
+  simp [assocArg, Seq.seq, some_bind_pfun]
 
 theorem eval_assocIn (p : Baire) (m : ℕ) :
     assocIn.eval p m =
       Part.some (Nat.pair m.unpair.1.unpair.1 (Nat.pair m.unpair.1.unpair.2 m.unpair.2)) := by
-  simp [assocIn, Seq.seq]
+  simp [assocIn, Seq.seq, some_bind_pfun]
 
 /-! ### The generic trackwise map -/
 
@@ -103,6 +103,7 @@ private theorem eval_pair_left (c : OracleCode) (p : Baire) (t k : ℕ) :
     (pair left c).eval p (Nat.pair t k) = Nat.pair t <$> c.eval p (Nat.pair t k) := by
   simp [Seq.seq, Nat.unpair_pair]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- **The coordinate-level contract.** On a tagged input `Nat.pair t k`, the transformed
 code computes exactly what `c` computes at `k` against track `t`. -/
 theorem eval_mapTracks_pair (c : OracleCode) (p : Baire) (t : ℕ) :
@@ -116,8 +117,13 @@ theorem eval_mapTracks_pair (c : OracleCode) (p : Baire) (t : ℕ) :
   | pair cf cg ihf ihg => intro k; simp [mapTracks, ihf, ihg]
   | comp cf cg ihf ihg =>
       intro k
-      simp only [mapTracks, eval_comp, eval_pair_left, ihg, Part.bind_eq_bind,
-        Part.map_eq_map, Part.bind_map]
+      simp only [mapTracks, eval_comp, eval_pair_left, ihg, Part.map_eq_map]
+      -- `Part.bind_map` no longer rewrites under `>>=` when the continuation is a partial
+      -- function, so it is applied with its arguments supplied explicitly
+      rw [show (Part.map (Nat.pair t) (cg.eval (Baire.track t p) k) >>= (mapTracks cf).eval p)
+            = (cg.eval (Baire.track t p) k).bind
+                fun y => (mapTracks cf).eval p (Nat.pair t y) from
+          Part.bind_map (Nat.pair t) _ ((mapTracks cf).eval p)]
       exact congrArg (Part.bind _) (funext fun v => ihf v)
   | prec cf cg ihf ihg =>
       intro k

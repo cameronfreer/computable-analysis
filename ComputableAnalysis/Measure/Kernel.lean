@@ -138,7 +138,7 @@ carrier must bundle it.  The advice is classical (a certificate table), so this
 carries no computable-point claim. -/
 theorem ContinuousMarkovKernel.advisedRealizable (κ : ContinuousMarkovKernel X Y) :
     ∃ c q, AdvisedRealizes P.cauchyRep (weakMeasureRep Q) c q κ.law := by
-  haveI : TopologicalSpace.SeparableSpace Y :=
+  have : TopologicalSpace.SeparableSpace Y :=
     ⟨⟨Set.range Q.dense, Set.countable_range _, Q.denseRange⟩⟩
   have hg : Continuous fun x =>
       (LevyProkhorov.ofMeasure (κ.law x) : LevyProkhorov (ProbabilityMeasure Y)) :=

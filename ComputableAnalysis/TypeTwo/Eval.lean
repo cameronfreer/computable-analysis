@@ -73,6 +73,24 @@ theorem eval_pair (cf cg : OracleCode) (p : Baire) (n : ℕ) :
     (pair cf cg).eval p n = Nat.pair <$> cf.eval p n <*> cg.eval p n :=
   rfl
 
+/-- `Part.bind_some` stated at the `PFun` type. Since Lean 4.34 the elaborator no longer
+unfolds `α →. β` to `α → Part β` at `implicit` transparency, so `Part.bind_some` itself no
+longer matches goals whose continuation is a partial function — every code-assembly step below
+goes through this instead. -/
+theorem some_bind_pfun (a : ℕ) (f : ℕ →. ℕ) :
+    (Part.some a >>= f) = f a := Part.bind_some a f
+
+/-- The same bridge with the continuation at the plain function type. Both forms are needed:
+`rw` matches syntactically, and since Lean 4.34 `ℕ →. ℕ` and `ℕ → Part ℕ` are no longer
+interchangeable at that level, so a site's shape decides which one applies. -/
+theorem some_bind_fun (a : ℕ) (f : ℕ → Part ℕ) :
+    (Part.some a >>= f) = f a := Part.bind_some a f
+
+/-- The `.bind`-spelled form of the same bridge, for goals `simp` has already normalized away
+from `>>=`. -/
+theorem bind_some_pfun (a : ℕ) (f : ℕ →. ℕ) :
+    (Part.some a).bind f = f a := Part.bind_some a f
+
 @[simp]
 theorem eval_comp (cf cg : OracleCode) (p : Baire) (n : ℕ) :
     (comp cf cg).eval p n = cg.eval p n >>= cf.eval p :=
@@ -81,7 +99,7 @@ theorem eval_comp (cf cg : OracleCode) (p : Baire) (n : ℕ) :
 /-- Code-assembly step: composing past a converged inner evaluation. -/
 theorem eval_comp_some {cf cg : OracleCode} {p : Baire} {n a : ℕ}
     (h : cg.eval p n = Part.some a) : (comp cf cg).eval p n = cf.eval p a := by
-  rw [eval_comp, h, Part.bind_eq_bind, Part.bind_some]
+  rw [eval_comp, h, some_bind_pfun]
 
 /-- Code-assembly step: pairing two converged evaluations. -/
 theorem eval_pair_some {cf cg : OracleCode} {p : Baire} {n a b : ℕ}
@@ -149,14 +167,16 @@ theorem eval_id (p : Baire) (n : ℕ) : OracleCode.id.eval p n = Part.some n := 
 theorem eval_curry (c : OracleCode) (n x : ℕ) (p : Baire) :
     (curry c n).eval p x = c.eval p (Nat.pair n x) := by
   simp! [Seq.seq, curry]
+  rw [some_bind_pfun]
 
 theorem eval_rfind (cf : OracleCode) (p : Baire) (a : ℕ) :
     (rfind cf).eval p a =
       Nat.rfind fun n => (fun x => x = 0) <$> cf.eval p (Nat.pair a n) := by
   have h : (pair OracleCode.id zero).eval p a = Part.some (Nat.pair a 0) := by
     simp [Seq.seq, pure, PFun.pure]
-  simp only [rfind, eval_comp, h, Part.bind_eq_bind, Part.bind_some,
-    eval_rfind' cf p a 0, Nat.add_zero]
+  simp only [rfind, eval_comp, h, some_bind_pfun]
+  rw [eval_rfind' cf p a 0]
+  simp only [Nat.add_zero]
   exact Part.map_id' (fun _ => rfl) _
 
 theorem primrec_const : Primrec OracleCode.const :=
@@ -203,10 +223,10 @@ theorem eval_ofPartrecCode (c : Nat.Partrec.Code) (p : Baire) :
   | succ => rfl
   | left => rfl
   | right => rfl
-  | pair cf cg ihf ihg => simp [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
-  | comp cf cg ihf ihg => simp [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
-  | prec cf cg ihf ihg => simp [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
-  | rfind' cf ihf => simp [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf]
+  | pair cf cg ihf ihg => simp only [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]; rfl
+  | comp cf cg ihf ihg => simp only [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]; rfl
+  | prec cf cg ihf ihg => simp only [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]; rfl
+  | rfind' cf ihf => simp only [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf]; rfl
 
 end OracleCode
 

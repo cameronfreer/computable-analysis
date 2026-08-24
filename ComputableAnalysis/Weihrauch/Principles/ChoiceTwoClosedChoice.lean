@@ -78,7 +78,7 @@ theorem cantorForbiddenWord_c2ParallelForbiddenName {p : Baire} {m : ℕ}
       some (treeWordDecode m.unpair.2) := by
   obtain ⟨h0, h1⟩ := c2ParallelForbiddenName_ne_zero_iff.mp h
   refine cantorForbiddenWord_of_eq_code ?_
-  rw [c2ParallelForbiddenName, if_neg h0, if_pos h1]
+  rw [c2ParallelForbiddenName, ite_eq_right h0, ite_eq_left h1]
 
 /-- **The semantic anchor**, promise-free: the presented closed set is exactly the set of
 points solving every instance simultaneously. -/
@@ -86,7 +86,7 @@ theorem closedCantorSet_c2ParallelForbiddenName (p : Baire) :
     closedCantorSet (c2ParallelForbiddenName p) =
       {x : Cantor | ∀ n, C₂.accepts (Baire.track n p) (Bool.toNat (x n))} := by
   ext x
-  simp only [closedCantorSet, Set.mem_setOf_eq, C₂.accepts_iff, Baire.track]
+  simp only [closedCantorSet, Set.mem_ofPred_eq, C₂.accepts_iff, Baire.track]
   constructor
   · intro hx n
     refine ⟨by cases x n <;> simp, fun s hs => ?_⟩
@@ -236,7 +236,7 @@ theorem isStrongReductionPair_parallelize_c2_le_c_cantor :
       c2ParallelAnswerCode := by
   intro p xs hpxs hdom
   obtain rfl : xs = fun n => Baire.track n p := funext (baireSequence_names_iff.mp hpxs)
-  rw [Problem.parallelize_dom_iff] at hdom
+  replace hdom := Problem.parallelize_dom_iff.mp hdom
   refine ⟨c2ParallelForbiddenName p, mem_evalStream_c2ParallelForbiddenCode p,
     c2ParallelForbiddenName p, baireRep_names_iff.mpr rfl,
     c_Cantor_dom_c2ParallelForbiddenName (fun n => hdom n), ?_⟩

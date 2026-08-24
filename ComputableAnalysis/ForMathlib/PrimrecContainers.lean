@@ -53,7 +53,12 @@ theorem primrec_list_filter {f : α → List β} {p : α → β → Bool}
   (listFilterMap hf (Primrec.cond hp (option_some.comp snd) (const none)).to₂).of_eq fun a => by
     induction f a with
     | nil => rfl
-    | cons b l ih => cases h : p a b <;> simp [h, ih]
+    | cons b l ih =>
+      -- `simp` now normalizes `bif` to `if _ = true`, so the hypothesis needs the same
+      -- normal form before it can close either branch
+      have ih' : List.filterMap (fun x => if p a x = true then some x else none) l
+          = List.filter (p a) l := by simpa using ih
+      cases h : p a b <;> simp [h, ih']
 
 /-- **Parameterized `List.all`.** -/
 theorem primrec_list_all {f : α → List β} {p : α → β → Bool}

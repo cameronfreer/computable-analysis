@@ -80,7 +80,7 @@ theorem eval_llpoRemovalCode (p : Baire) (k : ℕ) :
   · have h0 : (1 : ℕ) - (1 - p k) = 0 := by omega
     rw [eval_comp_some (eval_pair_some (eval_id p k) (h0 ▸ hflag)),
       eval_caseszCode_zero]
-    simp only [llpoRemovalStream, if_pos h]
+    simp only [llpoRemovalStream, ite_eq_left h]
     rfl
   · have h1 : (1 : ℕ) - (1 - p k) = 1 := by omega
     rw [eval_comp_some (eval_pair_some (eval_id p k) (h1 ▸ hflag)),
@@ -98,14 +98,14 @@ theorem isStrongReductionPair_llpo_le_c2 :
   obtain ⟨i₀, hi₀⟩ := hdom
   obtain ⟨hone, hdisj⟩ := LLPO.accepts_iff.mp hi₀
   have hmem : llpoRemovalStream x ∈ llpoRemovalCode.evalStream x :=
-    mem_evalStream.mpr fun k => by rw [eval_llpoRemovalCode]; exact Part.mem_some _
+    mem_evalStream.mpr fun k => by rw [eval_llpoRemovalCode x k]; exact Part.mem_some _
   have hdom' : C₂.Dom (llpoRemovalStream x) := by
     rcases hdisj with ⟨-, hall⟩ | ⟨-, hall⟩
     · refine ⟨(0 : ℕ), C₂.accepts_iff.mpr ⟨by omega, fun n hn => ?_⟩⟩
       rcases eq_or_ne (x n) 0 with h | h
       · simp [llpoRemovalStream, h] at hn
       · have hpar : n % 2 = 0 := by
-          simp only [llpoRemovalStream, if_neg h] at hn
+          simp only [llpoRemovalStream, ite_eq_right h] at hn
           omega
         have hev : n = 2 * (n / 2) := by omega
         exact h (hev ▸ hall (n / 2))
@@ -113,7 +113,7 @@ theorem isStrongReductionPair_llpo_le_c2 :
       rcases eq_or_ne (x n) 0 with h | h
       · simp [llpoRemovalStream, h] at hn
       · have hpar : n % 2 = 1 := by
-          simp only [llpoRemovalStream, if_neg h] at hn
+          simp only [llpoRemovalStream, ite_eq_right h] at hn
           omega
         have hodd : n = 2 * (n / 2) + 1 := by omega
         exact h (hodd ▸ hall (n / 2))
@@ -124,10 +124,10 @@ theorem isStrongReductionPair_llpo_le_c2 :
   obtain rfl | rfl := Nat.le_one_iff_eq_zero_or_eq_one.mp hy'le
   · refine Or.inl ⟨rfl, fun n => ?_⟩
     by_contra h
-    exact hnorem (2 * n) (by simp [llpoRemovalStream, if_neg h])
+    exact hnorem (2 * n) (by simp [llpoRemovalStream, ite_eq_right h])
   · refine Or.inr ⟨rfl, fun n => ?_⟩
     by_contra h
-    exact hnorem (2 * n + 1) (by simp [llpoRemovalStream, if_neg h])
+    exact hnorem (2 * n + 1) (by simp [llpoRemovalStream, ite_eq_right h])
 
 /-! ### `C₂ ≤sW LLPO` -/
 
@@ -158,11 +158,11 @@ theorem c2FlagStream_even_zero_iff {p : Baire} :
     · have hfind := Nat.find_spec hex
       have hmin : ∀ m < Nat.find hex, p m ≠ 1 := fun m hm => Nat.find_min hex hm
       have := h (Nat.find hex)
-      rw [c2FlagStream_even, if_pos ⟨hfind, hmin⟩] at this
+      rw [c2FlagStream_even, ite_eq_left ⟨hfind, hmin⟩] at this
       exact one_ne_zero this
     · exact hex ⟨n, hn⟩
   · intro h n
-    rw [c2FlagStream_even, if_neg fun hc => h n hc.1]
+    rw [c2FlagStream_even, ite_eq_right fun hc => h n hc.1]
 
 /-- The odd track of the flags vanishes exactly when point `1` is never removed. -/
 theorem c2FlagStream_odd_zero_iff {p : Baire} :
@@ -173,17 +173,17 @@ theorem c2FlagStream_odd_zero_iff {p : Baire} :
     · have hfind := Nat.find_spec hex
       have hmin : ∀ m < Nat.find hex, p m ≠ 2 := fun m hm => Nat.find_min hex hm
       have := h (Nat.find hex)
-      rw [c2FlagStream_odd, if_pos ⟨hfind, hmin⟩] at this
+      rw [c2FlagStream_odd, ite_eq_left ⟨hfind, hmin⟩] at this
       exact one_ne_zero this
     · exact hex ⟨n, hn⟩
   · intro h n
-    rw [c2FlagStream_odd, if_neg fun hc => h n hc.1]
+    rw [c2FlagStream_odd, ite_eq_right fun hc => h n hc.1]
 
 /-- A nonzero flag unpacks to a first-removal certificate. -/
 private theorem c2FlagStream_ne_zero {p : Baire} {k : ℕ} (h : c2FlagStream p k ≠ 0) :
     p (k / 2) = k % 2 + 1 ∧ ∀ m < k / 2, p m ≠ k % 2 + 1 := by
   by_contra hc
-  exact h (if_neg hc)
+  exact h (ite_eq_right hc)
 
 /-- **The preprocessor of `c2_le_llpo`**, from the head-adaptive prefix bridge: the flag
 at `k` is a computable function of the length-`(k / 2 + 1)` prefix of the input. -/
@@ -250,11 +250,11 @@ theorem exists_c2FlagCode : ∃ K : OracleCode, ∀ p : Baire,
       have := h i i.isLt
       omega
   by_cases hcase : p (k / 2) = k % 2 + 1 ∧ ∀ m < k / 2, p m ≠ k % 2 + 1
-  · rw [if_pos ⟨hcase.1, hcond.mpr hcase.2⟩, c2FlagStream, if_pos hcase]
-  · rw [c2FlagStream, if_neg hcase]
+  · rw [ite_eq_left ⟨hcase.1, hcond.mpr hcase.2⟩, c2FlagStream, ite_eq_left hcase]
+  · rw [c2FlagStream, ite_eq_right hcase]
     rcases Decidable.not_and_iff_not_or_not.mp hcase with h | h
-    · rw [if_neg fun hc => h hc.1]
-    · rw [if_neg fun hc => h (hcond.mp hc.2)]
+    · rw [ite_eq_right fun hc => h hc.1]
+    · rw [ite_eq_right fun hc => h (hcond.mp hc.2)]
 
 /-- The first-removal flag code, extracted once from `exists_c2FlagCode` so that consumers
 share a single combinator. Specified, not constructed — the documented atom pattern of

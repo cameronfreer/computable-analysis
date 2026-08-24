@@ -77,12 +77,12 @@ theorem take_streamTake (p : ℕ → α) {t n : ℕ} (h : t ≤ n) :
 @[simp]
 theorem streamExtend_apply_lt (s : List α) (p : ℕ → α) {n : ℕ} (h : n < s.length) :
     streamExtend s p n = s[n] :=
-  dif_pos h
+  dite_eq_left h
 
 @[simp]
 theorem streamExtend_apply_ge (s : List α) (p : ℕ → α) {n : ℕ} (h : s.length ≤ n) :
     streamExtend s p n = p (n - s.length) :=
-  dif_neg (Nat.not_lt.mpr h)
+  dite_eq_right (Nat.not_lt.mpr h)
 
 theorem mem_cylinder_iff {s : List α} {p : ℕ → α} :
     p ∈ cylinder s ↔ streamTake p s.length = s := by
@@ -143,7 +143,7 @@ theorem cylinder_eq_of_mem {s : List α} {p : ℕ → α} (hp : p ∈ cylinder s
 theorem cylinder_eq_iInter (s : List α) :
     cylinder s = ⋂ i : Fin s.length, (fun p : ℕ → α => p i.1) ⁻¹' {s[i.1]} := by
   ext p
-  simp only [cylinder, Set.mem_setOf_eq, Set.mem_iInter, Set.mem_preimage,
+  simp only [cylinder, Set.mem_ofPred_eq, Set.mem_iInter, Set.mem_preimage,
     Set.mem_singleton_iff]
   exact ⟨fun h i => h i.1 i.2, fun h i hi => h ⟨i, hi⟩⟩
 

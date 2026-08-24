@@ -89,7 +89,7 @@ theorem reduction_iff_exists_reductionPair {f : Problem X Y} {g : Problem X' Y'}
       have hG₁ : g.Realizes fun r => if r = k then Part.none else G₀ r := by
         intro r x' hrx' hdom'
         have hr : r ≠ k := fun hrk => hno ⟨x', hrk ▸ hrx', hdom'⟩
-        simpa only [if_neg hr] using hG₀ r x' hrx' hdom'
+        simpa only [ite_eq_right hr] using hG₀ r x' hrx' hdom'
       obtain ⟨q₁, hq₁, -⟩ := hKH _ hG₁ p x hpx hdom
       obtain ⟨k₁, hk₁, a₁, ha₁, -⟩ := mem_transform_iff.mp hq₁
       rw [Part.mem_unique hk₁ hk] at ha₁

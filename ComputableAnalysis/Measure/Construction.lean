@@ -104,7 +104,7 @@ private theorem cylinder_eq_preimage_frestrictLe {s : List Bool} {n : ℕ}
     (hn : s.length = n + 1) :
     (cylinder s : Set Cantor) = Preorder.frestrictLe (π := B) n ⁻¹' {hist s hn} := by
   ext p
-  simp only [cylinder, Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+  simp only [cylinder, Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
   constructor
   · intro hp
     funext i
@@ -151,7 +151,7 @@ private lemma bernoulliStep (hm : IsConsistentCylinderMass m) (t : List Bool) (b
     have hq : ((nextPI hm t : ℝ)) = m (t ++ [true]) / m t := by
       change ((nextP m t : ℝ)) = _
       unfold nextP
-      rw [if_neg hne]
+      rw [ite_eq_right hne]
       exact Real.coe_toNNReal _ (div_nonneg (hm.2.1 _) h0.le)
     have hsplit := hm.2.2 t
     rw [← ENNReal.ofReal_mul (hm.2.1 t)]
@@ -173,7 +173,7 @@ private lemma oneStep (hm : IsConsistentCylinderMass m) {n : ℕ}
         kernels hm n (frestrictLe₂ (π := B) (Nat.le_succ n) y)
           ({y ⟨n + 1, mem_Iic.mpr le_rfl⟩} : Set Bool) := by
   rw [Kernel.partialTraj_succ_self,
-    Kernel.map_apply' _ measurable_IicProdIoc _ (measurableSet_singleton y)]
+    Kernel.map_apply' _ (measurable_IicProdIoc (X := B)) _ (measurableSet_singleton y)]
   have hpre : IicProdIoc (X := B) n (n + 1) ⁻¹' ({y} : Set _) =
       ({frestrictLe₂ (π := B) (Nat.le_succ n) y} : Set _) ×ˢ
         ({restrict₂ (π := B) Ioc_subset_Iic_self y} : Set _) := by
