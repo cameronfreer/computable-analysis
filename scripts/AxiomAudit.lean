@@ -412,6 +412,7 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_certifiedWeightCode,
    -- Rider: the certified-weight accumulator that is exact on complete masks
    ``ComputableAnalysis.exists_completeCertifiedWeightCode,
+   ``ComputableAnalysis.exists_completeCertifiedAtomicCode,
    -- Rider: the least-witness prefix search builder, promoted on its second consumer
    ``ComputableAnalysis.OracleCode.exists_prefixSearchCode,
    -- Rider: computable problems return computable answers; conditioning is not computable

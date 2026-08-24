@@ -38,6 +38,10 @@ topology on `ProbabilityMeasure X` (unit 27):
   from positive membership information alone. The first bounds the mass below from a bitmask
   over the raw decoded list; the second supplies the uniform normalized atom list, whose
   accumulator is exact once the mask is complete.
+* `exists_completeCertifiedAtomicCode` — the same package with an EMITTER: besides the retained
+  mass it returns an atomic index for the retained submeasure, normalized, together with the
+  submeasure itself as an existential witness tying the two together. This is what a
+  normalized-restriction realizer emits; `exists_completeCertifiedWeightCode` is its corollary.
 * `prokhorovPresentation` — the effective Prokhorov presentation of the `LevyProkhorov`
   metric synonym: both convention 7 semidecisions are fully discharged through the Σ₁
   characterizations of strict LP-distance comparisons between atomics (five-level Σ₁
@@ -52,7 +56,7 @@ semantics/`Primrec` lemmas, and `repred_comp` on the gt-side assembly pins `(g :
 explicitly.
 -/
 
-set_option linter.style.longFile 2300
+set_option linter.style.longFile 2600
 
 namespace ComputableAnalysis
 
@@ -1824,6 +1828,277 @@ private theorem toMeasure_atomic_eq_range_sum (m : ℕ) {A : Set X} (hA : Measur
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hA]
 
+
+/-! ### The masked atomic emitter
+
+`exists_completeCertifiedWeightCode` returns the retained MASS as a rational code. A realizer
+that has to *emit* the retained measure — normalized, as a coordinate of a weak name — needs the
+measure itself as an atomic index, together with enough semantics to identify what that index
+denotes. This package adds exactly that, over the same atom list and the same accumulator.
+
+The emitted list keeps every position of the uniform layer and zeroes the weight code of the
+positions the mask drops. Positional agreement with `certifiedAtoms` is deliberate: it lines the
+`Fin`-indexed sum of `atomicOfList` up with `toMeasure_atomic_eq_range_sum`'s `Finset.range` sum
+with no filtering bridge in between, and zero-weight entries are already known to be harmless to
+both existing clauses. -/
+
+private theorem sum_map_range {M : Type*} [AddCommMonoid M] (n : ℕ) (g : ℕ → M) :
+    ((List.range n).map g).sum = ∑ i ∈ Finset.range n, g i := by
+  induction n with
+  | zero => simp
+  | succ k ih =>
+    rw [List.range_succ, List.map_append, List.sum_append, ih, Finset.sum_range_succ]
+    simp
+
+private theorem clampedWeight_zeroCode : clampedWeight zeroCode = 0 := by
+  rw [clampedWeight, ratOfCode_zeroCode]
+  norm_num
+
+private theorem clampedWeight_le_clampedWeightSum {l : List (ℕ × ℕ)} {i : ℕ}
+    (h : i < l.length) : clampedWeight (l.getD i (0, 0)).2 ≤ clampedWeightSum l := by
+  rw [List.getD_eq_getElem _ _ h, clampedWeightSum]
+  refine List.single_le_sum (fun x hx => ?_) _ (List.mem_map_of_mem (List.getElem_mem h))
+  obtain ⟨pr, -, rfl⟩ := List.mem_map.mp hx
+  exact clampedWeight_nonneg _
+
+/-- Decoded atom weights are bounded by `1` at every indexed position: on the degenerate branch
+the single weight IS `1`, and otherwise the position's clamped weight is one summand of the
+nonnegative total it is divided by. -/
+private theorem atomWt_le_one (l : List (ℕ × ℕ)) {i : ℕ} (h : i < atomCount l) :
+    atomWt l i ≤ 1 := by
+  rw [atomWt]
+  split_ifs with h0
+  · exact le_rfl
+  · have hpos : (0 : ℚ) < clampedWeightSum l :=
+      lt_of_le_of_ne (clampedWeightSum_nonneg l) (Ne.symm h0)
+    rw [div_le_one hpos, atomCount, if_neg h0] at *
+    exact clampedWeight_le_clampedWeightSum h
+
+/-- The emitted weight code decodes to the atom weight itself: the clamp is inert because atom
+weights already lie in `[0, 1]`. -/
+private theorem clampedWeight_natAtomWtCode {m i : ℕ} (h : i < natAtomCount m) :
+    clampedWeight (natAtomWtCode m i) = atomWt (atomList m) i := by
+  rw [natAtomCount_eq] at h
+  rw [clampedWeight, ratOfCode_natAtomWtCode, min_eq_right (atomWt_le_one _ h),
+    max_eq_right (atomWt_nonneg _ _)]
+
+/-- The masked atom list: the uniform layer with the dropped positions' weight codes zeroed. -/
+private def maskedAtoms (m mask : ℕ) : List (ℕ × ℕ) :=
+  (List.range (natAtomCount m)).map fun i =>
+    (natAtomIdx m i, if mask.testBit i = true then natAtomWtCode m i else zeroCode)
+
+private theorem length_maskedAtoms (m mask : ℕ) :
+    (maskedAtoms m mask).length = natAtomCount m := by
+  rw [maskedAtoms, List.length_map, List.length_range]
+
+private theorem getElem_maskedAtoms {m mask i : ℕ} (_h : i < natAtomCount m)
+    (h' : i < (maskedAtoms m mask).length) :
+    (maskedAtoms m mask)[i]
+      = (natAtomIdx m i, if mask.testBit i = true then natAtomWtCode m i else zeroCode) := by
+  simp only [maskedAtoms, List.getElem_map, List.getElem_range]
+
+private theorem primrec_maskedAtoms : Primrec₂ maskedAtoms := by
+  have hbody : Primrec fun z : (ℕ × ℕ) × ℕ =>
+      (natAtomIdx z.1.1 z.2,
+        if Nat.testBit z.1.2 z.2 = true then natAtomWtCode z.1.1 z.2 else zeroCode) :=
+    (primrec_natAtomIdx.comp (Primrec.fst.comp Primrec.fst) Primrec.snd).pair
+      (Primrec.ite (Primrec.eq.comp
+          (primrec_testBit.comp (Primrec.snd.comp Primrec.fst) Primrec.snd)
+          (Primrec.const true))
+        (primrec_natAtomWtCode.comp (Primrec.fst.comp Primrec.fst) Primrec.snd)
+        (Primrec.const zeroCode))
+  exact (Primrec.list_map (Primrec.list_range.comp (primrec_natAtomCount.comp Primrec.fst))
+    hbody.to₂).to₂
+
+/-- The emitted atomic index of a mask. -/
+private def certAtomicCode (m mask : ℕ) : ℕ := Encodable.encode (maskedAtoms m mask)
+
+private theorem primrec_certAtomicCode : Primrec₂ certAtomicCode :=
+  (Primrec.encode.comp primrec_maskedAtoms).to₂
+
+private theorem clampedWeight_getElem_maskedAtoms {m mask i : ℕ} (h : i < natAtomCount m)
+    (h' : i < (maskedAtoms m mask).length) :
+    clampedWeight ((maskedAtoms m mask)[i]).2
+      = if mask.testBit i = true then atomWt (atomList m) i else 0 := by
+  rw [getElem_maskedAtoms h h']
+  by_cases hb : mask.testBit i = true
+  · rw [if_pos hb, if_pos hb, clampedWeight_natAtomWtCode h]
+  · rw [if_neg hb, if_neg hb, clampedWeight_zeroCode]
+
+private theorem clampedWeightSum_maskedAtoms (m mask : ℕ) :
+    clampedWeightSum (maskedAtoms m mask) = ratOfCode (completeCertWtCode m mask) := by
+  rw [ratOfCode_completeCertWtCode, clampedWeightSum, maskedAtoms, List.map_map, sum_map_range]
+  refine Finset.sum_congr rfl fun i hi => ?_
+  have hi' : i < natAtomCount m := Finset.mem_range.mp hi
+  by_cases hb : mask.testBit i = true
+  · simp only [Function.comp_apply, if_pos hb]
+    exact clampedWeight_natAtomWtCode hi'
+  · simp only [Function.comp_apply, if_neg hb]
+    exact clampedWeight_zeroCode
+
+/-- The retained submeasure of a mask: the decoded atomic with the dropped positions deleted,
+kept UNNORMALIZED so that its total mass is exactly what the accumulator denotes. -/
+private noncomputable def retainedMeasure (m mask : ℕ) : Measure X :=
+  ∑ i ∈ Finset.range (natAtomCount m),
+    (if mask.testBit i = true then ENNReal.ofReal ((atomWt (atomList m) i : ℚ) : ℝ) else 0)
+      • Measure.dirac (P.dense (natAtomIdx m i))
+
+omit [BorelSpace X] in
+private theorem retainedMeasure_apply (m mask : ℕ) {s : Set X} (hs : MeasurableSet s) :
+    retainedMeasure P m mask s
+      = ∑ i ∈ Finset.range (natAtomCount m),
+          (if mask.testBit i = true then ENNReal.ofReal ((atomWt (atomList m) i : ℚ) : ℝ) else 0)
+            * Set.indicator s 1 (P.dense (natAtomIdx m i)) := by
+  rw [retainedMeasure, Measure.finsetSum_apply]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
+
+omit [BorelSpace X] in
+private theorem retainedMeasure_univ (m mask : ℕ) :
+    retainedMeasure P m mask Set.univ
+      = ENNReal.ofReal ((ratOfCode (completeCertWtCode m mask) : ℚ) : ℝ) := by
+  rw [retainedMeasure_apply P m mask MeasurableSet.univ, ratOfCode_completeCertWtCode,
+    Rat.cast_sum, ENNReal.ofReal_sum_of_nonneg (nonneg_maskedWt m mask)]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Set.indicator_of_mem (Set.mem_univ _), Pi.one_apply, mul_one]
+  by_cases hb : mask.testBit i = true
+  · rw [if_pos hb, if_pos hb]
+  · rw [if_neg hb, if_neg hb, Rat.cast_zero, ENNReal.ofReal_zero]
+
+omit [BorelSpace X] in
+private theorem retainedMeasure_le_restrict {m mask : ℕ} {A : Set X} (hA : MeasurableSet A)
+    (hcert : ∀ i, i < (certifiedAtoms m).length → mask.testBit i = true →
+      P.dense ((certifiedAtoms m).getD i (0, 0)).1 ∈ A) :
+    retainedMeasure P m mask ≤ (atomic P m).toMeasure.restrict A := by
+  refine Measure.le_iff.mpr fun s hs => ?_
+  rw [Measure.restrict_apply hs, retainedMeasure_apply P m mask hs,
+    toMeasure_atomic_eq_range_sum P m (hs.inter hA)]
+  refine Finset.sum_le_sum fun i hi => ?_
+  have hi' : i < natAtomCount m := Finset.mem_range.mp hi
+  by_cases hb : mask.testBit i = true
+  · have hmem : P.dense (natAtomIdx m i) ∈ A := by
+      have h := hcert i (by rw [length_certifiedAtoms]; exact hi') hb
+      rwa [fst_getD_certifiedAtoms hi'] at h
+    rw [if_pos hb]
+    by_cases hxs : P.dense (natAtomIdx m i) ∈ s
+    · rw [Set.indicator_of_mem hxs, Set.indicator_of_mem (Set.mem_inter hxs hmem)]
+    · rw [Set.indicator_of_notMem hxs, mul_zero]
+      exact zero_le
+  · rw [if_neg hb, zero_mul]
+    exact zero_le
+
+omit [BorelSpace X] in
+/-- **What the emitted index denotes**: the normalized retained submeasure, whenever the retained
+mass is positive. -/
+private theorem toMeasure_atomic_certAtomicCode {m mask : ℕ}
+    (h0 : retainedMeasure P m mask Set.univ ≠ 0) :
+    (atomic P (certAtomicCode m mask)).toMeasure
+      = (retainedMeasure P m mask Set.univ)⁻¹ • retainedMeasure P m mask := by
+  set S : ℚ := ratOfCode (completeCertWtCode m mask) with hS
+  have hSnn : (0 : ℚ) ≤ S := nonneg_ratOfCode_completeCertWtCode m mask
+  have huniv : retainedMeasure P m mask Set.univ = ENNReal.ofReal ((S : ℚ) : ℝ) :=
+    retainedMeasure_univ P m mask
+  have hSpos : (0 : ℝ) < ((S : ℚ) : ℝ) := by
+    rcases lt_or_eq_of_le hSnn with hlt | heq
+    · exact_mod_cast hlt
+    · exact absurd (by rw [huniv, ← heq]; simp) h0
+  have hsum0 : clampedWeightSum (maskedAtoms m mask) ≠ 0 := by
+    rw [clampedWeightSum_maskedAtoms, ← hS]
+    exact fun hc => absurd (by rw [hc]; norm_num) (ne_of_gt hSpos)
+  rw [certAtomicCode, atomic_encode_eq_atomicOfList,
+    toMeasure_atomicOfList_of_ne_zero P hsum0, huniv, retainedMeasure, Finset.smul_sum,
+    ← Fin.sum_univ_eq_sum_range
+      (fun i => (ENNReal.ofReal ((S : ℚ) : ℝ))⁻¹ •
+        ((if mask.testBit i = true then ENNReal.ofReal ((atomWt (atomList m) i : ℚ) : ℝ) else 0)
+          • Measure.dirac (P.dense (natAtomIdx m i)))) (natAtomCount m),
+    ← Fin.sum_congr' _ (length_maskedAtoms m mask)]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have hlt' : (i : ℕ) < (maskedAtoms m mask).length := i.isLt
+  have hlt : (i : ℕ) < natAtomCount m :=
+    lt_of_lt_of_le i.isLt (le_of_eq (length_maskedAtoms m mask))
+  simp only [Fin.getElem_fin, Fin.val_cast, smul_smul]
+  rw [getElem_maskedAtoms hlt hlt', clampedWeightSum_maskedAtoms, ← hS]
+  have hwt : clampedWeight (if mask.testBit i = true then natAtomWtCode m i else zeroCode)
+      = if mask.testBit i = true then atomWt (atomList m) i else 0 := by
+    by_cases hb : mask.testBit (i : ℕ) = true
+    · rw [if_pos hb, if_pos hb, clampedWeight_natAtomWtCode hlt]
+    · rw [if_neg hb, if_neg hb, clampedWeight_zeroCode]
+  rw [hwt]
+  congr 1
+  by_cases hb : mask.testBit (i : ℕ) = true
+  · rw [if_pos hb, if_pos hb, Rat.cast_div, ENNReal.ofReal_div_of_pos hSpos,
+      ENNReal.div_eq_inv_mul]
+  · rw [if_neg hb, if_neg hb, Rat.cast_div, Rat.cast_zero, zero_div, ENNReal.ofReal_zero]
+    exact (mul_zero _).symm
+
+omit [BorelSpace X] in
+/-- **A certified-weight accumulator that also EMITS the normalized retained measure.**
+
+The sibling of `exists_completeCertifiedWeightCode`: the same atom list, the same accumulator and
+the same three clauses, plus a primitive recursive `emit` and, for every sound mask, an explicit
+retained submeasure `ρ` tying the three together —
+
+* `ρ ≤ (atomic P m).restrict A` — `ρ` really is a piece of the decoded atomic living inside `A`;
+* `ρ univ` is exactly what the accumulator denotes, so the existing mass clauses transfer to it;
+* when that mass is positive, `emit m mask` is an atomic index for the NORMALIZED `ρ`.
+
+Stating `ρ` existentially is what keeps the private weight representation hidden: a consumer
+never sees `maskedAtoms`, only a measure with these three properties, which is all a
+normalized-restriction realizer needs. `exists_completeCertifiedWeightCode` is the corollary
+obtained by dropping `emit` and the last clause. -/
+theorem exists_completeCertifiedAtomicCode :
+    ∃ (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode) (emit : ℕ → ℕ → ℕ),
+      Primrec atoms ∧ Primrec₂ acc ∧ Primrec₂ emit ∧
+      (∀ m mask : ℕ, (0 : ℝ) ≤ ((ratOfCode (acc m mask) : ℚ) : ℝ)) ∧
+      (∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
+        (∀ i, i < (atoms m).length → mask.testBit i = true →
+          P.dense ((atoms m).getD i (0, 0)).1 ∈ A) →
+        ENNReal.ofReal ((ratOfCode (acc m mask) : ℚ) : ℝ) ≤ (atomic P m).toMeasure A) ∧
+      (∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
+        (∀ i, i < (atoms m).length →
+          (mask.testBit i = true ↔ P.dense ((atoms m).getD i (0, 0)).1 ∈ A)) →
+        ENNReal.ofReal ((ratOfCode (acc m mask) : ℚ) : ℝ) = (atomic P m).toMeasure A) ∧
+      (∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
+        (∀ i, i < (atoms m).length → mask.testBit i = true →
+          P.dense ((atoms m).getD i (0, 0)).1 ∈ A) →
+        ∃ ρ : Measure X,
+          ρ ≤ (atomic P m).toMeasure.restrict A ∧
+          ρ Set.univ = ENNReal.ofReal ((ratOfCode (acc m mask) : ℚ) : ℝ) ∧
+          (ρ Set.univ ≠ 0 →
+            (atomic P (emit m mask)).toMeasure = (ρ Set.univ)⁻¹ • ρ)) := by
+  classical
+  refine ⟨certifiedAtoms, completeCertWtCode, certAtomicCode, primrec_certifiedAtoms,
+    primrec_completeCertWtCode, primrec_certAtomicCode,
+    fun m mask => by exact_mod_cast nonneg_ratOfCode_completeCertWtCode m mask, ?_, ?_, ?_⟩
+  · intro m mask A hA hcert
+    rw [toMeasure_atomic_eq_range_sum P m hA, ratOfCode_completeCertWtCode, Rat.cast_sum,
+      ENNReal.ofReal_sum_of_nonneg (nonneg_maskedWt m mask)]
+    refine Finset.sum_le_sum fun i hi => ?_
+    have hi' : i < natAtomCount m := Finset.mem_range.mp hi
+    by_cases hb : mask.testBit i = true
+    · have hmem : P.dense (natAtomIdx m i) ∈ A := by
+        have h := hcert i (by rw [length_certifiedAtoms]; exact hi') hb
+        rwa [fst_getD_certifiedAtoms hi'] at h
+      rw [if_pos hb, Set.indicator_of_mem hmem]
+      simp
+    · rw [if_neg hb]
+      simp
+  · intro m mask A hA hcert
+    rw [toMeasure_atomic_eq_range_sum P m hA, ratOfCode_completeCertWtCode, Rat.cast_sum,
+      ENNReal.ofReal_sum_of_nonneg (nonneg_maskedWt m mask)]
+    refine Finset.sum_congr rfl fun i hi => ?_
+    have hi' : i < natAtomCount m := Finset.mem_range.mp hi
+    have hiff := hcert i (by rw [length_certifiedAtoms]; exact hi')
+    rw [fst_getD_certifiedAtoms hi'] at hiff
+    by_cases hb : mask.testBit i = true
+    · rw [if_pos hb, Set.indicator_of_mem (hiff.mp hb)]
+      simp
+    · rw [if_neg hb, Set.indicator_of_notMem (fun hmem => by simp [hiff.mpr hmem] at hb)]
+      simp
+  · intro m mask A hA hcert
+    exact ⟨retainedMeasure P m mask, retainedMeasure_le_restrict P hA hcert,
+      retainedMeasure_univ P m mask, fun h0 => toMeasure_atomic_certAtomicCode P h0⟩
+
 omit [BorelSpace X] in
 /-- **A certified-weight accumulator that is exact on complete masks.**
 
@@ -1871,35 +2146,9 @@ theorem exists_completeCertifiedWeightCode :
         (∀ i, i < (atoms m).length →
           (mask.testBit i = true ↔ P.dense ((atoms m).getD i (0, 0)).1 ∈ A)) →
         ENNReal.ofReal ((ratOfCode (acc m mask) : ℚ) : ℝ) = (atomic P m).toMeasure A) := by
-  classical
-  refine ⟨certifiedAtoms, completeCertWtCode, primrec_certifiedAtoms,
-    primrec_completeCertWtCode,
-    fun m mask => by exact_mod_cast nonneg_ratOfCode_completeCertWtCode m mask, ?_, ?_⟩
-  · intro m mask A hA hcert
-    rw [toMeasure_atomic_eq_range_sum P m hA, ratOfCode_completeCertWtCode, Rat.cast_sum,
-      ENNReal.ofReal_sum_of_nonneg (nonneg_maskedWt m mask)]
-    refine Finset.sum_le_sum fun i hi => ?_
-    have hi' : i < natAtomCount m := Finset.mem_range.mp hi
-    by_cases hb : mask.testBit i = true
-    · have hmem : P.dense (natAtomIdx m i) ∈ A := by
-        have h := hcert i (by rw [length_certifiedAtoms]; exact hi') hb
-        rwa [fst_getD_certifiedAtoms hi'] at h
-      rw [if_pos hb, Set.indicator_of_mem hmem]
-      simp
-    · rw [if_neg hb]
-      simp
-  · intro m mask A hA hcert
-    rw [toMeasure_atomic_eq_range_sum P m hA, ratOfCode_completeCertWtCode, Rat.cast_sum,
-      ENNReal.ofReal_sum_of_nonneg (nonneg_maskedWt m mask)]
-    refine Finset.sum_congr rfl fun i hi => ?_
-    have hi' : i < natAtomCount m := Finset.mem_range.mp hi
-    have hiff := hcert i (by rw [length_certifiedAtoms]; exact hi')
-    rw [fst_getD_certifiedAtoms hi'] at hiff
-    by_cases hb : mask.testBit i = true
-    · rw [if_pos hb, Set.indicator_of_mem (hiff.mp hb)]
-      simp
-    · rw [if_neg hb, Set.indicator_of_notMem (fun hmem => by simp [hiff.mpr hmem] at hb)]
-      simp
+  obtain ⟨atoms, acc, -, hatoms, hacc, -, hnonneg, hsound, hexact, -⟩ :=
+    exists_completeCertifiedAtomicCode P
+  exact ⟨atoms, acc, hatoms, hacc, hnonneg, hsound, hexact⟩
 
 omit [MeasurableSpace X] [BorelSpace X] in
 /-- **The fully coded form of the witnessed strict finite condition** between two
