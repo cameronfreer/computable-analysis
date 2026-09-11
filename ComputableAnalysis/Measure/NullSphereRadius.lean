@@ -45,7 +45,7 @@ value and eventual certification below any slack.
 open MeasureTheory Metric Encodable Denumerable
 open scoped ENNReal NNReal
 
-set_option linter.style.longFile 1700
+set_option linter.style.longFile 1800
 
 namespace ComputableAnalysis
 
@@ -1551,6 +1551,68 @@ theorem exists_radiusSelectorCode :
   · refine lt_trans ?_ (normHi_lt hlt)
     rw [hstate0] at hhi
     simpa only [resHi, Nat.unpair_pair] using hhi
+
+/-! ### The basis, semantically -/
+
+/-- The set named by basis entry `n`. -/
+noncomputable def basisSet (ρ : ℕ → ℕ → ℝ) : ℕ → Set X
+  | 0 => ∅
+  | (n + 1) => ball (P.dense n.unpair.1) (ρ n.unpair.1 n.unpair.2)
+
+omit [MeasurableSpace X] [BorelSpace X] in
+@[simp] theorem basisSet_zero (ρ : ℕ → ℕ → ℝ) : basisSet P ρ 0 = (∅ : Set X) := rfl
+
+omit [MeasurableSpace X] [BorelSpace X] in
+@[simp] theorem basisSet_succ (ρ : ℕ → ℕ → ℝ) (n : ℕ) :
+    basisSet P ρ (n + 1) = ball (P.dense n.unpair.1) (ρ n.unpair.1 n.unpair.2) := rfl
+
+variable {P}
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- **Local refinement with a size bound.** The strengthening `exists_certFires_subset` — and
+through it the refinement tail of a basis entry — needs the refining entry to be not merely
+contained in the ambient open but arbitrarily small around `x`.  The construction already chooses
+the level `k` freely, so it suffices to choose it small against `ε` as well as against the margin;
+nothing else in the original argument changes. -/
+theorem exists_basisSet_refines_openOf_subset {ρ : ℕ → ℕ → ℝ}
+    (hlo : ∀ i k, (2 : ℝ)⁻¹ ^ (k + 2) < ρ i k)
+    (hhi : ∀ i k, ρ i k < (2 : ℝ)⁻¹ ^ (k + 1))
+    {u : Baire} {x : X} (hx : x ∈ openOf P u) {ε : ℝ} (hε : 0 < ε) :
+    ∃ i k j, x ∈ basisSet P ρ (Nat.pair i k + 1) ∧
+      dist (P.dense i) (P.dense (u j).unpair.1) + ρ i k
+        < ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) ∧
+      basisSet P ρ (Nat.pair i k + 1) ⊆ ball x ε := by
+  rw [openOf] at hx
+  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp hx
+  have hjd : dist x (P.dense (u j).unpair.1) < ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) :=
+    mem_ball.mp hj
+  set m : ℝ := ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) - dist x (P.dense (u j).unpair.1) with hm
+  have hmpos : 0 < m := by rw [hm]; linarith
+  obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one
+    (lt_min (by linarith : (0 : ℝ) < m / 2) (by linarith : (0 : ℝ) < ε / 4))
+    (by norm_num : (2 : ℝ)⁻¹ < 1)
+  have hk1 : (2 : ℝ)⁻¹ ^ (k + 1) < min (m / 2) (ε / 4) :=
+    lt_of_le_of_lt (pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)) hk
+  have hkm : (2 : ℝ)⁻¹ ^ (k + 1) < m / 2 := lt_of_lt_of_le hk1 (min_le_left _ _)
+  have hke : (2 : ℝ)⁻¹ ^ (k + 1) < ε / 4 := lt_of_lt_of_le hk1 (min_le_right _ _)
+  obtain ⟨i, hi⟩ := P.denseRange.exists_dist_lt x (by positivity : (0:ℝ) < (2 : ℝ)⁻¹ ^ (k + 2))
+  have hk2 : (2 : ℝ)⁻¹ ^ (k + 2) < (2 : ℝ)⁻¹ ^ (k + 1) := by
+    have hpos : (0:ℝ) < (2 : ℝ)⁻¹ ^ (k + 1) := by positivity
+    rw [pow_succ]; linarith
+  have hix : dist (P.dense i) x < (2 : ℝ)⁻¹ ^ (k + 2) := by rw [dist_comm]; exact hi
+  refine ⟨i, k, j, ?_, ?_, ?_⟩
+  · simp only [basisSet_succ, Nat.unpair_pair, mem_ball]
+    exact lt_trans hi (hlo i k)
+  · have htri := dist_triangle (P.dense i) x (P.dense (u j).unpair.1)
+    have := hhi i k
+    rw [hm] at hkm
+    linarith
+  · simp only [basisSet_succ, Nat.unpair_pair]
+    intro y hy
+    have h1 : dist y (P.dense i) < ρ i k := mem_ball.mp hy
+    have h3 := hhi i k
+    refine mem_ball.mpr (lt_of_le_of_lt (dist_triangle y (P.dense i) x) ?_)
+    linarith
 
 end NullSphereRadius
 

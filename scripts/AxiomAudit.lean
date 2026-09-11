@@ -720,7 +720,15 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.nest_names,
    ``ComputableAnalysis.exists_thinStepCode,
    ``ComputableAnalysis.exists_iterCode,
-   ``ComputableAnalysis.exists_radiusSelectorCode]
+   ``ComputableAnalysis.exists_radiusSelectorCode,
+   ``ComputableAnalysis.exists_basisSet_subset,
+   ``ComputableAnalysis.exists_basisSet_refines_openOf_subset,
+   ``ComputableAnalysis.exists_radiusAndNameCode,
+   ``ComputableAnalysis.exists_certFires_subset,
+   ``ComputableAnalysis.exists_requestCode,
+   ``ComputableAnalysis.exists_prependCode,
+   ``ComputableAnalysis.exists_rightInverseCode,
+   ``ComputableAnalysis.exists_continuityBasisCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
