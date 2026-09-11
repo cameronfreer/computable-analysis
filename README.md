@@ -53,8 +53,10 @@ Landmarks, not an inventory, and not a status report:
 - `WKL ≤sW LLPO.parallelize` — weak Kőnig's lemma below parallelized `LLPO`
 - `EFILC ≡W WKL` and `Hall ≤W WKL` — inverse-limit compactness and countable Hall
 - A computable Hausdorff moment theorem on the unit interval
-- `Lim ≤sW Disintegrate` on Cantor space — the lower bound for conditioning, after
-  Ackerman–Freer–Roy ([arXiv:1509.02992](https://arxiv.org/abs/1509.02992))
+- `Disintegrate P Q ≤sW Lim` for every pair of presented metric spaces, and
+  `Disintegrate ≡sW Lim` on Cantor space — the Weihrauch classification of continuous
+  disintegration, after Ackerman–Freer–Roy
+  ([arXiv:1509.02992](https://arxiv.org/abs/1509.02992))
 
 ## Getting started
 
