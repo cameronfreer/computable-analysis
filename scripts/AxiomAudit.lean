@@ -699,7 +699,14 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.primrec_halfPowCode,
    ``ComputableAnalysis.testBit_maskOfList,
    ``ComputableAnalysis.primrec_maskOfList,
-   ``ComputableAnalysis.exists_maskAtCode]
+   ``ComputableAnalysis.exists_maskAtCode,
+   ``ComputableAnalysis.measure_residual_transfer,
+   ``ComputableAnalysis.levyProkhorovEDist_restrict_le_dyadic,
+   ``ComputableAnalysis.levyProkhorovEDist_normalize_lipschitz,
+   ``ComputableAnalysis.explicit_normalized_budget,
+   ``ComputableAnalysis.restrictionSuccess_sound,
+   ``ComputableAnalysis.exists_restrictionSuccess,
+   ``ComputableAnalysis.exists_contSetRestrictionCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
