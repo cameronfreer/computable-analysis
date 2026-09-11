@@ -728,7 +728,22 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_requestCode,
    ``ComputableAnalysis.exists_prependCode,
    ``ComputableAnalysis.exists_rightInverseCode,
-   ``ComputableAnalysis.exists_continuityBasisCode]
+   ``ComputableAnalysis.exists_continuityBasisCode,
+   -- Unit 42: the upper bound
+   ``ComputableAnalysis.exists_upperPreprocessorCode,
+   ``ComputableAnalysis.exists_conditionalOnContOpenCode,
+   ``ComputableAnalysis.exists_trackwiseConditionalCode,
+   ``ComputableAnalysis.exists_refinementTailCode,
+   ``ComputableAnalysis.exists_refinementStable,
+   ``ComputableAnalysis.refinementStable_le,
+   ``ComputableAnalysis.exists_violationB_iff,
+   ``ComputableAnalysis.exists_stabilityIndex,
+   ``ComputableAnalysis.jumpBit_iff_not_refinementStable,
+   ``ComputableAnalysis.odd_of_lim_accepts_iff_refinementStable,
+   ``ComputableAnalysis.mem_openOf_iff_exists_ltCert,
+   ``ComputableAnalysis.exists_searchLeafCode,
+   ``ComputableAnalysis.exists_disintegrateEvaluator,
+   ``ComputableAnalysis.disintegrate_le_lim]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
