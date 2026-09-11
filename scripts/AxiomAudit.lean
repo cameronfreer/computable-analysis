@@ -706,7 +706,13 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.explicit_normalized_budget,
    ``ComputableAnalysis.restrictionSuccess_sound,
    ``ComputableAnalysis.exists_restrictionSuccess,
-   ``ComputableAnalysis.exists_contSetRestrictionCode]
+   ``ComputableAnalysis.exists_contSetRestrictionCode,
+   ``ComputableAnalysis.contSetNames_afr,
+   ``ComputableAnalysis.exists_afrOddCert,
+   ``ComputableAnalysis.openOf_afrOddEffective,
+   ``ComputableAnalysis.exists_distGtCert,
+   ``ComputableAnalysis.contSetNames_afrReal,
+   ``ComputableAnalysis.exists_afrRealEvalCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
