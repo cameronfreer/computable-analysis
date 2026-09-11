@@ -688,7 +688,15 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.IsStronglyParallelizable.collapse,
    ``ComputableAnalysis.isParallelizable_iff,
    ``ComputableAnalysis.isStronglyParallelizable_iff,
-   ``ComputableAnalysis.parallelize_congr_strong]
+   ``ComputableAnalysis.parallelize_congr_strong,
+   -- Unit 42: effective continuity opens
+   ``ComputableAnalysis.le_measure_of_thickening_subset,
+   ``ComputableAnalysis.tendsto_innerApprox,
+   ``ComputableAnalysis.tendsto_gap,
+   ``ComputableAnalysis.atomic_le_of_weakName,
+   ``ComputableAnalysis.le_atomic_of_weakName,
+   ``ComputableAnalysis.ratOfCode_halfPowCode,
+   ``ComputableAnalysis.primrec_halfPowCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
