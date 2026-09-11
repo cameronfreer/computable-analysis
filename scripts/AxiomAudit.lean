@@ -743,7 +743,8 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.mem_openOf_iff_exists_ltCert,
    ``ComputableAnalysis.exists_searchLeafCode,
    ``ComputableAnalysis.exists_disintegrateEvaluator,
-   ``ComputableAnalysis.disintegrate_le_lim]
+   ``ComputableAnalysis.disintegrate_le_lim,
+   ``ComputableAnalysis.disintegrate_cantor_equiv_lim]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
