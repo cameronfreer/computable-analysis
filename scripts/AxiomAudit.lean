@@ -712,7 +712,15 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.openOf_afrOddEffective,
    ``ComputableAnalysis.exists_distGtCert,
    ``ComputableAnalysis.contSetNames_afrReal,
-   ``ComputableAnalysis.exists_afrRealEvalCode]
+   ``ComputableAnalysis.exists_afrRealEvalCode,
+   ``ComputableAnalysis.exists_thin_annulus,
+   ``ComputableAnalysis.exists_interiorSubinterval,
+   ``ComputableAnalysis.nest_exists_limit,
+   ``ComputableAnalysis.nest_sphere_null,
+   ``ComputableAnalysis.nest_names,
+   ``ComputableAnalysis.exists_thinStepCode,
+   ``ComputableAnalysis.exists_iterCode,
+   ``ComputableAnalysis.exists_radiusSelectorCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
