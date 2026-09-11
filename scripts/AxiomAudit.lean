@@ -696,7 +696,10 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.atomic_le_of_weakName,
    ``ComputableAnalysis.le_atomic_of_weakName,
    ``ComputableAnalysis.ratOfCode_halfPowCode,
-   ``ComputableAnalysis.primrec_halfPowCode]
+   ``ComputableAnalysis.primrec_halfPowCode,
+   ``ComputableAnalysis.testBit_maskOfList,
+   ``ComputableAnalysis.primrec_maskOfList,
+   ``ComputableAnalysis.exists_maskAtCode]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
