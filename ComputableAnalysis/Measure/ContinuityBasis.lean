@@ -16,11 +16,12 @@ it as one stream: entry `⟨i, k⟩ + 1` carries a fast Cauchy name of the selec
 with the two-track continuity-open name of the ball, and entry `0` is an inert sentinel naming
 the empty set, so that every index is a valid entry.
 
-Two further objects ride on the basis stream. The **right inverse** searches, for an arbitrary
-open named by a stream, for a basis entry inside it containing a given point, so that basis
-entries can be refined uniformly. Its certificates are staged strict-comparison tests read off
-the presentation, and the proofs establish both soundness (a firing certificate names a genuine
-sub-entry) and local cofinality (inside any open, some certificate fires).
+A **right inverse** rides on the basis stream: from the basis and an arbitrary open named by a
+stream, it enumerates basis entries (with the sentinel as filler) whose union is exactly that
+open, so that opens can be refined by basis entries uniformly and totally. Its certificates
+are staged strict-comparison tests read off the presentation; soundness (a firing certificate
+names a genuine sub-entry) and completeness (every point of the open is covered by a firing
+certificate, inside any prescribed ball) give the union identity.
 
 ## Main definitions and results
 
@@ -29,9 +30,12 @@ sub-entry) and local cofinality (inside any open, some certificate fires).
   every radius within its band, the open named by every entry, and continuity of every entry's
   two-track name.
 * `exists_continuityBasisCode` — one code computing a basis stream from a weak name.
-* `certFires`, `basisChoiceAt`, `exists_certFires_subset` — the refinement certificates and
-  their soundness and cofinality.
-* `exists_rightInverseCode` — the code enumerating the certificates.
+* `certFires`, `basisChoiceAt`, `exists_certFires`, `exists_certFires_subset`,
+  `openOf_eq_iUnion_basisOpen` — the refinement certificates, their soundness and completeness,
+  and the union identity.
+* `exists_rightInverseCode`, `exists_basisRightInverseCode` — the code enumerating the
+  certificates, and the promise-free right-inverse contract: total on every pair of streams,
+  and every output satisfies the union identity.
 -/
 
 open MeasureTheory Metric Encodable Denumerable
@@ -45,6 +49,18 @@ section ContinuityBasis
 
 variable {X : Type} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 variable (P : ComputableMetricPresentation X)
+
+/-- The set named by basis entry `n`. -/
+noncomputable def basisSet (ρ : ℕ → ℕ → ℝ) : ℕ → Set X
+  | 0 => ∅
+  | (n + 1) => ball (P.dense n.unpair.1) (ρ n.unpair.1 n.unpair.2)
+
+omit [MeasurableSpace X] [BorelSpace X] in
+@[simp] theorem basisSet_zero (ρ : ℕ → ℕ → ℝ) : basisSet P ρ 0 = (∅ : Set X) := rfl
+
+omit [MeasurableSpace X] [BorelSpace X] in
+@[simp] theorem basisSet_succ (ρ : ℕ → ℕ → ℝ) (n : ℕ) :
+    basisSet P ρ (n + 1) = ball (P.dense n.unpair.1) (ρ n.unpair.1 n.unpair.2) := rfl
 
 variable {P}
 
@@ -89,15 +105,92 @@ theorem ball_subset_ball_of_dist_add_lt {c c' : X} {r r' : ℝ} (h : dist c c' +
   have h2 := dist_triangle y c c'
   exact mem_ball.mpr (by linarith)
 
+
+omit [MeasurableSpace X] [BorelSpace X] in
+theorem exists_basisSet_refines_openOf {ρ : ℕ → ℕ → ℝ}
+    (hlo : ∀ i k, (2 : ℝ)⁻¹ ^ (k + 2) < ρ i k)
+    (hhi : ∀ i k, ρ i k < (2 : ℝ)⁻¹ ^ (k + 1))
+    {u : Baire} {x : X} (hx : x ∈ openOf P u) :
+    ∃ i k j, x ∈ basisSet P ρ (Nat.pair i k + 1) ∧
+      dist (P.dense i) (P.dense (u j).unpair.1) + ρ i k
+        < ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) := by
+  rw [openOf] at hx
+  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp hx
+  have hjd : dist x (P.dense (u j).unpair.1) < ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) :=
+    mem_ball.mp hj
+  set m : ℝ := ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) - dist x (P.dense (u j).unpair.1) with hm
+  have hmpos : 0 < m := by rw [hm]; linarith
+  obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one (by linarith : (0 : ℝ) < m / 2)
+    (by norm_num : (2 : ℝ)⁻¹ < 1)
+  have hk1 : (2 : ℝ)⁻¹ ^ (k + 1) < m / 2 :=
+    lt_of_le_of_lt (pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)) hk
+  obtain ⟨i, hi⟩ := P.denseRange.exists_dist_lt x (by positivity : (0:ℝ) < (2 : ℝ)⁻¹ ^ (k + 2))
+  have hk2 : (2 : ℝ)⁻¹ ^ (k + 2) < (2 : ℝ)⁻¹ ^ (k + 1) := by
+    have hpos : (0:ℝ) < (2 : ℝ)⁻¹ ^ (k + 1) := by positivity
+    rw [pow_succ]; linarith
+  refine ⟨i, k, j, ?_, ?_⟩
+  · simp only [basisSet_succ, Nat.unpair_pair, mem_ball]
+    exact lt_trans hi (hlo i k)
+  · have htri := dist_triangle (P.dense i) x (P.dense (u j).unpair.1)
+    have hix : dist (P.dense i) x < (2 : ℝ)⁻¹ ^ (k + 2) := by rw [dist_comm]; exact hi
+    have := hhi i k
+    rw [hm] at hk1
+    linarith
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- **Local refinement with a size bound.** The strengthening `exists_certFires_subset` — and
+through it the refinement tail of a basis entry — needs the refining entry to be not merely
+contained in the ambient open but arbitrarily small around `x`.  The construction already chooses
+the level `k` freely, so it suffices to choose it small against `ε` as well as against the margin;
+nothing else in the original argument changes. -/
+theorem exists_basisSet_refines_openOf_subset {ρ : ℕ → ℕ → ℝ}
+    (hlo : ∀ i k, (2 : ℝ)⁻¹ ^ (k + 2) < ρ i k)
+    (hhi : ∀ i k, ρ i k < (2 : ℝ)⁻¹ ^ (k + 1))
+    {u : Baire} {x : X} (hx : x ∈ openOf P u) {ε : ℝ} (hε : 0 < ε) :
+    ∃ i k j, x ∈ basisSet P ρ (Nat.pair i k + 1) ∧
+      dist (P.dense i) (P.dense (u j).unpair.1) + ρ i k
+        < ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) ∧
+      basisSet P ρ (Nat.pair i k + 1) ⊆ ball x ε := by
+  rw [openOf] at hx
+  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp hx
+  have hjd : dist x (P.dense (u j).unpair.1) < ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) :=
+    mem_ball.mp hj
+  set m : ℝ := ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) - dist x (P.dense (u j).unpair.1) with hm
+  have hmpos : 0 < m := by rw [hm]; linarith
+  obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one
+    (lt_min (by linarith : (0 : ℝ) < m / 2) (by linarith : (0 : ℝ) < ε / 4))
+    (by norm_num : (2 : ℝ)⁻¹ < 1)
+  have hk1 : (2 : ℝ)⁻¹ ^ (k + 1) < min (m / 2) (ε / 4) :=
+    lt_of_le_of_lt (pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)) hk
+  have hkm : (2 : ℝ)⁻¹ ^ (k + 1) < m / 2 := lt_of_lt_of_le hk1 (min_le_left _ _)
+  have hke : (2 : ℝ)⁻¹ ^ (k + 1) < ε / 4 := lt_of_lt_of_le hk1 (min_le_right _ _)
+  obtain ⟨i, hi⟩ := P.denseRange.exists_dist_lt x (by positivity : (0:ℝ) < (2 : ℝ)⁻¹ ^ (k + 2))
+  have hk2 : (2 : ℝ)⁻¹ ^ (k + 2) < (2 : ℝ)⁻¹ ^ (k + 1) := by
+    have hpos : (0:ℝ) < (2 : ℝ)⁻¹ ^ (k + 1) := by positivity
+    rw [pow_succ]; linarith
+  have hix : dist (P.dense i) x < (2 : ℝ)⁻¹ ^ (k + 2) := by rw [dist_comm]; exact hi
+  refine ⟨i, k, j, ?_, ?_, ?_⟩
+  · simp only [basisSet_succ, Nat.unpair_pair, mem_ball]
+    exact lt_trans hi (hlo i k)
+  · have htri := dist_triangle (P.dense i) x (P.dense (u j).unpair.1)
+    have := hhi i k
+    rw [hm] at hkm
+    linarith
+  · simp only [basisSet_succ, Nat.unpair_pair]
+    intro y hy
+    have h1 : dist y (P.dense i) < ρ i k := mem_ball.mp hy
+    have h3 := hhi i k
+    refine mem_ball.mpr (lt_of_le_of_lt (dist_triangle y (P.dense i) x) ?_)
+    linarith
 variable (P)
 
 /-- **The packed request family.** Track `⟨i, k⟩` asks the selector for a radius about `tᵢ` in
 the band `(2⁻⁽ᵏ⁺²⁾, 2⁻⁽ᵏ⁺¹⁾)`. -/
-def basisRequests (p : Baire) : Baire := fun v =>
+private def basisRequests (p : Baire) : Baire := fun v =>
   radiusPack p v.unpair.1.unpair.1 (halfPowCode (v.unpair.1.unpair.2 + 2))
     (halfPowCode (v.unpair.1.unpair.2 + 1)) v.unpair.2
 
-@[simp] theorem track_basisRequests (p : Baire) (i k : ℕ) :
+@[simp] private theorem track_basisRequests (p : Baire) (i k : ℕ) :
     Baire.track (Nat.pair i k) (basisRequests p)
       = radiusPack p i (halfPowCode (k + 2)) (halfPowCode (k + 1)) := by
   funext m
@@ -143,10 +236,10 @@ omit [MeasurableSpace X] [BorelSpace X] in
 /-- **The sentinel entry's continuity-open name.** Its even track names `∅` and its odd track
 names `univ`. The odd track must NOT be empty as well: `ContinuityOpenNames.full` demands the two
 masses sum to `1`, so two empty tracks would not be a valid entry at all. -/
-def sentinelOpen : Baire := Baire.interleave emptyOpenName univOpenName
+private def sentinelOpen : Baire := Baire.interleave emptyOpenName univOpenName
 
 omit [BorelSpace X] in
-theorem contSetNames_sentinelOpen (μ : ProbabilityMeasure X) :
+private theorem contSetNames_sentinelOpen (μ : ProbabilityMeasure X) :
     ContinuityOpenNames P μ sentinelOpen := by
   constructor
   · simp only [sentinelOpen, Baire.evenPart_interleave, Baire.oddPart_interleave,
@@ -157,9 +250,9 @@ theorem contSetNames_sentinelOpen (μ : ProbabilityMeasure X) :
 
 /-- The sentinel basis entry: its radius track is inert, its continuity-open track is
 `sentinelOpen`. -/
-def sentinelEntry : Baire := Baire.interleave (fun _ => zeroCode) sentinelOpen
+private def sentinelEntry : Baire := Baire.interleave (fun _ => zeroCode) sentinelOpen
 
-@[simp] theorem oddPart_sentinelEntry : (sentinelEntry : Baire).oddPart = sentinelOpen := by
+@[simp] private theorem oddPart_sentinelEntry : (sentinelEntry : Baire).oddPart = sentinelOpen := by
   rw [sentinelEntry, Baire.oddPart_interleave]
 
 /-- Prepend the sentinel as track `0`, shifting every raw track up by one. -/
@@ -169,11 +262,11 @@ def prependSentinel (raw : Baire) : Baire :=
     | 0 => sentinelEntry
     | (m + 1) => Baire.track m raw
 
-@[simp] theorem track_zero_prependSentinel (raw : Baire) :
+@[simp] private theorem track_zero_prependSentinel (raw : Baire) :
     Baire.track 0 (prependSentinel raw) = sentinelEntry := by
   rw [prependSentinel, Baire.track_packTracks]
 
-@[simp] theorem track_succ_prependSentinel (raw : Baire) (n : ℕ) :
+@[simp] private theorem track_succ_prependSentinel (raw : Baire) (n : ℕ) :
     Baire.track (n + 1) (prependSentinel raw) = Baire.track n raw := by
   rw [prependSentinel, Baire.track_packTracks]
 
@@ -236,12 +329,12 @@ theorem exists_radiusAndNameCode {gt : ℕ × ℕ × RatCode → ℕ → Bool} (
     exact (contSetNames_afrReal (P := P) hgtspec hnames i hsphere).2
 
 /-- The radius-approximation read: stage `s` of entry `b`'s radius name. -/
-theorem interleave_radius_read (B u : Baire) (b s : ℕ) :
+private theorem interleave_radius_read (B u : Baire) (b s : ℕ) :
     (Baire.track b B).evenPart s = Baire.interleave B u (2 * Nat.pair b (2 * s)) := by
   rw [Baire.interleave_even, Baire.evenPart_apply, Baire.track_apply]
 
 /-- The constituent read: the `j`-th enumerated ball of `u`. -/
-theorem interleave_constituent_read (B u : Baire) (j : ℕ) :
+private theorem interleave_constituent_read (B u : Baire) (j : ℕ) :
     u j = Baire.interleave B u (2 * j + 1) := by
   rw [Baire.interleave_odd]
 
@@ -268,12 +361,12 @@ private theorem radiusUpper_bounds {r : Baire} {ρ : ℝ} (h : realRep.Names r �
   exact ⟨by linarith, by linarith⟩
 
 /-- The prefix length covering both reads. -/
-def certBound (b j s : ℕ) : ℕ := max (2 * Nat.pair b (2 * s) + 1) (2 * j + 2)
+private def certBound (b j s : ℕ) : ℕ := max (2 * Nat.pair b (2 * s) + 1) (2 * j + 2)
 
-theorem lt_certBound_radius (b j s : ℕ) : 2 * Nat.pair b (2 * s) < certBound b j s := by
+private theorem lt_certBound_radius (b j s : ℕ) : 2 * Nat.pair b (2 * s) < certBound b j s := by
   simp only [certBound]; omega
 
-theorem lt_certBound_constituent (b j s : ℕ) : 2 * j + 1 < certBound b j s := by
+private theorem lt_certBound_constituent (b j s : ℕ) : 2 * j + 1 < certBound b j s := by
   simp only [certBound]; omega
 
 /-- The open named by basis entry `b`'s continuity-open track. Track `0` is the sentinel, whose
@@ -312,17 +405,17 @@ def certB (w : ℕ) : ℕ := w.unpair.1
 /-- The constituent index of a candidate. -/
 def certJ (w : ℕ) : ℕ := w.unpair.2.unpair.1
 /-- The radius-approximation stage of a candidate. -/
-def certS (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.1
+private def certS (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.1
 /-- The semidecision stage of a candidate. -/
-def certT (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.2
+private def certT (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.2
 
-@[simp] theorem certB_packCert (b j s t : ℕ) : certB (packCert b j s t) = b := by
+@[simp] private theorem certB_packCert (b j s t : ℕ) : certB (packCert b j s t) = b := by
   simp [certB, packCert]
-@[simp] theorem certJ_packCert (b j s t : ℕ) : certJ (packCert b j s t) = j := by
+@[simp] private theorem certJ_packCert (b j s t : ℕ) : certJ (packCert b j s t) = j := by
   simp [certJ, packCert]
-@[simp] theorem certS_packCert (b j s t : ℕ) : certS (packCert b j s t) = s := by
+@[simp] private theorem certS_packCert (b j s t : ℕ) : certS (packCert b j s t) = s := by
   simp [certS, packCert]
-@[simp] theorem certT_packCert (b j s t : ℕ) : certT (packCert b j s t) = t := by
+@[simp] private theorem certT_packCert (b j s t : ℕ) : certT (packCert b j s t) = t := by
   simp [certT, packCert]
 
 /-- **The decoding identity.** On the nonzero branch the decoded pair reconstitutes the entry
@@ -335,7 +428,7 @@ theorem pair_decode_succ {b : ℕ} (hb : b ≠ 0) :
 variable (P)
 
 /-- The coded upper bound for the basis radius at stage `s`. -/
-def certUpperCode (radiusApprox s : ℕ) : RatCode := addCode radiusApprox (halfPowCode s)
+private def certUpperCode (radiusApprox s : ℕ) : RatCode := addCode radiusApprox (halfPowCode s)
 
 /-- The coded threshold `ltSemidec` is asked about. -/
 def certThresholdCode (constituentRadius radiusApprox s : ℕ) : RatCode :=
@@ -400,6 +493,44 @@ theorem certB_ne_zero_of_certFires {fires : ℕ × ℕ × RatCode → ℕ → Bo
 
 omit [MeasurableSpace X] [BorelSpace X] in
 omit [MeasurableSpace X] [BorelSpace X] in
+/-- **Completeness, existential in BOTH stages.** The radius approximation forces an existential
+in `s`, the semidecision one in `t`. -/
+theorem exists_certFires {fires : ℕ × ℕ × RatCode → ℕ → Bool}
+    (hcomplete : ∀ a : ℕ × ℕ × RatCode,
+      dist (P.dense a.1) (P.dense a.2.1) < ((ratOfCode a.2.2 : ℚ) : ℝ) → ∃ t, fires a t = true)
+    {B u : Baire} {ρ : ℕ → ℕ → ℝ} (hspec : BasisEntrySpec P B ρ) {x : X}
+    (hx : x ∈ openOf P u) :
+    ∃ w, x ∈ basisOpen P B (certB w) ∧ certFires fires B u w = true := by
+  classical
+  obtain ⟨i, k, j, hmem, hmargin⟩ :=
+    exists_basisSet_refines_openOf (P := P) hspec.lower hspec.upper hx
+  have hnames := hspec.names i k
+  -- a stage at which twice the approximation error fits inside the retained margin
+  set m : ℝ := ((ratOfCode (u j).unpair.2 : ℚ) : ℝ)
+    - (dist (P.dense i) (P.dense (u j).unpair.1) + ρ i k) with hm
+  have hmpos : 0 < m := by rw [hm]; linarith
+  obtain ⟨s, hs⟩ := exists_pow_lt_of_lt_one (by linarith : (0 : ℝ) < m / 2)
+    (by norm_num : (2 : ℝ)⁻¹ < 1)
+  obtain ⟨-, hup⟩ := radiusUpper_bounds hnames s
+  rw [ratOfCode_addCode, ratOfCode_halfPowCode] at hup
+  push_cast at hup
+  -- the coded threshold inequality, then the semidecision stage
+  have hthr : dist (P.dense i) (P.dense (u j).unpair.1)
+      < ((ratOfCode (certThresholdCode (u j).unpair.2
+          ((Baire.track (Nat.pair i k + 1) B).evenPart s) s) : ℚ) : ℝ) := by
+    rw [ratOfCode_certThresholdCode]
+    rw [hm] at hs
+    linarith
+  obtain ⟨t, ht⟩ := hcomplete (i, (u j).unpair.1,
+    certThresholdCode (u j).unpair.2 ((Baire.track (Nat.pair i k + 1) B).evenPart s) s) hthr
+  refine ⟨packCert (Nat.pair i k + 1) j s t, ?_, ?_⟩
+  · rw [certB_packCert, hspec.open_eq i k]
+    simpa only [basisSet_succ, Nat.unpair_pair] using hmem
+  · rw [certFires, certB_packCert, certJ_packCert, certS_packCert, certT_packCert,
+      ite_eq_right (by omega), Nat.add_sub_cancel, Nat.unpair_pair]
+    exact ht
+
+omit [MeasurableSpace X] [BorelSpace X] in
 /-- **Completeness with a size bound.**  The strengthening of `exists_certFires` that the
 refinement tail's local cofinality needs: the certified entry can additionally be demanded to sit
 inside any prescribed ball about `x`.  Only the choice of level changes; the certificate,
@@ -446,9 +577,35 @@ was introduced for. -/
 def basisChoiceAt (fires : ℕ × ℕ × RatCode → ℕ → Bool) (B u : Baire) (w : ℕ) : ℕ :=
   if certFires fires B u w = true then certB w else 0
 
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- **The promise-free union identity** — the right inverse's whole content, proved before any
+encoding. `⊆` is certificate completeness; `⊇` is certificate soundness together with the
+sentinel's empty entry. No measure, no continuity data, no code. -/
+theorem openOf_eq_iUnion_basisOpen {fires : ℕ × ℕ × RatCode → ℕ → Bool}
+    (hsound : ∀ (a : ℕ × ℕ × RatCode) (t : ℕ), fires a t = true →
+      dist (P.dense a.1) (P.dense a.2.1) < ((ratOfCode a.2.2 : ℚ) : ℝ))
+    (hcomplete : ∀ a : ℕ × ℕ × RatCode,
+      dist (P.dense a.1) (P.dense a.2.1) < ((ratOfCode a.2.2 : ℚ) : ℝ) → ∃ t, fires a t = true)
+    {B u : Baire} {ρ : ℕ → ℕ → ℝ} (hspec : BasisEntrySpec P B ρ) :
+    openOf P u = ⋃ w, basisOpen P B (basisChoiceAt fires B u w) := by
+  classical
+  refine Set.Subset.antisymm (fun x hx => ?_) (Set.iUnion_subset fun w => ?_)
+  · obtain ⟨w, hmem, hfire⟩ := exists_certFires hcomplete hspec hx
+    refine Set.mem_iUnion.mpr ⟨w, ?_⟩
+    rwa [basisChoiceAt, ite_eq_left hfire]
+  · by_cases hfire : certFires fires B u w = true
+    · rw [basisChoiceAt, ite_eq_left hfire]
+      refine subset_trans (certFires_sound hsound hspec w hfire) ?_
+      rw [openOf]
+      exact Set.subset_iUnion
+        (fun k => ball (P.dense (u k).unpair.1) (((ratOfCode (u k).unpair.2 : ℚ) : ℝ)))
+        (certJ w)
+    · rw [basisChoiceAt, ite_eq_right hfire, hspec.zero]
+      exact Set.empty_subset _
 /-- The certificate over a finite prefix of `Baire.interleave B u`, reading both
 positions. -/
-def certFiresPre (fires : ℕ × ℕ × RatCode → ℕ → Bool) (pre : List ℕ) (w : ℕ) : Bool :=
+private def certFiresPre (fires : ℕ × ℕ × RatCode → ℕ → Bool) (pre : List ℕ) (w : ℕ) : Bool :=
   if certB w = 0 then false
   else
     fires ((certB w - 1).unpair.1, (pre.getD (2 * certJ w + 1) 0).unpair.1,
@@ -456,7 +613,7 @@ def certFiresPre (fires : ℕ × ℕ × RatCode → ℕ → Bool) (pre : List �
         (pre.getD (2 * Nat.pair (certB w) (2 * certS w)) 0) (certS w)) (certT w)
 
 /-- **Exact-prefix agreement**, from the two lookup inequalities and nothing else. -/
-theorem certFiresPre_eq (fires : ℕ × ℕ × RatCode → ℕ → Bool) (B u : Baire) (w L : ℕ)
+private theorem certFiresPre_eq (fires : ℕ × ℕ × RatCode → ℕ → Bool) (B u : Baire) (w L : ℕ)
     (h1 : 2 * Nat.pair (certB w) (2 * certS w) < L) (h2 : 2 * certJ w + 1 < L) :
     certFiresPre fires (streamTake (Baire.interleave B u) L) w = certFires fires B u w := by
   rw [certFiresPre, certFires]
@@ -467,10 +624,10 @@ theorem certFiresPre_eq (fires : ℕ × ℕ × RatCode → ℕ → Bool) (B u : 
       ← interleave_constituent_read B u (certJ w)]
 
 /-- The prefix mirror of the total choice stream. -/
-def basisChoicePre (fires : ℕ × ℕ × RatCode → ℕ → Bool) (pre : List ℕ) (w : ℕ) : ℕ :=
+private def basisChoicePre (fires : ℕ × ℕ × RatCode → ℕ → Bool) (pre : List ℕ) (w : ℕ) : ℕ :=
   if certFiresPre fires pre w = true then certB w else 0
 
-theorem basisChoicePre_eq (fires : ℕ × ℕ × RatCode → ℕ → Bool) (B u : Baire) (w L : ℕ)
+private theorem basisChoicePre_eq (fires : ℕ × ℕ × RatCode → ℕ → Bool) (B u : Baire) (w L : ℕ)
     (h1 : 2 * Nat.pair (certB w) (2 * certS w) < L) (h2 : 2 * certJ w + 1 < L) :
     basisChoicePre fires (streamTake (Baire.interleave B u) L) w = basisChoiceAt fires B u w := by
   rw [basisChoicePre, basisChoiceAt, certFiresPre_eq fires B u w L h1 h2]
@@ -560,7 +717,7 @@ private theorem primrec_requestG : Primrec requestG := by
         (primrec_halfPowCode.comp (Primrec.succ.comp hk))))
 
 /-- **The request code**, with its total coordinate equation. -/
-theorem exists_requestCode :
+private theorem exists_requestCode :
     ∃ c : OracleCode, ∀ (p : Baire) (n : ℕ), c.eval p n = Part.some (basisRequests p n) := by
   obtain ⟨c, hc⟩ := exists_prefixPostCode (b := fun n _ => n + 1)
     (Primrec.succ.comp Primrec.fst) primrec_requestG
@@ -618,7 +775,7 @@ private theorem primrec_prependG : Primrec prependG := by
       (Primrec₂.natPair.comp (Primrec.nat_sub.comp ha (Primrec.const 1)) hb))
 
 /-- **The prepend code**, with its total coordinate equation. -/
-theorem exists_prependCode :
+private theorem exists_prependCode :
     ∃ c : OracleCode, ∀ (raw : Baire) (n : ℕ),
       c.eval raw n = Part.some (prependSentinel raw n) := by
   obtain ⟨c, hc⟩ := exists_prefixPostCode (b := fun n _ => n + 1)
@@ -658,6 +815,35 @@ theorem exists_rightInverseCode {fires : ℕ × ℕ × RatCode → ℕ → Bool}
     exact basisChoicePre_eq fires B u w _ (lt_certBound_radius _ _ _)
       (lt_certBound_constituent _ _ _)
   rw [hc (Baire.interleave B u) w, hval]
+
+/-- **Global totality**, with no promise of any kind. -/
+theorem rightInverse_dom {fires : ℕ × ℕ × RatCode → ℕ → Bool} {c : OracleCode}
+    (hc : ∀ (B u : Baire) (w : ℕ),
+      c.eval (Baire.interleave B u) w = Part.some (basisChoiceAt fires B u w))
+    (B u : Baire) : (c.evalStream (Baire.interleave B u)).Dom :=
+  Part.dom_iff_mem.mpr ⟨basisChoiceAt fires B u,
+    OracleCode.mem_evalStream.mpr fun w => by rw [hc B u w]; exact Part.mem_some _⟩
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- **Universal correctness**: every produced output — not merely some output — satisfies the
+union identity, because `evalStream` values are unique. -/
+theorem rightInverse_union {fires : ℕ × ℕ × RatCode → ℕ → Bool} {c : OracleCode}
+    (hc : ∀ (B u : Baire) (w : ℕ),
+      c.eval (Baire.interleave B u) w = Part.some (basisChoiceAt fires B u w))
+    (hsound : ∀ (a : ℕ × ℕ × RatCode) (t : ℕ), fires a t = true →
+      dist (P.dense a.1) (P.dense a.2.1) < ((ratOfCode a.2.2 : ℚ) : ℝ))
+    (hcomplete : ∀ a : ℕ × ℕ × RatCode,
+      dist (P.dense a.1) (P.dense a.2.1) < ((ratOfCode a.2.2 : ℚ) : ℝ) → ∃ t, fires a t = true)
+    {B : Baire} {ρ : ℕ → ℕ → ℝ} (hspec : BasisEntrySpec P B ρ) (u f : Baire)
+    (hf : f ∈ c.evalStream (Baire.interleave B u)) :
+    openOf P u = ⋃ n, basisOpen P B (f n) := by
+  have hfeq : f = basisChoiceAt fires B u := by
+    funext w
+    have := OracleCode.mem_evalStream.mp hf w
+    rw [hc B u w] at this
+    exact Part.mem_some_iff.mp this
+  rw [hfeq]
+  exact openOf_eq_iUnion_basisOpen hsound hcomplete hspec
 
 variable (P)
 /-- **The basis compiler.** One code; every weak name. -/
@@ -719,6 +905,22 @@ theorem exists_continuityBasisCode :
     rw [track_succ_prependSentinel, ← ht, htrack_raw]
     exact hcont n.unpair.1 n.unpair.2
 
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- **The right-inverse compiler.** It needs NO measure and NO `ContinuityBasisNames` — only
+`BasisEntrySpec`. Totality holds for every raw pair of streams, with no promise at all. -/
+theorem exists_basisRightInverseCode :
+    ∃ H : OracleCode,
+      (∀ B u : Baire, (H.evalStream (Baire.interleave B u)).Dom) ∧
+      ∀ (B : Baire) (ρ : ℕ → ℕ → ℝ), BasisEntrySpec P B ρ →
+        ∀ u f : Baire, f ∈ H.evalStream (Baire.interleave B u) →
+          openOf P u = ⋃ n, basisOpen P B (f n) := by
+  classical
+  obtain ⟨fires, hfiresprim, hfiresiff⟩ := repred_exists_primrec_stages P.ltSemidec
+  obtain ⟨H, hH⟩ := exists_rightInverseCode hfiresprim
+  exact ⟨H, fun B u => rightInverse_dom hH B u, fun B ρ hspec u f hf =>
+    rightInverse_union hH (fun a t hat => (hfiresiff a).mpr ⟨t, hat⟩)
+      (fun a ha => (hfiresiff a).mp ha) hspec u f hf⟩
 
 end ContinuityBasis
 

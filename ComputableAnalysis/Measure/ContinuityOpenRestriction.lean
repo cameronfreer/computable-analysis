@@ -579,69 +579,69 @@ theorem explicit_normalized_budget {μ : ProbabilityMeasure X} {p uv : Baire}
 section RestrictionWitness
 /-- The proof-side half of a restriction witness. Open-ended: later fields append into
 `rstRest`, leaving every accessor below unchanged. -/
-def rstProof (w : ℕ) : ℕ := w.unpair.1
+private def rstProof (w : ℕ) : ℕ := w.unpair.1
 
 /-- The emitted atomic index of a restriction witness. -/
-def rstAtomic (w : ℕ) : ℕ := w.unpair.2.unpair.1
+private def rstAtomic (w : ℕ) : ℕ := w.unpair.2.unpair.1
 
 /-- The emitted mask of a restriction witness. -/
-def rstMask (w : ℕ) : ℕ := w.unpair.2.unpair.2
+private def rstMask (w : ℕ) : ℕ := w.unpair.2.unpair.2
 
 /-- The inner-approximation level recorded by a restriction witness. -/
-def rstLevel (w : ℕ) : ℕ := (rstProof w).unpair.1
+private def rstLevel (w : ℕ) : ℕ := (rstProof w).unpair.1
 
 /-- The weak-name stage recorded by a restriction witness. -/
-def rstStage (w : ℕ) : ℕ := (rstProof w).unpair.2.unpair.1
+private def rstStage (w : ℕ) : ℕ := (rstProof w).unpair.2.unpair.1
 
 /-- The mask fuel recorded by a restriction witness. -/
-def rstFuel (w : ℕ) : ℕ := (rstProof w).unpair.2.unpair.2.unpair.1
+private def rstFuel (w : ℕ) : ℕ := (rstProof w).unpair.2.unpair.2.unpair.1
 
 /-- The reserved tail of the proof-side half: where the analytic argument's later fields go. -/
-def rstRest (w : ℕ) : ℕ := (rstProof w).unpair.2.unpair.2.unpair.2
+private def rstRest (w : ℕ) : ℕ := (rstProof w).unpair.2.unpair.2.unpair.2
 
 /-- The restriction-witness packer. -/
-def packRestrictWit (level stage fuel rest atomicIndex mask : ℕ) : ℕ :=
+private def packRestrictWit (level stage fuel rest atomicIndex mask : ℕ) : ℕ :=
   Nat.pair (Nat.pair level (Nat.pair stage (Nat.pair fuel rest)))
     (Nat.pair atomicIndex mask)
 
-@[simp] theorem rstLevel_packRestrictWit (level stage fuel rest a mk : ℕ) :
+@[simp] private theorem rstLevel_packRestrictWit (level stage fuel rest a mk : ℕ) :
     rstLevel (packRestrictWit level stage fuel rest a mk) = level := by
   simp [rstLevel, rstProof, packRestrictWit]
 
-@[simp] theorem rstStage_packRestrictWit (level stage fuel rest a mk : ℕ) :
+@[simp] private theorem rstStage_packRestrictWit (level stage fuel rest a mk : ℕ) :
     rstStage (packRestrictWit level stage fuel rest a mk) = stage := by
   simp [rstStage, rstProof, packRestrictWit]
 
-@[simp] theorem rstFuel_packRestrictWit (level stage fuel rest a mk : ℕ) :
+@[simp] private theorem rstFuel_packRestrictWit (level stage fuel rest a mk : ℕ) :
     rstFuel (packRestrictWit level stage fuel rest a mk) = fuel := by
   simp [rstFuel, rstProof, packRestrictWit]
 
-@[simp] theorem rstRest_packRestrictWit (level stage fuel rest a mk : ℕ) :
+@[simp] private theorem rstRest_packRestrictWit (level stage fuel rest a mk : ℕ) :
     rstRest (packRestrictWit level stage fuel rest a mk) = rest := by
   simp [rstRest, rstProof, packRestrictWit]
 
-@[simp] theorem rstAtomic_packRestrictWit (level stage fuel rest a mk : ℕ) :
+@[simp] private theorem rstAtomic_packRestrictWit (level stage fuel rest a mk : ℕ) :
     rstAtomic (packRestrictWit level stage fuel rest a mk) = a := by
   simp [rstAtomic, packRestrictWit]
 
-@[simp] theorem rstMask_packRestrictWit (level stage fuel rest a mk : ℕ) :
+@[simp] private theorem rstMask_packRestrictWit (level stage fuel rest a mk : ℕ) :
     rstMask (packRestrictWit level stage fuel rest a mk) = mk := by
   simp [rstMask, packRestrictWit]
 
-theorem primrec_rstAtomic : Primrec rstAtomic :=
+private theorem primrec_rstAtomic : Primrec rstAtomic :=
   (Primrec.fst.comp Primrec.unpair).comp (Primrec.snd.comp Primrec.unpair)
 
-theorem primrec_rstMask : Primrec rstMask :=
+private theorem primrec_rstMask : Primrec rstMask :=
   (Primrec.snd.comp Primrec.unpair).comp (Primrec.snd.comp Primrec.unpair)
 
-theorem primrec_rstLevel : Primrec rstLevel :=
+private theorem primrec_rstLevel : Primrec rstLevel :=
   (Primrec.fst.comp Primrec.unpair).comp (Primrec.fst.comp Primrec.unpair)
 
-theorem primrec_rstStage : Primrec rstStage :=
+private theorem primrec_rstStage : Primrec rstStage :=
   (Primrec.fst.comp Primrec.unpair).comp
     ((Primrec.snd.comp Primrec.unpair).comp (Primrec.fst.comp Primrec.unpair))
 
-theorem primrec_rstFuel : Primrec rstFuel :=
+private theorem primrec_rstFuel : Primrec rstFuel :=
   (Primrec.fst.comp Primrec.unpair).comp
     ((Primrec.snd.comp Primrec.unpair).comp
       ((Primrec.snd.comp Primrec.unpair).comp (Primrec.fst.comp Primrec.unpair)))
@@ -650,34 +650,34 @@ theorem primrec_rstFuel : Primrec rstFuel :=
 indispensable *access*: the atomic index must be the weak name's own stage entry, and the mask
 must be the certified mask at the recorded level and fuel. Checking them in the search predicate
 is what lets the postprocessor use the tail without re-reading the oracle. -/
-def RestrictWitConsistent (atoms : ℕ → List (ℕ × ℕ))
+private def RestrictWitConsistent (atoms : ℕ → List (ℕ × ℕ))
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p u : Baire) (w : ℕ) : Prop :=
   rstAtomic w = p (rstStage w + 1) ∧
     rstMask w = mac (atoms (rstAtomic w)) (streamTake u (rstLevel w)) (rstLevel w) (rstFuel w)
 
 /-- **The oracle-free postprocessor**: a successful witness is turned into the emitted atomic
 index by the package's own emitter, reading nothing else. -/
-def restrictionOut (emit : ℕ → ℕ → ℕ) (w : ℕ) : ℕ := emit (rstAtomic w) (rstMask w)
+private def restrictionOut (emit : ℕ → ℕ → ℕ) (w : ℕ) : ℕ := emit (rstAtomic w) (rstMask w)
 
-theorem primrec_restrictionOut {emit : ℕ → ℕ → ℕ} (hemit : Primrec₂ emit) :
+private theorem primrec_restrictionOut {emit : ℕ → ℕ → ℕ} (hemit : Primrec₂ emit) :
     Primrec (restrictionOut emit) := by
   have h := hemit.comp primrec_rstAtomic primrec_rstMask
   exact h.of_eq fun _ => rfl
 
 /-- The `β₀` field, given its own accessor so that further budget fields may still be appended
 into `(rstRest w).unpair.2` without disturbing any consumer. -/
-def rstBeta (w : ℕ) : ℕ := (rstRest w).unpair.1
+private def rstBeta (w : ℕ) : ℕ := (rstRest w).unpair.1
 
-@[simp] theorem rstBeta_packRestrictWit (level stage fuel rest a mk : ℕ) :
+@[simp] private theorem rstBeta_packRestrictWit (level stage fuel rest a mk : ℕ) :
     rstBeta (packRestrictWit level stage fuel rest a mk) = rest.unpair.1 := by
   simp [rstBeta]
 
-theorem primrec_rstRest : Primrec rstRest :=
+private theorem primrec_rstRest : Primrec rstRest :=
   (Primrec.snd.comp Primrec.unpair).comp
     ((Primrec.snd.comp Primrec.unpair).comp
       ((Primrec.snd.comp Primrec.unpair).comp (Primrec.fst.comp Primrec.unpair)))
 
-theorem primrec_rstBeta : Primrec rstBeta :=
+private theorem primrec_rstBeta : Primrec rstBeta :=
   (Primrec.fst.comp Primrec.unpair).comp primrec_rstRest
 
 /-- **The arithmetic quarter step**, one half of the mass ledger. `β₀ + q ≤ a` gives the quarter
@@ -696,7 +696,7 @@ consistency, `ℓ ≤ s` and accumulator soundness, certifies that `β₀` reall
 one-way step: `β₀` is established against `μ` here, and only afterwards may `β₁ = β₀ / 4` be
 read off by `quarter_le_of_floor`. Note every deficit refers to the same `m = rstAtomic w`,
 `A = innerApprox P u (rstLevel w)` and `mask = rstMask w` that the emitter uses. -/
-theorem floor_le_measure_of_success
+private theorem floor_le_measure_of_success
     {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (haccsound : ∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
@@ -814,34 +814,34 @@ private theorem exists_indices_gap_floor {μ : ProbabilityMeasure X} {p uv : Bai
   linarith
 
 /-- The odd-track mask, derived at the same atomic index, level and fuel as the emitted one. -/
-def rstOddMask (atoms : ℕ → List (ℕ × ℕ))
+private def rstOddMask (atoms : ℕ → List (ℕ × ℕ))
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (uv : Baire) (w : ℕ) : ℕ :=
   mac (atoms (rstAtomic w)) (streamTake uv.oddPart (rstLevel w)) (rstLevel w) (rstFuel w)
 
 /-- The certified mass retained on the even track: the emitted mask's accumulator. -/
-def rstMassU (acc : ℕ → ℕ → RatCode) (w : ℕ) : ℚ :=
+private def rstMassU (acc : ℕ → ℕ → RatCode) (w : ℕ) : ℚ :=
   ratOfCode (acc (rstAtomic w) (rstMask w))
 
 /-- The certified mass on the odd track, at the same atomic index, level and fuel. -/
-def rstMassV (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstMassV (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (uv : Baire) (w : ℕ) : ℚ :=
   ratOfCode (acc (rstAtomic w) (rstOddMask atoms mac uv w))
 
 /-- The stage dyadic `q = 2⁻ˢ`. -/
-def rstQ (w : ℕ) : ℚ := (2 : ℚ)⁻¹ ^ rstStage w
+private def rstQ (w : ℕ) : ℚ := (2 : ℚ)⁻¹ ^ rstStage w
 
 /-- The single gap `δ = 1 - (cU + cV)`, covering inner-approximation shortfall and mask
 omission together. -/
-def rstGap (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstGap (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (uv : Baire) (w : ℕ) : ℚ :=
   1 - (rstMassU acc w + rstMassV atoms acc mac uv w)
 
 /-- The searched dyadic floor `β₀`, as a rational. -/
-def rstBetaQ (w : ℕ) : ℚ := ratOfCode (rstBeta w)
+private def rstBetaQ (w : ℕ) : ℚ := ratOfCode (rstBeta w)
 
 /-- **The success predicate.** Six clauses; `j` occurs in the last, so no witness can
 succeed at every precision. -/
-def RestrictionSuccess (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def RestrictionSuccess (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p uv : Baire) (j w : ℕ) : Prop :=
   RestrictWitConsistent atoms mac p uv.evenPart w ∧
   rstLevel w + 2 ≤ rstStage w ∧
@@ -933,7 +933,7 @@ odd-track guard `cU + cV ≤ 1` are spent.
 
 The deficit bound is proved additively — `atomicₘ(U) + cV ≤ 1 = cU + cV + δ`, then cancel
 `cV` — so `ENNReal` truncated subtraction never appears. -/
-theorem restriction_bridge
+private theorem restriction_bridge
     {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ} {emit : ℕ → ℕ → ℕ}
     (hnonneg : ∀ m mask : ℕ, (0 : ℝ) ≤ ((ratOfCode (acc m mask) : ℚ) : ℝ))
@@ -1015,7 +1015,7 @@ theorem restriction_bridge
 The emitter rewrite is deliberately last: everything before it is stated about the normalized
 retained submeasure, and `hρemit`'s `ρ univ ≠ 0` premise is discharged from the mass ledger
 (`0 < β₁ ≤ ρ univ`) rather than assumed. -/
-theorem restrictionSuccess_sound
+private theorem restrictionSuccess_sound
     {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ} {emit : ℕ → ℕ → ℕ}
     (hnonneg : ∀ m mask : ℕ, (0 : ℝ) ≤ ((ratOfCode (acc m mask) : ℚ) : ℝ))
@@ -1109,7 +1109,7 @@ Slack allocation: `β₀` is a dyadic with `4β₀ < μ U`; the predecessor leve
 that `3β₀ ≤ μ(innerApprox U n₀)`; `ℓ := n + 1` for the `n ≥ n₀` returned by the index lemma; and
 the dyadic target `r` satisfies `8r ≤ β₀·2⁻ʲ` and `r ≤ 2β₀`. Then `q < β₀` follows from
 `2q ≤ δ + 2q < r ≤ 2β₀` rather than being proved separately. -/
-theorem exists_restrictionSuccess
+private theorem exists_restrictionSuccess
     {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (haccexact : ∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
@@ -1262,10 +1262,10 @@ theorem exists_restrictionSuccess
     exact_mod_cast hcast
 
 /-- The prefix of the payload that a success check can read. -/
-def restrictionPrefixBound (w : ℕ) : ℕ :=
+private def restrictionPrefixBound (w : ℕ) : ℕ :=
   max (2 * (rstStage w + 1) + 1) (4 * rstLevel w)
 
-theorem primrec_restrictionPrefixBound : Primrec restrictionPrefixBound := by
+private theorem primrec_restrictionPrefixBound : Primrec restrictionPrefixBound := by
   have h1 : Primrec fun w => 2 * (rstStage w + 1) + 1 :=
     Primrec.succ.comp ((Primrec.nat_mul.comp (Primrec.const 2)
       (Primrec.succ.comp primrec_rstStage)))
@@ -1274,66 +1274,66 @@ theorem primrec_restrictionPrefixBound : Primrec restrictionPrefixBound := by
   exact (Primrec.nat_max.comp h1 h2).of_eq fun _ => rfl
 
 /-- The atomic index is read inside the bound. -/
-theorem lt_restrictionPrefixBound_atomic (w : ℕ) :
+private theorem lt_restrictionPrefixBound_atomic (w : ℕ) :
     2 * (rstStage w + 1) < restrictionPrefixBound w :=
   lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_left _ _)
 
 /-- Every even-track coordinate below the level is read inside the bound. -/
-theorem lt_restrictionPrefixBound_even {w i : ℕ} (hi : i < rstLevel w) :
+private theorem lt_restrictionPrefixBound_even {w i : ℕ} (hi : i < rstLevel w) :
     4 * i + 1 < restrictionPrefixBound w :=
   lt_of_lt_of_le (by omega) (le_max_right _ _)
 
 /-- Every odd-track coordinate below the level is read inside the bound. -/
-theorem lt_restrictionPrefixBound_odd {w i : ℕ} (hi : i < rstLevel w) :
+private theorem lt_restrictionPrefixBound_odd {w i : ℕ} (hi : i < rstLevel w) :
     4 * i + 3 < restrictionPrefixBound w :=
   lt_of_lt_of_le (by omega) (le_max_right _ _)
 
 /-- Payload lookup: the weak-name coordinate. -/
-theorem payload_read_stage (p uv : Baire) (k : ℕ) :
+private theorem payload_read_stage (p uv : Baire) (k : ℕ) :
     Baire.interleave p uv (2 * k) = p k := Baire.interleave_even _ _ _
 
 /-- Payload lookup: the even track. -/
-theorem payload_read_even (p uv : Baire) (i : ℕ) :
+private theorem payload_read_even (p uv : Baire) (i : ℕ) :
     Baire.interleave p uv (4 * i + 1) = uv.evenPart i := by
   rw [show 4 * i + 1 = 2 * (2 * i) + 1 by ring, Baire.interleave_odd, Baire.evenPart_apply]
 
 /-- Payload lookup: the odd track. -/
-theorem payload_read_odd (p uv : Baire) (i : ℕ) :
+private theorem payload_read_odd (p uv : Baire) (i : ℕ) :
     Baire.interleave p uv (4 * i + 3) = uv.oddPart i := by
   rw [show 4 * i + 3 = 2 * (2 * i + 1) + 1 by ring, Baire.interleave_odd, Baire.oddPart_apply]
 
 /-- The atomic index as read from the prefix. Used only by the consistency clause. -/
-def rstAtomicOf (pre : List ℕ) (w : ℕ) : ℕ := pre.getD (2 * (rstStage w + 1)) 0
+private def rstAtomicOf (pre : List ℕ) (w : ℕ) : ℕ := pre.getD (2 * (rstStage w + 1)) 0
 
 /-- The even track's prefix, extracted from the payload prefix. -/
-def rstEvenPre (pre : List ℕ) (w : ℕ) : List ℕ :=
+private def rstEvenPre (pre : List ℕ) (w : ℕ) : List ℕ :=
   streamTake (fun i => pre.getD (4 * i + 1) 0) (rstLevel w)
 
 /-- The odd track's prefix, extracted from the payload prefix. -/
-def rstOddPre (pre : List ℕ) (w : ℕ) : List ℕ :=
+private def rstOddPre (pre : List ℕ) (w : ℕ) : List ℕ :=
   streamTake (fun i => pre.getD (4 * i + 3) 0) (rstLevel w)
 
 /-- The odd mask, rebuilt from the extracted odd prefix at the *stored* atomic index. -/
-def rstMaskVOf (atoms : ℕ → List (ℕ × ℕ))
+private def rstMaskVOf (atoms : ℕ → List (ℕ × ℕ))
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : ℕ :=
   mac (atoms (rstAtomic w)) (rstOddPre pre w) (rstLevel w) (rstFuel w)
 
 /-- The odd track's certified mass — the only prefix-dependent coded quantity. -/
-def rstMassVOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstMassVOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : ℚ :=
   ratOfCode (acc (rstAtomic w) (rstMaskVOf atoms mac pre w))
 
 /-- The extracted gap, `1 - (cU + cV)` with `cU` witness-only. -/
-def rstGapOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstGapOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : ℚ :=
   1 - (rstMassU acc w + rstMassVOf atoms acc mac pre w)
 
-theorem rstAtomicOf_streamTake (p uv : Baire) (w : ℕ) :
+private theorem rstAtomicOf_streamTake (p uv : Baire) (w : ℕ) :
     rstAtomicOf (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) w
       = p (rstStage w + 1) := by
   rw [rstAtomicOf, streamTake_getD _ (lt_restrictionPrefixBound_atomic w), payload_read_stage]
 
-theorem rstEvenPre_streamTake (p uv : Baire) (w : ℕ) :
+private theorem rstEvenPre_streamTake (p uv : Baire) (w : ℕ) :
     rstEvenPre (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) w
       = streamTake uv.evenPart (rstLevel w) := by
   unfold rstEvenPre
@@ -1342,7 +1342,7 @@ theorem rstEvenPre_streamTake (p uv : Baire) (w : ℕ) :
   have hi : i < rstLevel w := by simpa [length_streamTake] using h1
   rw [streamTake_getD _ (lt_restrictionPrefixBound_even hi), payload_read_even]
 
-theorem rstOddPre_streamTake (p uv : Baire) (w : ℕ) :
+private theorem rstOddPre_streamTake (p uv : Baire) (w : ℕ) :
     rstOddPre (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) w
       = streamTake uv.oddPart (rstLevel w) := by
   unfold rstOddPre
@@ -1351,20 +1351,20 @@ theorem rstOddPre_streamTake (p uv : Baire) (w : ℕ) :
   have hi : i < rstLevel w := by simpa [length_streamTake] using h1
   rw [streamTake_getD _ (lt_restrictionPrefixBound_odd hi), payload_read_odd]
 
-theorem rstMaskVOf_streamTake (atoms : ℕ → List (ℕ × ℕ))
+private theorem rstMaskVOf_streamTake (atoms : ℕ → List (ℕ × ℕ))
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p uv : Baire) (w : ℕ) :
     rstMaskVOf atoms mac (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) w
       = rstOddMask atoms mac uv w := by
   rw [rstMaskVOf, rstOddMask, rstOddPre_streamTake]
 
-theorem rstMassVOf_streamTake (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem rstMassVOf_streamTake (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p uv : Baire) (w : ℕ) :
     rstMassVOf atoms acc mac
         (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) w
       = rstMassV atoms acc mac uv w := by
   rw [rstMassVOf, rstMassV, rstMaskVOf_streamTake]
 
-theorem rstGapOf_streamTake (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem rstGapOf_streamTake (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p uv : Baire) (w : ℕ) :
     rstGapOf atoms acc mac
         (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) w
@@ -1372,44 +1372,44 @@ theorem rstGapOf_streamTake (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → �
   rw [rstGapOf, rstGap, rstMassVOf_streamTake]
 
 /-- The stage dyadic, as a code. -/
-def rstQCode (w : ℕ) : RatCode := halfPowCode (rstStage w)
+private def rstQCode (w : ℕ) : RatCode := halfPowCode (rstStage w)
 
-theorem ratOfCode_rstQCode (w : ℕ) : ratOfCode (rstQCode w) = rstQ w := by
+private theorem ratOfCode_rstQCode (w : ℕ) : ratOfCode (rstQCode w) = rstQ w := by
   rw [rstQCode, ratOfCode_halfPowCode, rstQ]
 
 /-- The even track's certified mass, as a code. Witness-only. -/
-def rstMassUCode (acc : ℕ → ℕ → RatCode) (w : ℕ) : RatCode := acc (rstAtomic w) (rstMask w)
+private def rstMassUCode (acc : ℕ → ℕ → RatCode) (w : ℕ) : RatCode := acc (rstAtomic w) (rstMask w)
 
-theorem ratOfCode_rstMassUCode (acc : ℕ → ℕ → RatCode) (w : ℕ) :
+private theorem ratOfCode_rstMassUCode (acc : ℕ → ℕ → RatCode) (w : ℕ) :
     ratOfCode (rstMassUCode acc w) = rstMassU acc w := rfl
 
 /-- The odd track's certified mass, as a code. The only prefix-dependent one. -/
-def rstMassVCodeOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstMassVCodeOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : RatCode :=
   acc (rstAtomic w) (rstMaskVOf atoms mac pre w)
 
-theorem ratOfCode_rstMassVCodeOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem ratOfCode_rstMassVCodeOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) :
     ratOfCode (rstMassVCodeOf atoms acc mac pre w) = rstMassVOf atoms acc mac pre w := rfl
 
 /-- The gap, as a code. -/
-def rstGapCodeOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstGapCodeOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : RatCode :=
   subCode oneCode (addCode (rstMassUCode acc w) (rstMassVCodeOf atoms acc mac pre w))
 
-theorem ratOfCode_rstGapCodeOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem ratOfCode_rstGapCodeOf (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) :
     ratOfCode (rstGapCodeOf atoms acc mac pre w) = rstGapOf atoms acc mac pre w := by
   rw [rstGapCodeOf, ratOfCode_subCode, ratOfCode_addCode, ratOfCode_oneCode,
     ratOfCode_rstMassUCode, ratOfCode_rstMassVCodeOf, rstGapOf]
 
 /-- The budget's left-hand side `14q + 8δ`, as a code. -/
-def rstBudgetLhsCode (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstBudgetLhsCode (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : RatCode :=
   addCode (mulCode (natCode 14) (rstQCode w))
     (mulCode (natCode 8) (rstGapCodeOf atoms acc mac pre w))
 
-theorem ratOfCode_rstBudgetLhsCode (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem ratOfCode_rstBudgetLhsCode (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) :
     ratOfCode (rstBudgetLhsCode atoms acc mac pre w)
       = 14 * rstQ w + 8 * rstGapOf atoms acc mac pre w := by
@@ -1418,66 +1418,67 @@ theorem ratOfCode_rstBudgetLhsCode (atoms : ℕ → List (ℕ × ℕ)) (acc : �
   norm_num
 
 /-- The budget's right-hand side `β₀ · 2⁻ʲ`, as a code. -/
-def rstBudgetRhsCode (w j : ℕ) : RatCode := mulCode (rstBeta w) (halfPowCode j)
+private def rstBudgetRhsCode (w j : ℕ) : RatCode := mulCode (rstBeta w) (halfPowCode j)
 
-theorem ratOfCode_rstBudgetRhsCode (w j : ℕ) :
+private theorem ratOfCode_rstBudgetRhsCode (w j : ℕ) :
     ratOfCode (rstBudgetRhsCode w j) = rstBetaQ w * (2 : ℚ)⁻¹ ^ j := by
   rw [rstBudgetRhsCode, ratOfCode_mulCode, ratOfCode_halfPowCode, rstBetaQ]
 
 /-- Leaf 1: the stored atomic index is the payload's stage entry. -/
-def rstBAtomic (pre : List ℕ) (w : ℕ) : Bool := decide (rstAtomicOf pre w = rstAtomic w)
+private def rstBAtomic (pre : List ℕ) (w : ℕ) : Bool := decide (rstAtomicOf pre w = rstAtomic w)
 
-theorem rstBAtomic_iff (pre : List ℕ) (w : ℕ) :
+private theorem rstBAtomic_iff (pre : List ℕ) (w : ℕ) :
     rstBAtomic pre w = true ↔ rstAtomicOf pre w = rstAtomic w := by simp [rstBAtomic]
 
 /-- Leaf 2: the stored even mask is `mac` at the extracted even prefix. -/
-def rstBEvenMask (atoms : ℕ → List (ℕ × ℕ))
+private def rstBEvenMask (atoms : ℕ → List (ℕ × ℕ))
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : Bool :=
   decide (rstMask w = mac (atoms (rstAtomic w)) (rstEvenPre pre w) (rstLevel w) (rstFuel w))
 
-theorem rstBEvenMask_iff (atoms : ℕ → List (ℕ × ℕ))
+private theorem rstBEvenMask_iff (atoms : ℕ → List (ℕ × ℕ))
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) :
     rstBEvenMask atoms mac pre w = true ↔
       rstMask w = mac (atoms (rstAtomic w)) (rstEvenPre pre w) (rstLevel w) (rstFuel w) := by
   simp [rstBEvenMask]
 
 /-- Leaf 3: the index coupling. -/
-def rstBCoupling (w : ℕ) : Bool := decide (rstLevel w + 2 ≤ rstStage w)
+private def rstBCoupling (w : ℕ) : Bool := decide (rstLevel w + 2 ≤ rstStage w)
 
-theorem rstBCoupling_iff (w : ℕ) :
+private theorem rstBCoupling_iff (w : ℕ) :
     rstBCoupling w = true ↔ rstLevel w + 2 ≤ rstStage w := by simp [rstBCoupling]
 
 /-- Leaf 4: the floor is positive. -/
-def rstBPos (w : ℕ) : Bool := decide (0 < ratOfCode (rstBeta w))
+private def rstBPos (w : ℕ) : Bool := decide (0 < ratOfCode (rstBeta w))
 
-theorem rstBPos_iff (w : ℕ) : rstBPos w = true ↔ 0 < rstBetaQ w := by simp [rstBPos, rstBetaQ]
+private theorem rstBPos_iff (w : ℕ) : rstBPos w = true ↔ 0 < rstBetaQ w := by simp [rstBPos,
+    rstBetaQ]
 
 /-- Leaf 5: the two certified masses do not exceed the whole. -/
-def rstBGuard (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstBGuard (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : Bool :=
   decide (ratOfCode (addCode (rstMassUCode acc w) (rstMassVCodeOf atoms acc mac pre w)) ≤ 1)
 
-theorem rstBGuard_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem rstBGuard_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) :
     rstBGuard atoms acc mac pre w = true ↔
       rstMassU acc w + rstMassVOf atoms acc mac pre w ≤ 1 := by
   simp [rstBGuard, ratOfCode_addCode, ratOfCode_rstMassUCode, ratOfCode_rstMassVCodeOf]
 
 /-- Leaf 6: the floor comparison `β₀ + q ≤ cU`. -/
-def rstBFloor (acc : ℕ → ℕ → RatCode) (w : ℕ) : Bool :=
+private def rstBFloor (acc : ℕ → ℕ → RatCode) (w : ℕ) : Bool :=
   decide (ratOfCode (addCode (rstBeta w) (rstQCode w)) ≤ ratOfCode (rstMassUCode acc w))
 
-theorem rstBFloor_iff (acc : ℕ → ℕ → RatCode) (w : ℕ) :
+private theorem rstBFloor_iff (acc : ℕ → ℕ → RatCode) (w : ℕ) :
     rstBFloor acc w = true ↔ rstBetaQ w + rstQ w ≤ rstMassU acc w := by
   simp [rstBFloor, ratOfCode_addCode, ratOfCode_rstQCode, ratOfCode_rstMassUCode, rstBetaQ]
 
 /-- Leaf 7: the division-free budget. Unconditional: an exact rational comparison. -/
-def rstBBudget (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def rstBBudget (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (j w : ℕ) : Bool :=
   decide (ratOfCode (rstBudgetLhsCode atoms acc mac pre w)
     ≤ ratOfCode (rstBudgetRhsCode w j))
 
-theorem rstBBudget_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem rstBBudget_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (j w : ℕ) :
     rstBBudget atoms acc mac pre j w = true ↔
       14 * rstQ w + 8 * rstGapOf atoms acc mac pre w
@@ -1485,12 +1486,12 @@ theorem rstBBudget_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ �
   simp [rstBBudget, ratOfCode_rstBudgetLhsCode, ratOfCode_rstBudgetRhsCode]
 
 /-- The consistency Boolean, from leaves 1 and 2. -/
-def rstBConsistent (atoms : ℕ → List (ℕ × ℕ))
+private def rstBConsistent (atoms : ℕ → List (ℕ × ℕ))
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (w : ℕ) : Bool :=
   rstBAtomic pre w && rstBEvenMask atoms mac pre w
 
 /-- Clause 1 at the payload's own prefix. -/
-theorem rstBConsistent_streamTake_iff (atoms : ℕ → List (ℕ × ℕ))
+private theorem rstBConsistent_streamTake_iff (atoms : ℕ → List (ℕ × ℕ))
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p uv : Baire) (w : ℕ) :
     rstBConsistent atoms mac
         (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) w = true
@@ -1500,7 +1501,7 @@ theorem rstBConsistent_streamTake_iff (atoms : ℕ → List (ℕ × ℕ))
   exact and_congr_left' eq_comm
 
 /-- Clause 4 at the payload's own prefix. -/
-theorem rstBGuard_streamTake_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem rstBGuard_streamTake_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p uv : Baire) (w : ℕ) :
     rstBGuard atoms acc mac
         (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) w = true
@@ -1508,7 +1509,7 @@ theorem rstBGuard_streamTake_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ 
   rw [rstBGuard_iff, rstMassVOf_streamTake]
 
 /-- Clause 6 at the payload's own prefix. -/
-theorem rstBBudget_streamTake_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem rstBBudget_streamTake_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p uv : Baire) (j w : ℕ) :
     rstBBudget atoms acc mac
         (streamTake (Baire.interleave p uv) (restrictionPrefixBound w)) j w = true
@@ -1517,7 +1518,7 @@ theorem rstBBudget_streamTake_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ
   rw [rstBBudget_iff, rstGapOf_streamTake]
 
 /-- **The Boolean predicate**, in the semantic clause order. -/
-def restrictionSuccessB (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def restrictionSuccessB (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (j w : ℕ) : Bool :=
   rstBConsistent atoms mac pre w && rstBCoupling w && rstBPos w
     && rstBGuard atoms acc mac pre w && rstBFloor acc w
@@ -1525,7 +1526,7 @@ def restrictionSuccessB (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ �
 
 /-- **Exact-prefix equivalence.** The Boolean test on the payload's own prefix is precisely the
 semantic predicate — not merely sufficient for it. -/
-theorem restrictionSuccessB_streamTake_iff (atoms : ℕ → List (ℕ × ℕ))
+private theorem restrictionSuccessB_streamTake_iff (atoms : ℕ → List (ℕ × ℕ))
     (acc : ℕ → ℕ → RatCode) (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ)
     (p uv : Baire) (j w : ℕ) :
     restrictionSuccessB atoms acc mac
@@ -1538,19 +1539,19 @@ theorem restrictionSuccessB_streamTake_iff (atoms : ℕ → List (ℕ × ℕ))
   tauto
 
 /-- The search predicate, packed as `⟨j, w⟩` and returning `0` exactly on success. -/
-def restrictionCheck (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def restrictionCheck (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (n : ℕ) : ℕ :=
   if restrictionSuccessB atoms acc mac pre n.unpair.1 n.unpair.2 = true then 0 else 1
 
 /-- Projection: the packed call unpacks to its components. -/
-theorem restrictionCheck_pair (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem restrictionCheck_pair (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (j w : ℕ) :
     restrictionCheck atoms acc mac pre (Nat.pair j w)
       = if restrictionSuccessB atoms acc mac pre j w = true then 0 else 1 := by
   rw [restrictionCheck, Nat.unpair_pair]
 
 /-- Zero means success. Kept separate from the projection lemma. -/
-theorem restrictionCheck_eq_zero_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private theorem restrictionCheck_eq_zero_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (j w : ℕ) :
     restrictionCheck atoms acc mac pre (Nat.pair j w) = 0
       ↔ restrictionSuccessB atoms acc mac pre j w = true := by
@@ -1558,23 +1559,23 @@ theorem restrictionCheck_eq_zero_iff (atoms : ℕ → List (ℕ × ℕ)) (acc : 
   split <;> simp_all
 
 /-- The bound, in the builder's binary form. The oracle head is ignored. -/
-def restrictionSearchBound (v : ℕ) (_ : ℕ) : ℕ := restrictionPrefixBound v.unpair.2
+private def restrictionSearchBound (v : ℕ) (_ : ℕ) : ℕ := restrictionPrefixBound v.unpair.2
 
-theorem restrictionSearchBound_pair (j w h : ℕ) :
+private theorem restrictionSearchBound_pair (j w h : ℕ) :
     restrictionSearchBound (Nat.pair j w) h = restrictionPrefixBound w := by
   rw [restrictionSearchBound, Nat.unpair_pair]
 
-theorem primrec₂_restrictionSearchBound : Primrec₂ restrictionSearchBound :=
+private theorem primrec₂_restrictionSearchBound : Primrec₂ restrictionSearchBound :=
   (primrec_restrictionPrefixBound.comp
     ((Primrec.snd.comp Primrec.unpair).comp Primrec.fst)).to₂
 
 /-- The packed test, in the builder's convention. -/
-def restrictionSearchG (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def restrictionSearchG (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (v : ℕ) : ℕ :=
   restrictionCheck atoms acc mac (ofNat (List ℕ) v.unpair.2) v.unpair.1
 
 /-- **Unpacking.** Pure projection bookkeeping. -/
-theorem restrictionSearchG_pack {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem restrictionSearchG_pack {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ} (j w : ℕ) (pre : List ℕ) :
     restrictionSearchG atoms acc mac (Nat.pair (Nat.pair j w) (encode pre))
       = restrictionCheck atoms acc mac pre (Nat.pair j w) := by
@@ -1582,7 +1583,7 @@ theorem restrictionSearchG_pack {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ �
   simp [Denumerable.ofNat_encode]
 
 /-- **Zero means success.** The convention bridge, stated separately from the projection. -/
-theorem restrictionSearchG_eq_zero_iff {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem restrictionSearchG_eq_zero_iff {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ} (j w : ℕ) (pre : List ℕ) :
     restrictionSearchG atoms acc mac (Nat.pair (Nat.pair j w) (encode pre)) = 0
       ↔ restrictionSuccessB atoms acc mac pre j w = true := by
@@ -1590,7 +1591,7 @@ theorem restrictionSearchG_eq_zero_iff {atoms : ℕ → List (ℕ × ℕ)} {acc 
 
 /-- **The builder's success predicate is the semantic one.** On the payload `interleave p uv`,
 `SearchSuccess` at input `j` and candidate `w` is exactly `RestrictionSuccess`. -/
-theorem searchSuccess_iff_restrictionSuccess {atoms : ℕ → List (ℕ × ℕ)}
+private theorem searchSuccess_iff_restrictionSuccess {atoms : ℕ → List (ℕ × ℕ)}
     {acc : ℕ → ℕ → RatCode} {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (p uv : Baire) (j w : ℕ) :
     SearchSuccess restrictionSearchBound (restrictionSearchG atoms acc mac)
@@ -1604,12 +1605,12 @@ private theorem streamTake_eq_map_range {α : Type*} (f : ℕ → α) (n : ℕ) 
   refine List.ext_getElem (by simp [length_streamTake]) fun i h1 h2 => ?_
   rw [getElem_streamTake, List.getElem_map, List.getElem_range]
 
-theorem primrec_rstAtomicOf : Primrec fun x : List ℕ × ℕ => rstAtomicOf x.1 x.2 :=
+private theorem primrec_rstAtomicOf : Primrec fun x : List ℕ × ℕ => rstAtomicOf x.1 x.2 :=
   (Primrec.list_getD 0).comp Primrec.fst
     (Primrec.nat_mul.comp (Primrec.const 2)
       (Primrec.succ.comp (primrec_rstStage.comp Primrec.snd)))
 
-theorem primrec_rstEvenPre : Primrec fun x : List ℕ × ℕ => rstEvenPre x.1 x.2 :=
+private theorem primrec_rstEvenPre : Primrec fun x : List ℕ × ℕ => rstEvenPre x.1 x.2 :=
   (Primrec.list_map (Primrec.list_range.comp (primrec_rstLevel.comp Primrec.snd))
     (((Primrec.list_getD 0).comp (Primrec.fst.comp Primrec.fst)
       (Primrec.nat_add.comp
@@ -1617,7 +1618,7 @@ theorem primrec_rstEvenPre : Primrec fun x : List ℕ × ℕ => rstEvenPre x.1 x
         (Primrec.const 1))).to₂)).of_eq fun x => by
       rw [rstEvenPre, streamTake_eq_map_range]
 
-theorem primrec_rstOddPre : Primrec fun x : List ℕ × ℕ => rstOddPre x.1 x.2 :=
+private theorem primrec_rstOddPre : Primrec fun x : List ℕ × ℕ => rstOddPre x.1 x.2 :=
   (Primrec.list_map (Primrec.list_range.comp (primrec_rstLevel.comp Primrec.snd))
     (((Primrec.list_getD 0).comp (Primrec.fst.comp Primrec.fst)
       (Primrec.nat_add.comp
@@ -1625,7 +1626,7 @@ theorem primrec_rstOddPre : Primrec fun x : List ℕ × ℕ => rstOddPre x.1 x.2
         (Primrec.const 3))).to₂)).of_eq fun x => by
       rw [rstOddPre, streamTake_eq_map_range]
 
-theorem primrec_rstMaskVOf {atoms : ℕ → List (ℕ × ℕ)}
+private theorem primrec_rstMaskVOf {atoms : ℕ → List (ℕ × ℕ)}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1634,21 +1635,21 @@ theorem primrec_rstMaskVOf {atoms : ℕ → List (ℕ × ℕ)}
     (((hatoms.comp (primrec_rstAtomic.comp Primrec.snd)).pair primrec_rstOddPre).pair
       ((primrec_rstLevel.comp Primrec.snd).pair (primrec_rstFuel.comp Primrec.snd)))
 
-theorem primrec_rstQCode : Primrec rstQCode :=
+private theorem primrec_rstQCode : Primrec rstQCode :=
   primrec_halfPowCode.comp primrec_rstStage
 
-theorem primrec_rstMassUCode {acc : ℕ → ℕ → RatCode} (hacc : Primrec₂ acc) :
+private theorem primrec_rstMassUCode {acc : ℕ → ℕ → RatCode} (hacc : Primrec₂ acc) :
     Primrec (rstMassUCode acc) :=
   hacc.comp primrec_rstAtomic primrec_rstMask
 
-theorem primrec_rstMassVCodeOf {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem primrec_rstMassVCodeOf {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms) (hacc : Primrec₂ acc)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
     Primrec fun x : List ℕ × ℕ => rstMassVCodeOf atoms acc mac x.1 x.2 :=
   hacc.comp (primrec_rstAtomic.comp Primrec.snd) (primrec_rstMaskVOf hatoms hmac)
 
-theorem primrec_rstGapCodeOf {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem primrec_rstGapCodeOf {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms) (hacc : Primrec₂ acc)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1657,7 +1658,7 @@ theorem primrec_rstGapCodeOf {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → 
     (primrec₂_addCode.comp ((primrec_rstMassUCode hacc).comp Primrec.snd)
       (primrec_rstMassVCodeOf hatoms hacc hmac))
 
-theorem primrec_rstBudgetLhsCode {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem primrec_rstBudgetLhsCode {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms) (hacc : Primrec₂ acc)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1668,16 +1669,16 @@ theorem primrec_rstBudgetLhsCode {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ 
     (primrec₂_mulCode.comp (Primrec.const (natCode 8))
       (primrec_rstGapCodeOf hatoms hacc hmac))
 
-theorem primrec_rstBudgetRhsCode : Primrec fun y : ℕ × ℕ => rstBudgetRhsCode y.1 y.2 :=
+private theorem primrec_rstBudgetRhsCode : Primrec fun y : ℕ × ℕ => rstBudgetRhsCode y.1 y.2 :=
   primrec₂_mulCode.comp (primrec_rstBeta.comp Primrec.fst)
     (primrec_halfPowCode.comp Primrec.snd)
 
-theorem primrec_rstBAtomic : Primrec fun x : List ℕ × ℕ => rstBAtomic x.1 x.2 :=
+private theorem primrec_rstBAtomic : Primrec fun x : List ℕ × ℕ => rstBAtomic x.1 x.2 :=
   (Primrec.ite (Primrec.eq.comp primrec_rstAtomicOf (primrec_rstAtomic.comp Primrec.snd))
     (Primrec.const true) (Primrec.const false)).of_eq fun x => by
       by_cases h : rstAtomicOf x.1 x.2 = rstAtomic x.2 <;> simp [rstBAtomic, h]
 
-theorem primrec_rstBEvenMask {atoms : ℕ → List (ℕ × ℕ)}
+private theorem primrec_rstBEvenMask {atoms : ℕ → List (ℕ × ℕ)}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1692,19 +1693,19 @@ theorem primrec_rstBEvenMask {atoms : ℕ → List (ℕ × ℕ)}
           = mac (atoms (rstAtomic x.2)) (rstEvenPre x.1 x.2) (rstLevel x.2) (rstFuel x.2) <;>
         simp [rstBEvenMask, h]
 
-theorem primrec_rstBCoupling : Primrec rstBCoupling :=
+private theorem primrec_rstBCoupling : Primrec rstBCoupling :=
   (Primrec.ite (Primrec.nat_le.comp
       (Primrec.nat_add.comp primrec_rstLevel (Primrec.const 2)) primrec_rstStage)
     (Primrec.const true) (Primrec.const false)).of_eq fun w => by
       by_cases h : rstLevel w + 2 ≤ rstStage w <;> simp [rstBCoupling, h]
 
-theorem primrec_rstBPos : Primrec rstBPos :=
+private theorem primrec_rstBPos : Primrec rstBPos :=
   (Primrec.ite (primrecPred_ratLt (Primrec.const (natCode 0)) primrec_rstBeta)
     (Primrec.const true) (Primrec.const false)).of_eq fun w => by
       simp only [rstBPos, ratOfCode_natCode, Nat.cast_zero]
       by_cases h : (0 : ℚ) < ratOfCode (rstBeta w) <;> simp [h]
 
-theorem primrec_rstBGuard {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem primrec_rstBGuard {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms) (hacc : Primrec₂ acc)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1720,7 +1721,7 @@ theorem primrec_rstBGuard {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ
       · simp [h, not_le.mpr h]
       · simp [h, not_lt.mp h]
 
-theorem primrec_rstBFloor {acc : ℕ → ℕ → RatCode} (hacc : Primrec₂ acc) :
+private theorem primrec_rstBFloor {acc : ℕ → ℕ → RatCode} (hacc : Primrec₂ acc) :
     Primrec (rstBFloor acc) :=
   (Primrec.ite
     (primrecPred_ratLt (primrec_rstMassUCode hacc)
@@ -1732,7 +1733,7 @@ theorem primrec_rstBFloor {acc : ℕ → ℕ → RatCode} (hacc : Primrec₂ acc
       · simp [h, not_le.mpr h]
       · simp [h, not_lt.mp h]
 
-theorem primrec_rstBBudget {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem primrec_rstBBudget {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms) (hacc : Primrec₂ acc)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1750,7 +1751,7 @@ theorem primrec_rstBBudget {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → �
       · simp [h, not_le.mpr h]
       · simp [h, not_lt.mp h]
 
-theorem primrec_rstBConsistent {atoms : ℕ → List (ℕ × ℕ)}
+private theorem primrec_rstBConsistent {atoms : ℕ → List (ℕ × ℕ)}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1759,7 +1760,7 @@ theorem primrec_rstBConsistent {atoms : ℕ → List (ℕ × ℕ)}
     (Primrec.const false)).of_eq fun x => by
       cases h : rstBAtomic x.1 x.2 <;> simp [rstBConsistent, h]
 
-theorem primrec_restrictionSuccessB {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem primrec_restrictionSuccessB {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms) (hacc : Primrec₂ acc)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1786,7 +1787,7 @@ theorem primrec_restrictionSuccessB {atoms : ℕ → List (ℕ × ℕ)} {acc : �
 -- `whnf` from unfolding six nested leaves through the coded arithmetic.
 attribute [local irreducible] restrictionSuccessB
 
-theorem primrec_restrictionCheck {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem primrec_restrictionCheck {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms) (hacc : Primrec₂ acc)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :
@@ -1800,7 +1801,7 @@ theorem primrec_restrictionCheck {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ 
       cases h : restrictionSuccessB atoms acc mac x.1 x.2.unpair.1 x.2.unpair.2 <;>
         simp [restrictionCheck, h]
 
-theorem primrec_restrictionSearchG {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem primrec_restrictionSearchG {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hatoms : Primrec atoms) (hacc : Primrec₂ acc)
     (hmac : Primrec fun v : (List (ℕ × ℕ) × List ℕ) × ℕ × ℕ => mac v.1.1 v.1.2 v.2.1 v.2.2) :

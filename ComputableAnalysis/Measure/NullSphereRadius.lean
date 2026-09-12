@@ -28,9 +28,9 @@ the limit off the shrinking endpoints.
 * `annulus`, `exists_thin_annulus`, `exists_subinterval`, `exists_interiorSubinterval` — the
   counting engine and the subdivision step.
 * `nest_exists_limit`, `nest_sphere_null`, `nest_names` — the nest's invariants.
-* `ThinClosedAnnulusStep`, `exists_stepCode` — the single-step search, one code for every
+* `ThinClosedAnnulusStep`, `exists_thinStepCode` — the single-step search, one code for every
   measure and request.
-* `IsNestRun`, `exists_nestCode` — the iterator.
+* `IsNestRun`, `exists_iterCode` — the iterator.
 * `exists_radiusSelectorCode` — the selector: one code, every measure, centre and coded
   interval, one `realRep` name out.
 
@@ -45,7 +45,7 @@ value and eventual certification below any slack.
 open MeasureTheory Metric Encodable Denumerable
 open scoped ENNReal NNReal
 
-set_option linter.style.longFile 1800
+set_option linter.style.longFile 1700
 
 namespace ComputableAnalysis
 
@@ -283,16 +283,16 @@ def radiusPack (p : Baire) (i : ℕ) (ac bc : RatCode) : Baire :=
   Baire.interleave p fun _ => Nat.pair i (Nat.pair ac bc)
 
 /-- The centre index of a request. -/
-def reqCentre (r : ℕ) : ℕ := r.unpair.1
+private def reqCentre (r : ℕ) : ℕ := r.unpair.1
 
 /-- The coded lower endpoint of a request. -/
-def reqLo (r : ℕ) : RatCode := r.unpair.2.unpair.1
+private def reqLo (r : ℕ) : RatCode := r.unpair.2.unpair.1
 
 /-- The coded upper endpoint of a request. -/
-def reqHi (r : ℕ) : RatCode := r.unpair.2.unpair.2.unpair.1
+private def reqHi (r : ℕ) : RatCode := r.unpair.2.unpair.2.unpair.1
 
 /-- The coded target error of a request. -/
-def reqErr (r : ℕ) : RatCode := r.unpair.2.unpair.2.unpair.2
+private def reqErr (r : ℕ) : RatCode := r.unpair.2.unpair.2.unpair.2
 
 /-- The coded lower endpoint of a result. -/
 def resLo (v : ℕ) : RatCode := v.unpair.1
@@ -321,13 +321,13 @@ def ThinClosedAnnulusStep (μ : ProbabilityMeasure X) (request result : ℕ) : P
 
 /-- **The stagewise certified lower bound** for the mass of the open set named by `u`: the
 level-`(m+1)` atomic approximant read on the stage-`n` inner approximation, less `2⁻ᵐ`. -/
-noncomputable def openLower (p u : Baire) (n m : ℕ) : ℝ :=
+private noncomputable def openLower (p u : Baire) (n m : ℕ) : ℝ :=
   ((atomic P (p (m + 1))).toMeasure (innerApprox P u n)).toReal - (2 : ℝ)⁻¹ ^ m
 
 variable {P}
 
 /-- **Soundness of the lower bound.** Every computed value really is below the mass. -/
-theorem openLower_le {μ : ProbabilityMeasure X} {p u : Baire} (hp : WeakMeasureNames P p μ)
+private theorem openLower_le {μ : ProbabilityMeasure X} {p u : Baire} (hp : WeakMeasureNames P p μ)
     {n m : ℕ} (hnm : n ≤ m) :
     openLower P p u n m ≤ (μ.toMeasure (openOf P u)).toReal := by
   have h := atomic_le_of_weakName hp (u := u) hnm
@@ -340,7 +340,8 @@ theorem openLower_le {μ : ProbabilityMeasure X} {p u : Baire} (hp : WeakMeasure
 
 /-- **Eventual slack.** For every slack above the true mass, some stage's bound falls within it.
 No monotonicity is claimed or used. -/
-theorem exists_openLower_gt {μ : ProbabilityMeasure X} {p : Baire} (hp : WeakMeasureNames P p μ)
+private theorem exists_openLower_gt {μ : ProbabilityMeasure X} {p : Baire} (hp : WeakMeasureNames P
+    p μ)
     (u : Baire) {δ : ℝ} (hδ : 0 < δ) :
     ∃ n m : ℕ, n ≤ m ∧ (μ.toMeasure (openOf P u)).toReal - δ < openLower P p u n m := by
   have hR : Filter.Tendsto (fun n => (μ.toMeasure (innerApprox P u n)).toReal) Filter.atTop
@@ -367,13 +368,13 @@ variable (P)
 
 /-- **The stagewise upper bound for the closed annulus**: one complement of a sum of two
 lower bounds, with independent stages on the two tracks. -/
-noncomputable def annulusUpper (p uin ufar : Baire) (n₁ m₁ n₂ m₂ : ℕ) : ℝ :=
+private noncomputable def annulusUpper (p uin ufar : Baire) (n₁ m₁ n₂ m₂ : ℕ) : ℝ :=
   1 - (openLower P p uin n₁ m₁ + openLower P p ufar n₂ m₂)
 
 variable {P}
 
 /-- **Soundness of the upper bound.** The closed-annulus mass is at most every computed value. -/
-theorem annulusUpper_sound {μ : ProbabilityMeasure X} {p uin ufar : Baire} {t : X} {a b : ℝ}
+private theorem annulusUpper_sound {μ : ProbabilityMeasure X} {p uin ufar : Baire} {t : X} {a b : ℝ}
     (hp : WeakMeasureNames P p μ) (hin : openOf P uin = ball t a)
     (hfar : openOf P ufar = {x : X | b < dist x t}) (hab : a ≤ b)
     {n₁ m₁ n₂ m₂ : ℕ} (h₁ : n₁ ≤ m₁) (h₂ : n₂ ≤ m₂) :
@@ -388,7 +389,8 @@ theorem annulusUpper_sound {μ : ProbabilityMeasure X} {p uin ufar : Baire} {t :
 
 /-- **Eventual slack for the upper bound.** If the true mass is below `ε`, some stage certifies
 it. The two tracks are given independent stages, so nothing has to be synchronized. -/
-theorem exists_annulusUpper_lt {μ : ProbabilityMeasure X} {p uin ufar : Baire} {t : X} {a b : ℝ}
+private theorem exists_annulusUpper_lt {μ : ProbabilityMeasure X} {p uin ufar : Baire} {t : X} {a b
+    : ℝ}
     (hp : WeakMeasureNames P p μ) (hin : openOf P uin = ball t a)
     (hfar : openOf P ufar = {x : X | b < dist x t}) (hab : a ≤ b) {ε : ℝ}
     (hlt : (μ.toMeasure (closedAnnulus t a b)).toReal < ε) :
@@ -409,103 +411,103 @@ theorem exists_annulusUpper_lt {μ : ProbabilityMeasure X} {p uin ufar : Baire} 
 variable (P)
 
 /-- The candidate's lower endpoint code. -/
-def witLo (w : ℕ) : RatCode := w.unpair.1.unpair.1
+private def witLo (w : ℕ) : RatCode := w.unpair.1.unpair.1
 
 /-- The candidate's upper endpoint code. -/
-def witHi (w : ℕ) : RatCode := w.unpair.1.unpair.2
+private def witHi (w : ℕ) : RatCode := w.unpair.1.unpair.2
 
 /-- Inner-approximation stage for the inner track. -/
-def witN₁ (w : ℕ) : ℕ := w.unpair.2.unpair.1.unpair.1
+private def witN₁ (w : ℕ) : ℕ := w.unpair.2.unpair.1.unpair.1
 
 /-- Weak-name level for the inner track. -/
-def witM₁ (w : ℕ) : ℕ := w.unpair.2.unpair.1.unpair.2.unpair.1
+private def witM₁ (w : ℕ) : ℕ := w.unpair.2.unpair.1.unpair.2.unpair.1
 
 /-- Mask fuel for the inner track. -/
-def witT₁ (w : ℕ) : ℕ := w.unpair.2.unpair.1.unpair.2.unpair.2
+private def witT₁ (w : ℕ) : ℕ := w.unpair.2.unpair.1.unpair.2.unpair.2
 
 /-- Inner-approximation stage for the far track. -/
-def witN₂ (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.1
+private def witN₂ (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.1
 
 /-- Weak-name level for the far track. -/
-def witM₂ (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.2.unpair.1
+private def witM₂ (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.2.unpair.1
 
 /-- Mask fuel for the far track. -/
-def witT₂ (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.2.unpair.2
+private def witT₂ (w : ℕ) : ℕ := w.unpair.2.unpair.2.unpair.2.unpair.2
 
 /-- **The witness with its bookkeeping discarded** — what the step actually returns. -/
-def witResult (w : ℕ) : ℕ := Nat.pair (witLo w) (witHi w)
+private def witResult (w : ℕ) : ℕ := Nat.pair (witLo w) (witHi w)
 
-@[simp] theorem resLo_witResult (w : ℕ) : resLo (witResult w) = witLo w := by
+@[simp] private theorem resLo_witResult (w : ℕ) : resLo (witResult w) = witLo w := by
   simp [resLo, witResult]
 
-@[simp] theorem resHi_witResult (w : ℕ) : resHi (witResult w) = witHi w := by
+@[simp] private theorem resHi_witResult (w : ℕ) : resHi (witResult w) = witHi w := by
   simp [resHi, witResult]
 
 /-- The witness packer. -/
-def packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) : ℕ :=
+private def packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) : ℕ :=
   Nat.pair (Nat.pair lo hi)
     (Nat.pair (Nat.pair n₁ (Nat.pair m₁ t₁)) (Nat.pair n₂ (Nat.pair m₂ t₂)))
 
-@[simp] theorem witLo_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
+@[simp] private theorem witLo_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
     witLo (packWit lo hi n₁ m₁ t₁ n₂ m₂ t₂) = lo := by simp [witLo, packWit]
 
-@[simp] theorem witHi_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
+@[simp] private theorem witHi_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
     witHi (packWit lo hi n₁ m₁ t₁ n₂ m₂ t₂) = hi := by simp [witHi, packWit]
 
-@[simp] theorem witN₁_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
+@[simp] private theorem witN₁_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
     witN₁ (packWit lo hi n₁ m₁ t₁ n₂ m₂ t₂) = n₁ := by simp [witN₁, packWit]
 
-@[simp] theorem witM₁_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
+@[simp] private theorem witM₁_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
     witM₁ (packWit lo hi n₁ m₁ t₁ n₂ m₂ t₂) = m₁ := by simp [witM₁, packWit]
 
-@[simp] theorem witT₁_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
+@[simp] private theorem witT₁_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
     witT₁ (packWit lo hi n₁ m₁ t₁ n₂ m₂ t₂) = t₁ := by simp [witT₁, packWit]
 
-@[simp] theorem witN₂_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
+@[simp] private theorem witN₂_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
     witN₂ (packWit lo hi n₁ m₁ t₁ n₂ m₂ t₂) = n₂ := by simp [witN₂, packWit]
 
-@[simp] theorem witM₂_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
+@[simp] private theorem witM₂_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
     witM₂ (packWit lo hi n₁ m₁ t₁ n₂ m₂ t₂) = m₂ := by simp [witM₂, packWit]
 
-@[simp] theorem witT₂_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
+@[simp] private theorem witT₂_packWit (lo hi n₁ m₁ t₁ n₂ m₂ t₂ : ℕ) :
     witT₂ (packWit lo hi n₁ m₁ t₁ n₂ m₂ t₂) = t₂ := by simp [witT₂, packWit]
 
 /-- Clause 1: the request's lower endpoint is strictly below the result's. -/
-def stepLoB (request w : ℕ) : Bool :=
+private def stepLoB (request w : ℕ) : Bool :=
   decide (ratOfCode (reqLo request) < ratOfCode (witLo w))
 
 /-- Clause 2: the result's endpoints are strictly ordered. -/
-def stepOrderB (w : ℕ) : Bool :=
+private def stepOrderB (w : ℕ) : Bool :=
   decide (ratOfCode (witLo w) < ratOfCode (witHi w))
 
 /-- Clause 3: the result's upper endpoint is strictly below the request's. -/
-def stepHiB (request w : ℕ) : Bool :=
+private def stepHiB (request w : ℕ) : Bool :=
   decide (ratOfCode (witHi w) < ratOfCode (reqHi request))
 
 /-- Clause 4: the result's width is at most half the request's. -/
-def stepWidthB (request w : ℕ) : Bool :=
+private def stepWidthB (request w : ℕ) : Bool :=
   !decide (ratOfCode (subCode (reqHi request) (reqLo request))
     < ratOfCode (addCode (subCode (witHi w) (witLo w)) (subCode (witHi w) (witLo w))))
 
-theorem stepLoB_eq_true_iff (request w : ℕ) :
+private theorem stepLoB_eq_true_iff (request w : ℕ) :
     stepLoB request w = true ↔
       ((ratOfCode (reqLo request) : ℚ) : ℝ) < ((ratOfCode (witLo w) : ℚ) : ℝ) := by
   simp only [stepLoB, decide_eq_true_eq]
   exact (Rat.cast_lt (K := ℝ)).symm
 
-theorem stepOrderB_eq_true_iff (w : ℕ) :
+private theorem stepOrderB_eq_true_iff (w : ℕ) :
     stepOrderB w = true ↔
       ((ratOfCode (witLo w) : ℚ) : ℝ) < ((ratOfCode (witHi w) : ℚ) : ℝ) := by
   simp only [stepOrderB, decide_eq_true_eq]
   exact (Rat.cast_lt (K := ℝ)).symm
 
-theorem stepHiB_eq_true_iff (request w : ℕ) :
+private theorem stepHiB_eq_true_iff (request w : ℕ) :
     stepHiB request w = true ↔
       ((ratOfCode (witHi w) : ℚ) : ℝ) < ((ratOfCode (reqHi request) : ℚ) : ℝ) := by
   simp only [stepHiB, decide_eq_true_eq]
   exact (Rat.cast_lt (K := ℝ)).symm
 
-theorem stepWidthB_eq_true_iff (request w : ℕ) :
+private theorem stepWidthB_eq_true_iff (request w : ℕ) :
     stepWidthB request w = true ↔
       ((ratOfCode (witHi w) : ℚ) : ℝ) - ((ratOfCode (witLo w) : ℚ) : ℝ)
         ≤ (((ratOfCode (reqHi request) : ℚ) : ℝ)
@@ -523,7 +525,7 @@ theorem stepWidthB_eq_true_iff (request w : ℕ) :
     linarith
 
 /-- The coded lower bound: the accumulator on the certified mask, less `2⁻ᵐ`. -/
-def codedOpenLower (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def codedOpenLower (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p u : Baire) (n m t : ℕ) : RatCode :=
   subCode (acc (p (m + 1)) (mac (atoms (p (m + 1))) (streamTake u n) n t)) (halfPowCode m)
 
@@ -533,7 +535,7 @@ variable {P}
 atoms really lie in the inner approximation; accumulator soundness then bounds their weight by
 the approximant's mass there. Note `n ≤ m` is NOT needed here — that hypothesis belongs to
 `openLower_le`, one layer further out. -/
-theorem codedOpenLower_le {p u : Baire} {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem codedOpenLower_le {p u : Baire} {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hnonneg : ∀ m mask : ℕ, (0 : ℝ) ≤ ((ratOfCode (acc m mask) : ℚ) : ℝ))
     (haccsound : ∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
@@ -557,7 +559,7 @@ theorem codedOpenLower_le {p u : Baire} {atoms : ℕ → List (ℕ × ℕ)} {acc
 /-- **Eventual exactness.** At a fuel certifying every atom that lies in the inner approximation,
 the mask becomes an exact membership test, and the accumulator's exactness clause turns the coded
 bound into `openLower` on the nose. -/
-theorem exists_codedOpenLower_eq {p u : Baire} {atoms : ℕ → List (ℕ × ℕ)}
+private theorem exists_codedOpenLower_eq {p u : Baire} {atoms : ℕ → List (ℕ × ℕ)}
     {acc : ℕ → ℕ → RatCode} {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hnonneg : ∀ m mask : ℕ, (0 : ℝ) ≤ ((ratOfCode (acc m mask) : ℚ) : ℝ))
     (hexact : ∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
@@ -589,7 +591,7 @@ theorem exists_codedOpenLower_eq {p u : Baire} {atoms : ℕ → List (ℕ × ℕ
 variable (P)
 
 /-- The coded upper bound: one complement of a sum, matching `annulusUpper` clause for clause. -/
-def codedAnnulusUpper (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def codedAnnulusUpper (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p : Baire) (uin ufar : ℕ → RatCode → Baire)
     (request w : ℕ) : RatCode :=
   subCode oneCode
@@ -600,7 +602,7 @@ def codedAnnulusUpper (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ →
 
 /-- **Clause 5**, with the two `n ≤ m` guards folded in as VALIDITY CONDITIONS of the mass
 clause — they are what `openLower_le` needs, not new geometric requirements. -/
-def stepMassB (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def stepMassB (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p : Baire) (uin ufar : ℕ → RatCode → Baire)
     (request w : ℕ) : Bool :=
   decide (witN₁ w ≤ witM₁ w) && decide (witN₂ w ≤ witM₂ w) &&
@@ -611,7 +613,8 @@ variable {P}
 
 /-- **Clause 5's characterization, forward direction**: firing implies the two guards and the
 SEMANTIC bound. Soundness of the coded layer is what makes the implication go this way. -/
-theorem stepMassB_sound {p : Baire} {uin ufar : ℕ → RatCode → Baire} {atoms : ℕ → List (ℕ × ℕ)}
+private theorem stepMassB_sound {p : Baire} {uin ufar : ℕ → RatCode → Baire} {atoms : ℕ → List (ℕ ×
+    ℕ)}
     {acc : ℕ → ℕ → RatCode} {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
     (hnonneg : ∀ m mask : ℕ, (0 : ℝ) ≤ ((ratOfCode (acc m mask) : ℚ) : ℝ))
     (haccsound : ∀ (m mask : ℕ) (A : Set X), MeasurableSet A →
@@ -641,7 +644,7 @@ theorem stepMassB_sound {p : Baire} {uin ufar : ℕ → RatCode → Baire} {atom
   linarith
 
 /-- The five clauses combined. -/
-def stepSuccessB (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def stepSuccessB (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (p : Baire) (uin ufar : ℕ → RatCode → Baire)
     (request w : ℕ) : Bool :=
   stepLoB request w && stepOrderB w && stepHiB request w && stepWidthB request w &&
@@ -656,7 +659,7 @@ theorem closedAnnulus_mono {t : X} {a a' b b' : ℝ} (h1 : a ≤ a') (h2 : b' �
 
 /-- **Boundary theorem 1: success implies the contract.** Combines the four geometric
 characterizations, `stepMassB_sound`, and `annulusUpper_sound`. -/
-theorem stepSuccess_sound {μ : ProbabilityMeasure X} {p : Baire}
+private theorem stepSuccess_sound {μ : ProbabilityMeasure X} {p : Baire}
     {uin ufar : ℕ → RatCode → Baire}
     {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
@@ -693,7 +696,7 @@ theorem stepSuccess_sound {μ : ProbabilityMeasure X} {p : Baire}
 /-- **Boundary theorem 2: some witness succeeds.** Combines rationalization of
 `exists_interiorSubinterval`'s real endpoints, `exists_annulusUpper_lt`, and eventual coded
 exactness. The only place the classical counting lemma is used. -/
-theorem exists_stepSuccess {μ : ProbabilityMeasure X} {p : Baire}
+private theorem exists_stepSuccess {μ : ProbabilityMeasure X} {p : Baire}
     {uin ufar : ℕ → RatCode → Baire}
     {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ}
@@ -766,36 +769,36 @@ theorem streamTake_eq_map {α : Type*} (p : ℕ → α) (n : ℕ) :
 
 /-- **The prefix bound.** It need only cover the two weak-name reads `p (m₁ + 1)` and
 `p (m₂ + 1)`; `+ 2` is what makes each read STRICTLY inside the prefix. -/
-def stepBound (v : ℕ) (_head : ℕ) : ℕ :=
+private def stepBound (v : ℕ) (_head : ℕ) : ℕ :=
   max (witM₁ v.unpair.2 + 2) (witM₂ v.unpair.2 + 2)
 
 /-- Lookup inequality, inner track. -/
-theorem lt_stepBound_inner (request w head : ℕ) :
+private theorem lt_stepBound_inner (request w head : ℕ) :
     witM₁ w + 1 < stepBound (Nat.pair request w) head := by
   simp only [stepBound, Nat.unpair_pair]
   omega
 
 /-- Lookup inequality, far track. -/
-theorem lt_stepBound_far (request w head : ℕ) :
+private theorem lt_stepBound_far (request w head : ℕ) :
     witM₂ w + 1 < stepBound (Nat.pair request w) head := by
   simp only [stepBound, Nat.unpair_pair]
   omega
 
 /-- The coded lower bound, read off a prefix instead of the oracle. -/
-def codedOpenLowerPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def codedOpenLowerPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (u : Baire) (n m t : ℕ) :
     RatCode :=
   subCode (acc (pre.getD (m + 1) 0)
     (mac (atoms (pre.getD (m + 1) 0)) (streamTake u n) n t)) (halfPowCode m)
 
-theorem codedOpenLowerPre_eq {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem codedOpenLowerPre_eq {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ} (p u : Baire) {n m t L : ℕ} (h : m + 1 < L) :
     codedOpenLowerPre atoms acc mac (streamTake p L) u n m t
       = codedOpenLower atoms acc mac p u n m t := by
   simp only [codedOpenLowerPre, codedOpenLower, streamTake_getD p h]
 
 /-- The coded upper bound over a prefix. -/
-def codedAnnulusUpperPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def codedAnnulusUpperPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (uin ufar : ℕ → RatCode → Baire)
     (request w : ℕ) : RatCode :=
   subCode oneCode
@@ -805,7 +808,7 @@ def codedAnnulusUpperPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ 
         (witN₂ w) (witM₂ w) (witT₂ w)))
 
 /-- Clause 5 over a prefix. -/
-def stepMassBPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def stepMassBPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (uin ufar : ℕ → RatCode → Baire)
     (request w : ℕ) : Bool :=
   decide (witN₁ w ≤ witM₁ w) && decide (witN₂ w ≤ witM₂ w) &&
@@ -813,7 +816,7 @@ def stepMassBPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatC
       < ratOfCode (reqErr request))
 
 /-- The five clauses over a prefix. -/
-def stepSuccessBPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def stepSuccessBPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (pre : List ℕ) (uin ufar : ℕ → RatCode → Baire)
     (request w : ℕ) : Bool :=
   stepLoB request w && stepOrderB w && stepHiB request w && stepWidthB request w &&
@@ -821,7 +824,7 @@ def stepSuccessBPre (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → R
 
 /-- **Exact-prefix agreement.** On a prefix long enough for both weak-name reads, the
 prefix-parameterized test is the oracle test — pointwise, before any packing. -/
-theorem stepSuccessBPre_eq {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem stepSuccessBPre_eq {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ} (p : Baire) (uin ufar : ℕ → RatCode → Baire)
     (request w L : ℕ) (h₁ : witM₁ w + 1 < L) (h₂ : witM₂ w + 1 < L) :
     stepSuccessBPre atoms acc mac (streamTake p L) uin ufar request w
@@ -1026,14 +1029,14 @@ private theorem primrec_stepSuccessBPre :
 end MachinePrimrec
 
 /-- The packed test: zero exactly on success. -/
-def stepG (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
+private def stepG (atoms : ℕ → List (ℕ × ℕ)) (acc : ℕ → ℕ → RatCode)
     (mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ) (uin ufar : ℕ → RatCode → Baire) (v : ℕ) : ℕ :=
   if stepSuccessBPre atoms acc mac (Denumerable.ofNat (List ℕ) v.unpair.2) uin ufar
       v.unpair.1.unpair.1 v.unpair.1.unpair.2 = true then 0 else 1
 
 /-- **The zero characterization**, rewriting directly to `stepSuccessB` through exact-prefix
 agreement — so the search theorem never sees the prefix layer. -/
-theorem stepG_eq_zero_iff {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
+private theorem stepG_eq_zero_iff {atoms : ℕ → List (ℕ × ℕ)} {acc : ℕ → ℕ → RatCode}
     {mac : List (ℕ × ℕ) → List ℕ → ℕ → ℕ → ℕ} (uin ufar : ℕ → RatCode → Baire) (p : Baire)
     (request w : ℕ) :
     stepG atoms acc mac uin ufar (Nat.pair (Nat.pair request w)
@@ -1156,19 +1159,19 @@ theorem exists_thinStepCode :
   exact Part.mem_some _
 
 /-- The coded `1/4`. -/
-def quarterCode : RatCode := fracCode 1 4
+private def quarterCode : RatCode := fracCode 1 4
 
 /-- The coded `1/2`. -/
 def halfCode : RatCode := fracCode 1 2
 
 /-- Coded minimum — a decidable comparison of two rational codes. -/
-def minCode (x y : RatCode) : RatCode := if ratOfCode x < ratOfCode y then x else y
+private def minCode (x y : RatCode) : RatCode := if ratOfCode x < ratOfCode y then x else y
 
 /-- The midpoint of a coded interval. -/
-def midCode (ac bc : RatCode) : RatCode := mulCode (addCode ac bc) halfCode
+private def midCode (ac bc : RatCode) : RatCode := mulCode (addCode ac bc) halfCode
 
 /-- The normalized half-width: a quarter of the interval, capped at a quarter. -/
-def deltaCode (ac bc : RatCode) : RatCode :=
+private def deltaCode (ac bc : RatCode) : RatCode :=
   minCode (mulCode (subCode bc ac) quarterCode) quarterCode
 
 /-- The normalized lower endpoint. -/
@@ -1177,7 +1180,7 @@ def normLo (ac bc : RatCode) : RatCode := subCode (midCode ac bc) (deltaCode ac 
 /-- The normalized upper endpoint. -/
 def normHi (ac bc : RatCode) : RatCode := addCode (midCode ac bc) (deltaCode ac bc)
 
-theorem ratOfCode_quarterCode : ratOfCode quarterCode = 1 / 4 := by
+private theorem ratOfCode_quarterCode : ratOfCode quarterCode = 1 / 4 := by
   rw [quarterCode, ratOfCode_fracCode (by norm_num : (4 : ℕ) ≠ 0) 1]
   norm_num
 
@@ -1185,14 +1188,14 @@ theorem ratOfCode_halfCode : ratOfCode halfCode = 1 / 2 := by
   rw [halfCode, ratOfCode_fracCode (by norm_num : (2 : ℕ) ≠ 0) 1]
   norm_num
 
-theorem ratOfCode_minCode (x y : RatCode) :
+private theorem ratOfCode_minCode (x y : RatCode) :
     ratOfCode (minCode x y) = min (ratOfCode x) (ratOfCode y) := by
   rw [minCode]
   split_ifs with h
   · exact (min_eq_left h.le).symm
   · exact (min_eq_right (not_lt.mp h)).symm
 
-theorem ratOfCode_deltaCode (ac bc : RatCode) :
+private theorem ratOfCode_deltaCode (ac bc : RatCode) :
     ratOfCode (deltaCode ac bc)
       = min ((ratOfCode bc - ratOfCode ac) / 4) (1 / 4) := by
   rw [deltaCode, ratOfCode_minCode, ratOfCode_mulCode, ratOfCode_subCode, ratOfCode_quarterCode]
@@ -1261,15 +1264,15 @@ theorem normHi_sub_normLo_le :
 end NormProps
 
 /-- A request, assembled. -/
-def mkRequest (i lo hi err : ℕ) : ℕ := Nat.pair i (Nat.pair lo (Nat.pair hi err))
+private def mkRequest (i lo hi err : ℕ) : ℕ := Nat.pair i (Nat.pair lo (Nat.pair hi err))
 
-@[simp] theorem reqCentre_mkRequest (i lo hi err : ℕ) :
+@[simp] private theorem reqCentre_mkRequest (i lo hi err : ℕ) :
     reqCentre (mkRequest i lo hi err) = i := by simp [reqCentre, mkRequest]
-@[simp] theorem reqLo_mkRequest (i lo hi err : ℕ) :
+@[simp] private theorem reqLo_mkRequest (i lo hi err : ℕ) :
     reqLo (mkRequest i lo hi err) = lo := by simp [reqLo, mkRequest]
-@[simp] theorem reqHi_mkRequest (i lo hi err : ℕ) :
+@[simp] private theorem reqHi_mkRequest (i lo hi err : ℕ) :
     reqHi (mkRequest i lo hi err) = hi := by simp [reqHi, mkRequest]
-@[simp] theorem reqErr_mkRequest (i lo hi err : ℕ) :
+@[simp] private theorem reqErr_mkRequest (i lo hi err : ℕ) :
     reqErr (mkRequest i lo hi err) = err := by simp [reqErr, mkRequest]
 
 /-- **The indexing convention.** -/
@@ -1362,28 +1365,28 @@ theorem nestRun_spec (hw₀ : ((ratOfCode (resHi (state 0)) : ℚ) : ℝ)
 end NestRun
 
 /-- The centre carried by an iterator argument. -/
-def argCentre (a : ℕ) : ℕ := a.unpair.1
+private def argCentre (a : ℕ) : ℕ := a.unpair.1
 /-- The requested lower endpoint carried by an iterator argument. -/
-def argLo (a : ℕ) : RatCode := a.unpair.2.unpair.1
+private def argLo (a : ℕ) : RatCode := a.unpair.2.unpair.1
 /-- The requested upper endpoint carried by an iterator argument. -/
-def argHi (a : ℕ) : RatCode := a.unpair.2.unpair.2
+private def argHi (a : ℕ) : RatCode := a.unpair.2.unpair.2
 
-@[simp] theorem argCentre_pair (i ac bc : ℕ) :
+@[simp] private theorem argCentre_pair (i ac bc : ℕ) :
     argCentre (Nat.pair i (Nat.pair ac bc)) = i := by simp [argCentre]
-@[simp] theorem argLo_pair (i ac bc : ℕ) :
+@[simp] private theorem argLo_pair (i ac bc : ℕ) :
     argLo (Nat.pair i (Nat.pair ac bc)) = ac := by simp [argLo]
-@[simp] theorem argHi_pair (i ac bc : ℕ) :
+@[simp] private theorem argHi_pair (i ac bc : ℕ) :
     argHi (Nat.pair i (Nat.pair ac bc)) = bc := by simp [argHi]
 
 /-- The normalized initial state. -/
-def initFn (a : ℕ) : ℕ := Nat.pair (normLo (argLo a) (argHi a)) (normHi (argLo a) (argHi a))
+private def initFn (a : ℕ) : ℕ := Nat.pair (normLo (argLo a) (argHi a)) (normHi (argLo a) (argHi a))
 
 /-- The request posed at stage `k` from the running state. -/
-def requestFn (v : ℕ) : ℕ :=
+private def requestFn (v : ℕ) : ℕ :=
   mkRequest (argCentre v.unpair.1) (resLo v.unpair.2.unpair.2) (resHi v.unpair.2.unpair.2)
     (halfPowCode v.unpair.2.unpair.1)
 
-theorem primrec₂_minCode : Primrec₂ minCode :=
+private theorem primrec₂_minCode : Primrec₂ minCode :=
   Primrec.ite (primrecPred_ratLt Primrec.fst Primrec.snd) Primrec.fst Primrec.snd
 
 private theorem primrec_argCentre : Primrec argCentre := primrec_unpairFst
@@ -1551,68 +1554,6 @@ theorem exists_radiusSelectorCode :
   · refine lt_trans ?_ (normHi_lt hlt)
     rw [hstate0] at hhi
     simpa only [resHi, Nat.unpair_pair] using hhi
-
-/-! ### The basis, semantically -/
-
-/-- The set named by basis entry `n`. -/
-noncomputable def basisSet (ρ : ℕ → ℕ → ℝ) : ℕ → Set X
-  | 0 => ∅
-  | (n + 1) => ball (P.dense n.unpair.1) (ρ n.unpair.1 n.unpair.2)
-
-omit [MeasurableSpace X] [BorelSpace X] in
-@[simp] theorem basisSet_zero (ρ : ℕ → ℕ → ℝ) : basisSet P ρ 0 = (∅ : Set X) := rfl
-
-omit [MeasurableSpace X] [BorelSpace X] in
-@[simp] theorem basisSet_succ (ρ : ℕ → ℕ → ℝ) (n : ℕ) :
-    basisSet P ρ (n + 1) = ball (P.dense n.unpair.1) (ρ n.unpair.1 n.unpair.2) := rfl
-
-variable {P}
-
-omit [MeasurableSpace X] [BorelSpace X] in
-/-- **Local refinement with a size bound.** The strengthening `exists_certFires_subset` — and
-through it the refinement tail of a basis entry — needs the refining entry to be not merely
-contained in the ambient open but arbitrarily small around `x`.  The construction already chooses
-the level `k` freely, so it suffices to choose it small against `ε` as well as against the margin;
-nothing else in the original argument changes. -/
-theorem exists_basisSet_refines_openOf_subset {ρ : ℕ → ℕ → ℝ}
-    (hlo : ∀ i k, (2 : ℝ)⁻¹ ^ (k + 2) < ρ i k)
-    (hhi : ∀ i k, ρ i k < (2 : ℝ)⁻¹ ^ (k + 1))
-    {u : Baire} {x : X} (hx : x ∈ openOf P u) {ε : ℝ} (hε : 0 < ε) :
-    ∃ i k j, x ∈ basisSet P ρ (Nat.pair i k + 1) ∧
-      dist (P.dense i) (P.dense (u j).unpair.1) + ρ i k
-        < ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) ∧
-      basisSet P ρ (Nat.pair i k + 1) ⊆ ball x ε := by
-  rw [openOf] at hx
-  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp hx
-  have hjd : dist x (P.dense (u j).unpair.1) < ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) :=
-    mem_ball.mp hj
-  set m : ℝ := ((ratOfCode (u j).unpair.2 : ℚ) : ℝ) - dist x (P.dense (u j).unpair.1) with hm
-  have hmpos : 0 < m := by rw [hm]; linarith
-  obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one
-    (lt_min (by linarith : (0 : ℝ) < m / 2) (by linarith : (0 : ℝ) < ε / 4))
-    (by norm_num : (2 : ℝ)⁻¹ < 1)
-  have hk1 : (2 : ℝ)⁻¹ ^ (k + 1) < min (m / 2) (ε / 4) :=
-    lt_of_le_of_lt (pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)) hk
-  have hkm : (2 : ℝ)⁻¹ ^ (k + 1) < m / 2 := lt_of_lt_of_le hk1 (min_le_left _ _)
-  have hke : (2 : ℝ)⁻¹ ^ (k + 1) < ε / 4 := lt_of_lt_of_le hk1 (min_le_right _ _)
-  obtain ⟨i, hi⟩ := P.denseRange.exists_dist_lt x (by positivity : (0:ℝ) < (2 : ℝ)⁻¹ ^ (k + 2))
-  have hk2 : (2 : ℝ)⁻¹ ^ (k + 2) < (2 : ℝ)⁻¹ ^ (k + 1) := by
-    have hpos : (0:ℝ) < (2 : ℝ)⁻¹ ^ (k + 1) := by positivity
-    rw [pow_succ]; linarith
-  have hix : dist (P.dense i) x < (2 : ℝ)⁻¹ ^ (k + 2) := by rw [dist_comm]; exact hi
-  refine ⟨i, k, j, ?_, ?_, ?_⟩
-  · simp only [basisSet_succ, Nat.unpair_pair, mem_ball]
-    exact lt_trans hi (hlo i k)
-  · have htri := dist_triangle (P.dense i) x (P.dense (u j).unpair.1)
-    have := hhi i k
-    rw [hm] at hkm
-    linarith
-  · simp only [basisSet_succ, Nat.unpair_pair]
-    intro y hy
-    have h1 : dist y (P.dense i) < ρ i k := mem_ball.mp hy
-    have h3 := hhi i k
-    refine mem_ball.mpr (lt_of_le_of_lt (dist_triangle y (P.dense i) x) ?_)
-    linarith
 
 end NullSphereRadius
 
