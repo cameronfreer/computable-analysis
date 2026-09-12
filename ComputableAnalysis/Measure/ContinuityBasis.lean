@@ -398,7 +398,7 @@ structure BasisEntrySpec (B : Baire) (ρ : ℕ → ℕ → ℝ) : Prop where
 variable {P}
 
 /-- Pack a certificate candidate. -/
-def packCert (b j s t : ℕ) : ℕ := Nat.pair b (Nat.pair j (Nat.pair s t))
+private def packCert (b j s t : ℕ) : ℕ := Nat.pair b (Nat.pair j (Nat.pair s t))
 
 /-- The entry index of a candidate. -/
 def certB (w : ℕ) : ℕ := w.unpair.1
