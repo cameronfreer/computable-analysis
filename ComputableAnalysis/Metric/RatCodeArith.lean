@@ -3,6 +3,7 @@ Copyright (c) 2026 Cameron Freer. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Cameron Freer
 -/
+import ComputableAnalysis.ForMathlib.PrimrecArith
 import ComputableAnalysis.Metric.Presentation
 
 /-!
@@ -71,6 +72,16 @@ theorem ratOfCode_fracCode {b : ℕ} (hb : b ≠ 0) (a : ℕ) :
     ring
   simp only [ratOfCode, fracCode, Nat.unpair_pair, hcast]
   norm_num
+
+/-- The code of `2⁻ⁿ`, as the positive fraction `1 / 2ⁿ`. -/
+def halfPowCode (n : ℕ) : RatCode := fracCode 1 (2 ^ n)
+
+/-- `halfPowCode n` decodes to `2⁻ⁿ`; the nonzero-denominator side condition of
+`ratOfCode_fracCode` is discharged here once. -/
+theorem ratOfCode_halfPowCode (n : ℕ) : ratOfCode (halfPowCode n) = (2 : ℚ)⁻¹ ^ n := by
+  rw [halfPowCode, ratOfCode_fracCode (by positivity : (0 : ℕ) < 2 ^ n).ne' 1]
+  push_cast
+  simp [one_div, inv_pow]
 
 /-! ### Additive arithmetic -/
 
@@ -275,6 +286,10 @@ theorem primrec_natCode : Primrec natCode :=
 theorem primrec₂_fracCode : Primrec₂ fracCode :=
   Primrec₂.natPair.comp (Primrec₂.natPair.comp fst (const 0))
     (nat_sub.comp snd (const 1))
+
+/-- `halfPowCode` is primitive recursive. -/
+theorem primrec_halfPowCode : Primrec halfPowCode :=
+  primrec₂_fracCode.comp (const 1) (primrec_pow 2)
 
 /-- `addCode` is primitive recursive in both arguments. -/
 theorem primrec₂_addCode : Primrec₂ addCode := by
