@@ -17,6 +17,10 @@ starting-point `rfind'` convention (plain `rfind` is derived).
 `ofPartrecCode` embeds oracle-free codes, with evaluation preserved
 (`eval_ofPartrecCode`); `const`, `id`, and `curry` transfer verbatim.
 
+`eval_rfind_of_total`, `viol_of_mem_eval_rfind` and `rfind_dom_iff_exists` specialize
+`eval_rfind` to a total `{0,1}`-valued body: minimization halts exactly when a witness exists,
+and what it returns is one.
+
 Everything here is uniform in the oracle: one code is evaluated against every
 stream. No totalized stream operator appears in this file; the stream layer is
 introduced after bounded simulation and continuity.
@@ -229,5 +233,35 @@ theorem eval_ofPartrecCode (c : Nat.Partrec.Code) (p : Baire) :
   | rfind' cf ihf => simp only [ofPartrecCode, eval, Nat.Partrec.Code.eval, ihf]; rfl
 
 end OracleCode
+
+section TotalRfind
+
+open OracleCode
+
+/-- **Minimization over a total `{0,1}`-valued body halts exactly on a witness.** -/
+theorem eval_rfind_of_total {V : OracleCode} {F : Baire} {a : ℕ} {viol : ℕ → Bool}
+    (hV : ∀ z, V.eval F (Nat.pair a z) = Part.some (if viol z = true then 0 else 1)) :
+    (rfind V).eval F a = Nat.rfind (fun n => Part.some (viol n) : ℕ →. Bool) := by
+  rw [eval_rfind, show (fun n => (fun x : ℕ => decide (x = 0)) <$> V.eval F (Nat.pair a n)
+      : ℕ →. Bool) = fun n => Part.some (viol n) from
+    funext fun n => by
+      rw [hV, Part.map_eq_map, Part.map_some]
+      cases viol n <;> simp]
+
+/-- The value returned by minimization over a total `{0,1}`-valued body is a witness. -/
+theorem viol_of_mem_eval_rfind {V : OracleCode} {F : Baire} {a : ℕ} {viol : ℕ → Bool}
+    (hV : ∀ z, V.eval F (Nat.pair a z) = Part.some (if viol z = true then 0 else 1)) {v : ℕ}
+    (hv : v ∈ (rfind V).eval F a) : viol v = true := by
+  rw [eval_rfind_of_total hV] at hv
+  exact (Part.mem_some_iff.mp (Nat.rfind_spec hv)).symm
+
+theorem rfind_dom_iff_exists {V : OracleCode} {F : Baire} {a : ℕ} {viol : ℕ → Bool}
+    (hV : ∀ z, V.eval F (Nat.pair a z) = Part.some (if viol z = true then 0 else 1)) :
+    ((rfind V).eval F a).Dom ↔ ∃ z, viol z = true := by
+  rw [eval_rfind_of_total hV]
+  refine Nat.rfind_dom.trans ⟨fun ⟨n, hn, _⟩ => ⟨n, (Part.mem_some_iff.mp hn).symm⟩,
+    fun ⟨z, hz⟩ => ⟨z, Part.mem_some_iff.mpr hz.symm, fun _ => Part.some_dom _⟩⟩
+
+end TotalRfind
 
 end ComputableAnalysis

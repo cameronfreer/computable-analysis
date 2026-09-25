@@ -19,7 +19,9 @@ actually computes with, each with its `ratOfCode` **value spec** and its
 * the coded naturals `natCode` and the coded positive fractions `fracCode`;
 * the ring operations `addCode`, `negCode`, `subCode`, `mulCode`;
 * the variable-length folds `sumCode`, `prodCode`;
-* the order-flavoured `absCode`, `distCode`, `clampCode`, `symmCode`.
+* the order-flavoured `absCode`, `distCode`, `clampCode`, `symmCode`;
+* the dyadic powers `halfPowCode`, and the threshold `stabilityThresholdCode` coding
+  `2⁻⁽ʲ⁺¹⁾ + 2⁻ᵐ + 2⁻ᵐ`.
 
 Because the fractions are *unnormalized* — no gcd is ever taken — every operation is
 plain `Nat.pair` arithmetic on the three slots, so all of them are primitive recursive by
@@ -273,6 +275,15 @@ theorem ratOfCode_symmCode (m : ℕ) : ratOfCode (symmCode m) = 1 - ratOfCode m 
 
 Every combinator above is built from `Nat.pair`, `Nat.unpair`, `+`, `*`, truncated
 subtraction and decidable ℕ comparisons, so all of them are primitive recursive. -/
+
+/-- The coded stability threshold `2⁻⁽ʲ⁺¹⁾ + 2⁻ᵐ + 2⁻ᵐ`. -/
+def stabilityThresholdCode (j m : ℕ) : RatCode :=
+  addCode (halfPowCode (j + 1)) (addCode (halfPowCode m) (halfPowCode m))
+
+theorem ratOfCode_stabilityThresholdCode (j m : ℕ) :
+    ratOfCode (stabilityThresholdCode j m)
+      = (2 : ℚ)⁻¹ ^ (j + 1) + ((2 : ℚ)⁻¹ ^ m + (2 : ℚ)⁻¹ ^ m) := by
+  simp [stabilityThresholdCode, ratOfCode_addCode, ratOfCode_halfPowCode]
 
 section PrimrecFacts
 
