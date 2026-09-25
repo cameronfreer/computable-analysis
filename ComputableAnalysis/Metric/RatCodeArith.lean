@@ -391,6 +391,12 @@ theorem primrec_clampCode : Primrec clampCode := by
 theorem primrec_symmCode : Primrec symmCode :=
   primrec₂_addCode.comp (Primrec.const oneCode) primrec_negCode
 
+/-- `stabilityThresholdCode` is primitive recursive. -/
+theorem primrec₂_stabilityThresholdCode : Primrec₂ stabilityThresholdCode :=
+  primrec₂_addCode.comp (primrec_halfPowCode.comp (Primrec.succ.comp Primrec.fst))
+    (primrec₂_addCode.comp (primrec_halfPowCode.comp Primrec.snd)
+      (primrec_halfPowCode.comp Primrec.snd))
+
 end PrimrecFacts
 
 end ComputableAnalysis

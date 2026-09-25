@@ -747,7 +747,11 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_searchLeafCode,
    ``ComputableAnalysis.exists_disintegrateEvaluator,
    ``ComputableAnalysis.disintegrate_le_lim,
-   ``ComputableAnalysis.disintegrate_cantor_equiv_lim]
+   ``ComputableAnalysis.disintegrate_cantor_equiv_lim,
+   -- Limits of convergent sequences in presented spaces
+   ``ComputableAnalysis.primrec₂_stabilityThresholdCode,
+   ``ComputableAnalysis.exists_limitDecoder,
+   ``ComputableAnalysis.exists_weakLimitDecoder]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
