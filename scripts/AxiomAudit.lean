@@ -751,7 +751,12 @@ def headlineDecls : List Name :=
    -- Limits of convergent sequences in presented spaces
    ``ComputableAnalysis.primrec₂_stabilityThresholdCode,
    ``ComputableAnalysis.exists_limitDecoder,
-   ``ComputableAnalysis.exists_weakLimitDecoder]
+   ``ComputableAnalysis.exists_weakLimitDecoder,
+   -- The Vitali-limit conditional and its upper bound
+   ``ComputableAnalysis.isVitaliLimit_unique,
+   ``ComputableAnalysis.condSnd_eq_of_subset_of_measure_eq,
+   ``ComputableAnalysis.exists_condSeqCompiler,
+   ``ComputableAnalysis.vitaliDisintegrate_le_lim]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do

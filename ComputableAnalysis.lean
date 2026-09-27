@@ -88,6 +88,8 @@ import ComputableAnalysis.Measure.ContinuityBasis
 import ComputableAnalysis.Measure.DisintegrateUpper
 import ComputableAnalysis.Measure.DisintegrateCalibration
 import ComputableAnalysis.Measure.WeakLimit
+import ComputableAnalysis.Measure.VitaliLimit
+import ComputableAnalysis.Measure.VitaliUpper
 import ComputableAnalysis.Measure.BernoulliProduct
 import ComputableAnalysis.Measure.HausdorffMoments
 import ComputableAnalysis.Measure.UnitInterval
