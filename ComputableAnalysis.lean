@@ -51,6 +51,7 @@ import ComputableAnalysis.Weihrauch.Principles.EfilcCalibration
 import ComputableAnalysis.Weihrauch.Principles.Limit
 import ComputableAnalysis.Weihrauch.Principles.LimCylinder
 import ComputableAnalysis.Weihrauch.Principles.LimParallelizeLPO
+import ComputableAnalysis.Weihrauch.Principles.MetricLimit
 import ComputableAnalysis.Measure.CylinderMass
 import ComputableAnalysis.Measure.Construction
 import ComputableAnalysis.Metric.Presentation
@@ -86,6 +87,9 @@ import ComputableAnalysis.Measure.NullSphereRadius
 import ComputableAnalysis.Measure.ContinuityBasis
 import ComputableAnalysis.Measure.DisintegrateUpper
 import ComputableAnalysis.Measure.DisintegrateCalibration
+import ComputableAnalysis.Measure.WeakLimit
+import ComputableAnalysis.Measure.VitaliLimit
+import ComputableAnalysis.Measure.VitaliUpper
 import ComputableAnalysis.Measure.BernoulliProduct
 import ComputableAnalysis.Measure.HausdorffMoments
 import ComputableAnalysis.Measure.UnitInterval

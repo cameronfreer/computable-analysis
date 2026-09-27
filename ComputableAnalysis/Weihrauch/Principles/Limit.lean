@@ -27,7 +27,10 @@ even columns echo the input and odd columns carry the bounded-simulation halting
 stage. `limTable_dom` places it in the domain of `Lim`, and `exists_limTableCode` produces
 it by a single oracle code, so any `_ ≤sW Lim` whose oracle need is the jump can take its
 preprocessor from here. Routing the input through the answer is what leaves the
-postprocessor free of it, hence what makes such a reduction strong.
+postprocessor free of it, hence what makes such a reduction strong. An accepted answer is read
+back by `evenPart_of_lim_accepts` (the even half is the input) and `odd_of_lim_accepts`,
+`odd_of_lim_accepts_eq_zero` (column `2 * e + 1` is the halting bit of code `e`, in the sense of
+`exists_jumpBit_eq_one_iff`).
 -/
 
 open Encodable Denumerable
@@ -267,5 +270,74 @@ theorem exists_limTableCode : ∃ K : OracleCode, ∀ p : Baire, limTable p ∈ 
       getElem?_streamTake_of_lt p hlt, Option.getD_some]
   · simp only [limTable, limTableStep, Nat.unpair_pair, Denumerable.ofNat_encode, ite_eq_right hpar,
       take_streamTake p hle, jumpBit]
+
+/-! ### Reading an accepted answer of `limTable` -/
+
+/-- **The jump bit witnesses halting.** Some stage of the jump column is `1` exactly when the
+`e`-th code halts on input `e` against the stream. -/
+theorem exists_jumpBit_eq_one_iff (p : Baire) (e : ℕ) :
+    (∃ t, jumpBit p e t = 1) ↔ ((ofNat OracleCode e).eval p e).Dom := by
+  simp only [jumpBit, Bool.toNat_eq_one, Option.isSome_iff_exists]
+  rw [Part.dom_iff_mem]
+  constructor
+  · rintro ⟨t, x, hx⟩
+    exact ⟨x, OracleCode.evalnPrefix_complete.mpr ⟨t, hx⟩⟩
+  · rintro ⟨x, hx⟩
+    obtain ⟨t, ht⟩ := OracleCode.evalnPrefix_complete.mp hx
+    exact ⟨t, x, ht⟩
+
+/-- **The echo columns return the payload.** Even column `2 * i` of `limTable w` is constantly
+`w i`, so any accepted limit stream reproduces `w` on its even coordinates. -/
+theorem evenPart_of_lim_accepts {w a : Baire} (h : Lim.accepts (limTable w) a) :
+    Baire.evenPart a = w := by
+  funext i
+  obtain ⟨s, hs⟩ := Lim.accepts_iff.mp h (2 * i)
+  have hcol := hs s le_rfl
+  rw [limTable, Nat.unpair_pair, ite_eq_left (by omega)] at hcol
+  rw [Baire.evenPart_apply, ← hcol]
+  congr 1
+  omega
+
+/-- **The halting columns return the payload's jump.** Odd column `2 * e + 1` carries the
+monotone bounded-simulation bit, so its limit is `1` exactly when the `e`-th oracle code halts on
+input `e` against the payload. -/
+theorem odd_of_lim_accepts {w a : Baire} (h : Lim.accepts (limTable w) a) (e : ℕ) :
+    a (2 * e + 1) = 1 ↔ ∃ t, jumpBit w e t = 1 := by
+  obtain ⟨s, hs⟩ := Lim.accepts_iff.mp h (2 * e + 1)
+  have hcol : ∀ t, s ≤ t → jumpBit w e t = a (2 * e + 1) := by
+    intro t ht
+    have := hs t ht
+    rw [limTable, Nat.unpair_pair, ite_eq_right (by omega)] at this
+    rw [← this]
+    congr 1
+    omega
+  constructor
+  · intro ha
+    exact ⟨s, (hcol s le_rfl).trans ha⟩
+  · rintro ⟨t₀, ht₀⟩
+    have hmax : jumpBit w e (max s t₀) = 1 :=
+      jumpBit_mono w e (le_max_right s t₀) ht₀
+    exact (hcol (max s t₀) (le_max_left s t₀)).symm.trans hmax
+
+/-- **The halting columns, negative form.** The companion of `odd_of_lim_accepts`: an odd column
+limits to `0` exactly when the simulation never halts. Both directions are needed downstream, and
+neither follows from the other without knowing the limit is a bit, so they are stated separately. -/
+theorem odd_of_lim_accepts_eq_zero {w a : Baire} (h : Lim.accepts (limTable w) a) (e : ℕ) :
+    a (2 * e + 1) = 0 ↔ ¬ ∃ t, jumpBit w e t = 1 := by
+  constructor
+  · intro ha hex
+    rw [(odd_of_lim_accepts h e).mpr hex] at ha
+    exact absurd ha one_ne_zero
+  · intro hne
+    obtain ⟨s, hs⟩ := Lim.accepts_iff.mp h (2 * e + 1)
+    have hcol : jumpBit w e s = a (2 * e + 1) := by
+      have := hs s le_rfl
+      rw [limTable, Nat.unpair_pair, ite_eq_right (by omega)] at this
+      rw [← this]
+      congr 1
+      omega
+    rcases jumpBit_cases w e s with h0 | h1
+    · exact hcol.symm.trans h0
+    · exact absurd ⟨s, h1⟩ hne
 
 end ComputableAnalysis

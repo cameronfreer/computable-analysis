@@ -747,7 +747,16 @@ def headlineDecls : List Name :=
    ``ComputableAnalysis.exists_searchLeafCode,
    ``ComputableAnalysis.exists_disintegrateEvaluator,
    ``ComputableAnalysis.disintegrate_le_lim,
-   ``ComputableAnalysis.disintegrate_cantor_equiv_lim]
+   ``ComputableAnalysis.disintegrate_cantor_equiv_lim,
+   -- Limits of convergent sequences in presented spaces
+   ``ComputableAnalysis.primrec₂_stabilityThresholdCode,
+   ``ComputableAnalysis.exists_limitDecoder,
+   ``ComputableAnalysis.exists_weakLimitDecoder,
+   -- The Vitali-limit conditional and its upper bound
+   ``ComputableAnalysis.isVitaliLimit_unique,
+   ``ComputableAnalysis.condSnd_eq_of_subset_of_measure_eq,
+   ``ComputableAnalysis.exists_condSeqCompiler,
+   ``ComputableAnalysis.vitaliDisintegrate_le_lim]
 
 #eval show CoreM Unit from do
   for t in headlineDecls do
